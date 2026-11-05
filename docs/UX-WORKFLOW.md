@@ -36,7 +36,7 @@ The diagram is the proposed connected workflow. Actual host integration remains 
 | 4. Prepare and monitor | Implemented contracts; browser behavior unverified | The GUI polls actual status and offers cancellation; the core bounds jobs. A human-readable stage/status contract must cover both entry points. |
 | 5. Review a brief | Implemented data views; workflow risks remain | Exact excerpts, hashes, gaps and unverified model notes are shown. `app.js::startTask` retains the previous result; failed/cancelled `showResult` returns before replacing it. The interface now pins completed request/job identity and labels an earlier brief during a new or failed/cancelled job. This mitigation is implemented in source; browser/user testing remains pending. |
 | 6. Handoff to the assistant | Manual copy/export implemented; connection pending | Clipboard/download actions exist. The SDK/host path is not qualified; copy success cannot be labeled host delivery or final-task completion. |
-| 7. Return, retry or restart | Partial | Question drafts use browser localStorage. History, captured evidence and local-AI switch state are session-only; `Controller` starts with `disabled=False`. Users need explicit retention/reset information and a deliberate persistent-settings design. |
+| 7. Return, retry or restart | Partial | Question drafts use browser localStorage. History and captured evidence remain session-only. The normal GUI now persists Local AI on/off in private service state and a new installation starts off; session-only Controllers are explicit test/SDK diagnostics. Users need explicit retention/reset information and a deliberate persistent-settings design. |
 
 Useful foundations already exist: job-first task choices; exact source kept alongside notes; published model statistics separated from local records; no candidate silently treated as a qualified winner; and an evidence-only path when model preparation is unavailable. These controls need one understandable path through them.
 
@@ -49,7 +49,7 @@ Useful foundations already exist: job-first task choices; exact source kept alon
 5. **Inspect: a compact brief with expandable proof.** Pin the original request, job ID, task category and captured source identity. Make facts, model interpretation, contradictions and missing context distinct. A preparation result is labeled Brief prepared or Evidence gathered; it is not Bug fixed or Final answer ready.
 6. **Handoff: show what will leave the PC.** Keep manual Copy brief honest about the next paste step. Future connected Send controls require a qualified destination and a source/scope preview. Mark delivery only from an actual acknowledgement. Private-source handling must meet its own security gate.
 7. **Continue: ask for more evidence or review the host result.** Preserve the original request and captured brief. A follow-up creates a new linked job/source check when needed. Final answer received requires a real host result or an explicit user record, not a copied clipboard.
-8. **Return safely.** Show what was saved, what expires and what needs rechecking. A stale source/model/runtime profile cannot look current. Resume is offered only where durable recovery exists; otherwise preserve the request and offer a clearly new run. Saving/clearing private drafts and remembering the AI-off choice need explicit controls.
+8. **Return safely.** Show what was saved, what expires and what needs rechecking. A stale source/model/runtime profile cannot look current. Resume is offered only where durable recovery exists; otherwise preserve the request and offer a clearly new run. The service now remembers AI off; saving/clearing private drafts and durable job recovery still need explicit controls.
 
 ## One coordinator and one state contract
 
@@ -57,7 +57,7 @@ Shared-mode GUI and native adapter clients now use one authenticated local contr
 
 Each job should carry: job/request identity, source scope/snapshot, preparation mode/profile identity, stage, terminal outcome, evidence/gaps, usage origin and handoff status. Separate a new editable draft from the last completed result. Changes to a draft do not rewrite a previous receipt or silently change the model explanation for that receipt.
 
-The local-AI pause control should have a defined product-wide scope within this service, including assistant-originated jobs, and show acknowledgement. It does not control unrelated services or attest that Ollama stopped GPU work. Persistent preferences, source permissions and qualification records must have explicit versioning and restart behavior. Shared jobs and session pause are implemented in shared mode; persistence and the full restart/settings experience remain planned.
+The local-AI pause control should have a defined product-wide scope within this service, including assistant-originated jobs, and show acknowledgement. It does not control unrelated services or attest that Ollama stopped GPU work. Persistent preferences, source permissions and qualification records must have explicit versioning and restart behavior. Shared jobs and session pause are implemented in shared mode; Local AI persistence is implemented; other settings, durable jobs and the full restart experience remain planned.
 
 ## Failure and empty states
 
@@ -86,7 +86,7 @@ Model details have separate This PC, Publisher results, Why selected and License
 4. **Honest handoff:** preview/copy first, then actual qualified host delivery and acknowledgement; preserve evidence and gaps.
 5. **Calibration and detail views:** add the planned hardware/profile/license views using actual backend records, followed by desktop/phone and accessibility review.
 
-These are product/engineering priorities in parallel with the accuracy trial. The first shared-core slice plus first-run help and result identity are now implemented; the remaining guided setup, persistent profiles and actual host-delivery UI are still planned.
+These are product/engineering priorities in parallel with the accuracy trial. The first shared-core slice plus first-run help and result identity are now implemented; the remaining guided setup, persistent profiles and actual host-delivery UI are still planned. The source launcher and saved Local AI choice are now implemented; see validation-0.4.0.dev7.md.
 
 ## Task-based acceptance checks
 

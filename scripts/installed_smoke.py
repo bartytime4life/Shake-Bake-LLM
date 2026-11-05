@@ -15,7 +15,9 @@ checkout = Path(__file__).resolve().parent.parent
 assert not Path(shake_bake.__file__).resolve().is_relative_to(checkout), "Run with installed wheel and PYTHONPATH unset."
 assert shake_bake.__version__ == tomllib.loads((checkout / "pyproject.toml").read_text())["project"]["version"]
 with tempfile.TemporaryDirectory() as directory:
-    controller = Controller({"starter-demo": DEMO})
+    settings = Path(directory) / "settings"
+    controller = Controller({"starter-demo": DEMO}, state_directory=settings)
+    assert controller.call("state")["local_ai_enabled"] is False
     server = WorkbenchServer(("127.0.0.1", 0), controller, adapter_projects=("starter-demo",))
     thread = threading.Thread(target=lambda: server.serve_forever(poll_interval=.01), daemon=True)
     thread.start()
@@ -46,3 +48,15 @@ with tempfile.TemporaryDirectory() as directory:
         publication.close()
         controller.close()
     assert not publication.path.exists(), "Connection capability was not cleaned up."
+    replacement = Controller({"starter-demo": DEMO}, state_directory=settings)
+    try:
+        replacement.call("settings", {"enabled": True})
+        replacement.call("settings", {"enabled": False})
+    finally:
+        replacement.close()
+    restarted = Controller({"starter-demo": DEMO}, state_directory=settings)
+    try:
+        assert restarted.call("state")["local_ai_enabled"] is False
+        print("Installed Local AI off survives restart with isolated private settings.")
+    finally:
+        restarted.close()

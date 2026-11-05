@@ -22,7 +22,8 @@ async def run():
             port = reserve.getsockname()[1]
         environment = dict(os.environ)
         environment.pop("PYTHONPATH", None)
-        service = subprocess.Popen([sys.executable, "-B", "-m", "shake_bake.gui", "--no-browser", "--port", str(port), "--connection-file", str(connection_file)],
+        service = subprocess.Popen([sys.executable, "-B", "-m", "shake_bake.gui", "--no-browser", "--port", str(port),
+            "--state-dir", str(Path(directory) / "settings"), "--connection-file", str(connection_file)],
             cwd=directory, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
         try:
             assert select.select([service.stdout], [], [], 10)[0], "GUI startup timed out"

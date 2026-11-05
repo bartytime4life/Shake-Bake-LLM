@@ -13,7 +13,7 @@ Shake and Bake is a general local preparation helper for Claude or ChatGPT. It o
 | `gui.py` and `web/` | Local task/evidence/model interface, copy/export and off switch. Connection admission and deadlines are bounded. |
 | `doctor.py` | Startup checks and explicit metadata-only Ollama checks. |
 | `benchmarks/model_trial.py` | Checkpointed development trials and separate receipt-bound human review. No automatic qualification or cloud client. |
-| `mcp_server.py` | Prepared optional SDK adapter; SDK and actual host interoperability remain unqualified. |
+| `mcp_server.py` | Prepared optional SDK adapter; SDK 2.3.0 transport has development evidence; actual host interoperability remains unqualified. |
 
 ## Flow and ownership
 
@@ -33,4 +33,6 @@ The GUI uses loopback, request/session checks, eight active connection slots, an
 
 Use `benchmarks/task-lab/` for exposed synthetic development tasks, with grading keys outside each fixture root. Freeze unseen cases for accuracy qualification. Compare a well-configured native host, deterministic evidence and local-model notes using identical allowed source/tasks, retaining failures and unknown usage. A real project may later be an optional test input; it never becomes a required component of this helper.
 
-Real Ollama accuracy, actual host connections, owner-PC behavior, desktop/phone visual review, independent security qualification, per-PC automatic tuning and cloud savings remain pending. Persistent profile/calibration UX, durable GUI recovery, embeddings, vision and execution/patch workflows are future work.
+Held-out final-task accuracy, actual host connections, complete owner-PC qualification, broader desktop/phone accessibility review, independent security qualification, per-PC automatic tuning and cloud savings remain pending. Persistent profile/calibration UX, durable GUI recovery, embeddings, vision and execution/patch workflows are future work.
+
+The normal GUI saves the Local AI choice in private single-writer state; new installations start paused. Jobs remain session-only. External dataset replay now accepts private owner-declared splits with frozen identities and separate grading keys, without promoting profiles or running a paired host study. See local-ai-preferences.md and held-out-evaluation.md.

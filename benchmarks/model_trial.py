@@ -43,25 +43,25 @@ def write_new(path, value):
 
 def review_sheet(receipt_bytes, attempts):
     return {"schema_version": "1", "trial_sha256": sha(receipt_bytes), "reviewer": "",
-            "warning": "Review each attempt against grading-keys.json outside fixture roots. This exposed development set cannot qualify an auto-picked model.",
+            "warning": "Review against grading-keys.json outside fixture roots. Split labels are owner-declared; this handoff review alone cannot qualify an auto-picked model.",
             "entries": [{"attempt_id": a["attempt_id"], "case_id": a["id"],
                          **{field: None for field in REVIEW_FIELDS}, "notes": ""} for a in attempts]}
 
 
-def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeats=1, case_ids=None, seed=0):
+def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeats=1, case_ids=None, seed=0, dataset=None):
     if (model is None) == (not evidence_only):
         raise Refusal("choose_model_or_evidence_only")
     if type(repeats) is not int or not 1 <= repeats <= 3:
         raise Refusal("trial_repeat_limit")
     if type(seed) is not int or not 0 <= seed <= 2**32 - 1:
         raise Refusal("invalid_trial_seed")
-    manifest = json.loads((lab.LAB / "manifest.json").read_text())
-    available = {case["id"] for case in manifest["cases"]}
+    dataset_root, cases, _, identity = lab.load_dataset(dataset)
+    available = {case["id"] for case in cases}
     selected = sorted(available if case_ids is None else case_ids)
     if not selected or len(set(selected)) != len(selected) or set(selected) - available:
         raise Refusal("invalid_trial_cases")
     output_dir = Path(output_dir).resolve()
-    protected = lab.LAB.resolve()
+    protected = dataset_root
     if output_dir == protected or protected in output_dir.parents:
         raise Refusal("trial_output_inside_dataset")
     # Refuse to overwrite previous runs, even if the directory is empty.
@@ -69,14 +69,15 @@ def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeat
     plan = [{"attempt_id": f"{round_number}:{case_id}", "round": round_number, "case_id": case_id}
             for round_number in range(1, repeats + 1) for case_id in selected]
     random.Random(seed).shuffle(plan)
-    fixture_hashes = {case_id: lab.tree_hash(lab.LAB / "fixtures" / case_id) for case_id in selected}
+    fixture_hashes = {case_id: lab.tree_hash(dataset_root / "fixtures" / case_id) for case_id in selected}
     started = time.monotonic()
-    receipt = {"schema_version": "1", "kind": "exposed_development_model_trial", "trial_id": str(uuid.uuid4()),
+    receipt = {"schema_version": "1", "kind": "external_dataset_model_trial" if dataset is not None else "exposed_development_model_trial", "trial_id": str(uuid.uuid4()),
                "created_utc": datetime.now(timezone.utc).isoformat(), "helper_version": __version__,
                "pipeline_id": pipeline_id(), "trial_runner_sha256": sha(Path(__file__).read_bytes()),
                "task_runner_sha256": sha(Path(lab.__file__).read_bytes()),
-               "manifest_sha256": sha((lab.LAB / "manifest.json").read_bytes()),
-               "grading_keys_sha256": sha((lab.LAB / "grading-keys.json").read_bytes()),
+               "dataset": identity,
+               "manifest_sha256": identity["manifest_sha256"],
+               "grading_keys_sha256": identity["grading_keys_sha256"],
                "fixture_sha256": fixture_hashes, "unique_case_count": len(selected), "repeats": repeats,
                "planned_attempts": plan, "order_seed": seed,
                "mode": "evidence_only" if evidence_only else "local_model_candidate",
@@ -87,7 +88,7 @@ def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeat
                "attempts": [], "status": "RUNNING", "stop_reason": None,
                "semantic_model_accuracy": None, "cloud_usage_measured": False, "native_host_baseline": None,
                "auto_promotion_allowed": False,
-               "warning": "Known development cases, not held-out qualification. Repetitions are not independent cases. Missing usage is unknown, not zero. No cold-start or GPU-speed claim."}
+               "warning": "The bundled lab is exposed development data; external split labels are owner-declared. No paired native-host qualification. Repetitions are not independent cases. Missing usage is unknown, not zero. No cold-start or GPU-speed claim."}
     write_new(output_dir / "plan.json", receipt)
     try:
         if model:
@@ -96,22 +97,25 @@ def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeat
         with (output_dir / "attempts.jsonl").open("xb") as checkpoint:
             for item in plan:
                 case_id = item["case_id"]
-                if lab.tree_hash(lab.LAB / "fixtures" / case_id) != fixture_hashes[case_id]:
+                if lab.tree_hash(dataset_root / "fixtures" / case_id) != fixture_hashes[case_id]:
                     receipt["stop_reason"] = "fixture_changed"
                     break
                 if (pipeline_id() != receipt["pipeline_id"] or
-                    sha((lab.LAB / "manifest.json").read_bytes()) != receipt["manifest_sha256"] or
-                    sha((lab.LAB / "grading-keys.json").read_bytes()) != receipt["grading_keys_sha256"]):
+                    lab.load_dataset(dataset)[3] != identity):
                     receipt["stop_reason"] = "trial_inputs_changed"
                     break
                 result = lab.run_cases(model=model, port=port, case_ids=[case_id], expected_digest=digest,
-                    expected_runtime=(receipt["model_preflight"] or {}).get("runtime_version"))
+                    expected_runtime=(receipt["model_preflight"] or {}).get("runtime_version"),
+                    **({"dataset": dataset} if dataset is not None else {}))
                 attempt = {**result["cases"][0], "attempt_id": item["attempt_id"], "round": item["round"]}
                 attempt["fixture_matches_trial_start"] = attempt["fixture_sha256"] == fixture_hashes[case_id]
                 receipt["attempts"].append(attempt)
                 checkpoint.write(json.dumps(attempt, ensure_ascii=False, allow_nan=False).encode() + b"\n")
                 checkpoint.flush(); os.fsync(checkpoint.fileno())
                 error = attempt["error"] or (attempt["brief"] or {}).get("worker_error")
+                if not attempt["dataset_unchanged"] or result["dataset"] != identity or not lab.dataset_matches(dataset_root, identity):
+                    receipt["stop_reason"] = "trial_inputs_changed"
+                    break
                 if not attempt["fixture_unchanged"] or not attempt["fixture_matches_trial_start"]:
                     receipt["stop_reason"] = "fixture_changed"
                     break
@@ -129,7 +133,7 @@ def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeat
     receipt["elapsed_seconds"] = round(time.monotonic() - started, 6)
     receipt["completed_attempt_count"] = len(receipt["attempts"])
     receipt["failed_attempt_count"] = sum(bool(a["error"] or (a["brief"] or {}).get("worker_error") or
-        not a["coverage"].get("mechanical_pass") or not a["fixture_unchanged"] or not a["fixture_matches_trial_start"])
+        not a["coverage"].get("mechanical_pass") or not a["fixture_unchanged"] or not a["fixture_matches_trial_start"] or not a.get("dataset_unchanged", True))
         for a in receipt["attempts"])
     receipt_bytes = encoded(receipt)
     write_new(output_dir / "trial.json", receipt)
@@ -139,7 +143,7 @@ def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeat
 
 def score(receipt_bytes, reviews):
     receipt = parse_json(receipt_bytes.decode())
-    if not isinstance(receipt, dict) or receipt.get("kind") != "exposed_development_model_trial":
+    if not isinstance(receipt, dict) or receipt.get("kind") not in ("exposed_development_model_trial", "external_dataset_model_trial"):
         raise Refusal("invalid_trial_receipt")
     if not isinstance(reviews, dict) or reviews.get("schema_version") != "1" or reviews.get("trial_sha256") != sha(receipt_bytes):
         raise Refusal("review_receipt_mismatch")
@@ -161,7 +165,7 @@ def score(receipt_bytes, reviews):
         entry = by_id[attempt["attempt_id"]]
         if entry.get("case_id") != attempt["id"]:
             raise Refusal("review_case_mismatch")
-        good_evidence = bool(attempt["coverage"].get("mechanical_pass") and attempt["fixture_unchanged"] and attempt["fixture_matches_trial_start"])
+        good_evidence = bool(attempt["coverage"].get("mechanical_pass") and attempt["fixture_unchanged"] and attempt["fixture_matches_trial_start"] and attempt.get("dataset_unchanged", True))
         mechanical += good_evidence
         worker = (attempt["brief"] or {}).get("worker")
         error = attempt["error"] or (attempt["brief"] or {}).get("worker_error")
@@ -205,7 +209,8 @@ def score(receipt_bytes, reviews):
     fully_reviewed = complete and bool(attempts) and reviewed == len(attempts)
     if fully_reviewed and (not isinstance(reviews.get("reviewer"), str) or not reviews["reviewer"].strip()):
         raise Refusal("reviewer_required")
-    return {"kind": "development_trial_review", "trial_sha256": sha(receipt_bytes),
+    return {"kind": "external_dataset_trial_review" if receipt["kind"] == "external_dataset_model_trial" else "development_trial_review", "trial_sha256": sha(receipt_bytes),
+            "dataset": receipt.get("dataset"),
             "trial_status": receipt["status"], "completed_attempts": len(attempts), "planned_attempts": len(receipt["planned_attempts"]),
             "unique_cases": receipt["unique_case_count"], "mechanical_passes": mechanical,
             "failure_reasons": failure_reasons,
@@ -221,7 +226,7 @@ def score(receipt_bytes, reviews):
                       "full_task_total_known": False,
                       "warning": "Missing or rejected-response usage is unknown; sums can undercount failed work."},
             "cloud_savings": None, "auto_promotion_allowed": False,
-            "warning": "Development handoff review only. No native-host comparison, independent-case confidence interval or auto-routing qualification."}
+            "warning": "Local handoff review only; split labels are owner-declared. No native-host comparison, independent-case confidence interval or auto-routing qualification."}
 
 
 def main(argv=None):
@@ -236,6 +241,7 @@ def main(argv=None):
     run.add_argument("--repeat", type=int, default=1, dest="repeats")
     run.add_argument("--case", action="append", dest="case_ids")
     run.add_argument("--seed", type=int, default=0)
+    run.add_argument("--dataset", type=Path, help="Owner-selected external dataset; never auto-promotes a profile")
     review = commands.add_parser("score")
     review.add_argument("--trial", required=True, type=Path)
     review.add_argument("--reviews", required=True, type=Path)
@@ -243,7 +249,7 @@ def main(argv=None):
     try:
         if args.command == "run":
             result = run_trial(args.output, model=args.model, evidence_only=args.evidence_only, port=args.ollama_port,
-                               repeats=args.repeats, case_ids=args.case_ids, seed=args.seed)
+                               repeats=args.repeats, case_ids=args.case_ids, seed=args.seed, dataset=args.dataset)
             print(json.dumps({key: result[key] for key in ("status", "stop_reason", "completed_attempt_count", "failed_attempt_count", "semantic_model_accuracy", "auto_promotion_allowed")}))
             return 0 if result["status"] == "FINISHED" else 1
         result = score(args.trial.read_bytes(), parse_json(args.reviews.read_text()))

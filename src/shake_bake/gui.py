@@ -23,6 +23,7 @@ from .contracts import Refusal
 from .capabilities import computer_snapshot
 from .doctor import inspect_model
 from .helper import HelperSession
+from .preferences import LocalPreferences, default_state_directory
 from .routing import eligible_profiles, pipeline_id, validate_policy
 from .shared import ConnectionPublication
 from .worker import local_inventory, parse_json
@@ -36,16 +37,22 @@ CONTROLLER_TIMEOUT_SECONDS = 8
 class Controller:
     """One persistent owner thread supervises children across short HTTP requests."""
 
-    def __init__(self, projects, policy_path=DEFAULT_POLICY, port=11434, *, allow_trials=False):
+    def __init__(self, projects, policy_path=DEFAULT_POLICY, port=11434, *, allow_trials=False, state_directory=None):
         self.projects = dict(projects)
         self.policy_path = Path(policy_path)
         self.ollama_port = port
-        self.disabled = False
+        self._preferences = LocalPreferences(state_directory, projects.values()) if state_directory is not None else None
+        self.disabled = not self._preferences.enabled if self._preferences is not None else False
         self.allow_trials = allow_trials
         self.records = {}
         self.inventory_status = {"state": "not_checked", "models": []}
         self._queue = queue.Queue(maxsize=32)
-        self._session = HelperSession(projects, policy_path=policy_path, port=port)
+        try:
+            self._session = HelperSession(projects, policy_path=policy_path, port=port)
+        except Exception:
+            if self._preferences is not None:
+                self._preferences.close()
+            raise
         self._thread = threading.Thread(target=self._run, daemon=True, name="shake-bake-owner")
         self._thread.start()
 
@@ -63,7 +70,11 @@ class Controller:
                 except Exception as error:
                     future.set_exception(error)
         finally:
-            self._session.close()
+            try:
+                self._session.close()
+            finally:
+                if self._preferences is not None:
+                    self._preferences.close()
 
     def call(self, operation, payload=None):
         if not self._thread.is_alive():
@@ -166,6 +177,7 @@ class Controller:
             policy = self._policy()
             return {"version": __version__, "projects": [{"id": name, "label": name.replace("-", " ").title(), "path": str(root), "demo": root == DEMO} for name, root in self.projects.items()],
                     "local_ai_enabled": not self.disabled and policy["enabled"], "policy": policy,
+                    "local_ai_preference_persistent": self._preferences is not None,
                     "recent": list(reversed(recent)), "inventory": self.inventory_status,
                     "allow_candidate_trials": self.allow_trials, "pipeline_id": pipeline_id(),
                     "catalog": json.loads((ASSETS / "models.json").read_text())}
@@ -178,14 +190,22 @@ class Controller:
         if operation == "settings":
             if not isinstance(payload, dict) or set(payload) != {"enabled"} or type(payload["enabled"]) is not bool:
                 raise Refusal("invalid_settings")
-            self.disabled = not payload["enabled"]
+            failure = None
+            if self._preferences is not None:
+                try:
+                    self._preferences.save(payload["enabled"])
+                except Refusal as error:
+                    failure = error
+            self.disabled = failure is not None or not payload["enabled"]
             if self.disabled:
                 for identifier in self.records:
                     try:
                         self._session.cancel_task(identifier)
                     except Refusal:
                         pass
-            return {"enabled": not self.disabled and self._policy()["enabled"]}
+            if failure is not None:
+                raise failure
+            return {"enabled": not self.disabled and self._policy()["enabled"], "persisted": self._preferences is not None}
         if operation == "inventory":
             if self.disabled:
                 return {"state": "paused", "models": []}
@@ -430,6 +450,7 @@ def main(argv=None):
     parser.add_argument("--port", type=int, default=8421)
     parser.add_argument("--ollama-port", type=int, default=11434)
     parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--state-dir", type=Path, help="Private settings directory outside approved source; defaults to XDG state storage")
     parser.add_argument("--allow-candidate-trials", action="store_true", help="Allow acknowledged pinned model trials; never qualifies a candidate")
     parser.add_argument("--connection-file", type=Path, help="Publish a private local adapter connection file outside inspected projects")
     parser.add_argument("--adapter-project", action="append", help="Project ID permitted to the adapter; default starter-demo only")
@@ -445,7 +466,8 @@ def main(argv=None):
             parser.error("use distinct ID=/absolute/folder entries")
         projects[name] = Path(path)
     try:
-        controller = Controller(projects, args.policy, args.ollama_port, allow_trials=args.allow_candidate_trials)
+        controller = Controller(projects, args.policy, args.ollama_port, allow_trials=args.allow_candidate_trials,
+                                state_directory=args.state_dir if args.state_dir is not None else default_state_directory())
     except Refusal as error:
         print("The workbench could not start: "+error.code, file=sys.stderr)
         return 2

@@ -2,14 +2,14 @@
 
 A standalone local preparation helper for Claude or ChatGPT, with an Ollama worker option. Ask a repository question and get a traceable source handoff. Claude or ChatGPT supplies the demanding judgment and final answer. The diagnostic evidence path needs no model, network connection or runtime package beyond Python 3.11+.
 
-**Current source: `0.4.0.dev6`, built on the recovered standalone `0.4.0.dev4` package.** This replaces the separate `0.1.0.dev0` repository bootstrap while preserving it in Git history. The original runtime, tests, fixtures and technical documentation have been recovered; see the [import and publication review](docs/import/2026-11-05.md). This is a development preview, not a qualified production release.
+**Current source: `0.4.0.dev7`, built on the recovered standalone `0.4.0.dev4` package.** This replaces the separate `0.1.0.dev0` repository bootstrap while preserving it in Git history. The original runtime, tests, fixtures and technical documentation have been recovered; see the [import and publication review](docs/import/2026-11-05.md). This is a development preview, not a qualified production release.
 
 | Status | Scope |
 | --- | --- |
 | Implemented | Exact evidence collection, bounded lexical retrieval, optional loopback Ollama preparation, local workbench, owner-record model gates, shared GUI/adapter job coordination, scoped project access and cancellation. |
-| Verified in development | 140 program tests; synthetic retrieval and ten exposed evidence-only Task Lab cases. Model-service tests use simulations. Current import validation is recorded separately from historical receipts. |
+| Verified in development | 156 program tests; synthetic retrieval and ten exposed evidence-only Task Lab cases. Model-service tests use simulations. Current import validation is recorded separately from historical receipts. |
 | Prepared, unqualified | Official SDK 2.3.0 stdio/shared development checks; actual Claude/ChatGPT handoffs still need separate qualification. |
-| Planned | Guided setup, automatic per-PC calibration, persistent profiles, durable job recovery and direct cloud-provider clients. |
+| Planned | Guided setup, automatic per-PC calibration, persistent profiles, durable job recovery and direct cloud-provider clients. Local AI on/off persistence is implemented. |
 | Unverified or unmeasured | Owner-PC behavior, real-model accuracy/performance, actual host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
 
 ## Get the source
@@ -17,7 +17,7 @@ A standalone local preparation helper for Claude or ChatGPT, with an Ollama work
 ```bash
 git clone https://github.com/bartytime4life/Shake-Bake-LLM.git
 cd Shake-Bake-LLM
-PYTHONPATH=src python3 -B -m shake_bake doctor
+./scripts/run-workbench --help
 ```
 
 Use Linux and Python 3.11+ for development. Run the model-free demo below before approving any real source. For reproducible core tests, wheel installation and optional SDK checks, follow [CONTRIBUTING.md](CONTRIBUTING.md). No model weights or third-party runtime distributions are bundled.
@@ -43,9 +43,10 @@ The [shared-coordinator guide](docs/shared-coordinator.md) connects the workbenc
 On Linux, from the extracted `shake-and-bake` folder:
 
 ```bash
-PYTHONPATH=src python3 -B -m shake_bake doctor
-PYTHONPATH=src python3 -B -m shake_bake gui
+./scripts/run-workbench
 ```
+
+The launcher chooses an installed Python 3.11+ even when the system `python3` is older. New launches start with Local AI off until explicitly enabled; that choice is saved in private local state across restarts. See [saved preference boundaries](docs/local-ai-preferences.md). Starting a task never resumes a paused service.
 
 This opens the loopback-only browser interface at `http://127.0.0.1:8421`. The owner-selected graphite/amber interface includes a bundled inert demo, task choices, paired source excerpts, expandable model details, pinned request/job identity, copy/JSON export and a local-AI off switch. No model installation is needed for the evidence-only demo. Published benchmarks and owner-recorded local trials have separate labels.
 
@@ -56,14 +57,16 @@ The offline preview is a **recorded demo inspector**, with synthetic source and 
 Start with evidence-only or **Best tested**; the shipped candidate profiles do not qualify for automatic model use. To enable an explicit diagnostic candidate trial on inert source:
 
 ```bash
-PYTHONPATH=src python3 -B -m shake_bake gui --allow-candidate-trials
+./scripts/run-workbench --allow-candidate-trials
 ```
 
-In Model details, refresh installed models, choose **Try a candidate — unqualified**, select a pinned installed model and acknowledge the trial. No download or daemon start occurs. Selection preferences persist in this browser; job history and pause remain session-only. The owner launch flag and enabled routing policy are required. Candidate runs never promote profiles.
+In Model details, refresh installed models, choose **Try a candidate — unqualified**, select a pinned installed model and acknowledge the trial. No download or daemon start occurs. Model selection preferences persist in this browser; the shared service saves the Local AI choice. Jobs and captured results remain session-only. The owner launch flag and enabled routing policy are required. Candidate runs never promote profiles.
 
 In Model details, expand **This computer & selected model** for explicit readiness checks. Computer observations need no Ollama call; the selected-model check needs Local AI on and reads metadata only. Unknown GPU memory, actual model fit and task accuracy stay unknown. Worker notes now retain runtime/settings and receive actual scan cutoffs. A runtime change discards notes while preserving source. See [readiness and screening results](docs/validation-0.4.0.dev6.md).
 
 ## Prepare a real model trial
+
+The trial tools now accept separate owner-selected datasets with pinned input identities and isolated grading keys. See [external evaluation datasets](docs/held-out-evaluation.md). This is evaluation infrastructure, not a completed unseen-task comparison or model qualification.
 
 Start with the [Run on your PC checklist](docs/PC-CHECKLIST.md). Every owner-PC item stays unchecked until actually verified there.
 
@@ -133,7 +136,7 @@ PYTHONPATH=src python3 -B -m unittest discover -s tests -v
 PYTHONPATH=src python3 -B benchmarks/evaluate_selection.py
 ```
 
-The current candidate passed 140 program tests. The recovered tests remain, with coverage for candidate boundaries, capability observations, wire/receipt settings, runtime drift and worker-visible collection limits. See [current validation](docs/validation-0.4.0.dev6.md). HTTP model tests use a simulated loopback service, not a real model; GUI tests exercise the actual loopback HTTP server and real bounded preparation children. Routing tests use explicitly fabricated qualification records. The task lab supplies ten exposed jobs with independent grading keys outside each fixture root. All ten retain their required source spans on the diagnostic path. This is mechanical evidence coverage, not model accuracy. The saved previous candidate retained the required spans in nine of ten cases; the distant-condition case motivated the two-window retrieval change.
+The current candidate passed 156 program tests. The recovered tests remain, with coverage for candidate boundaries, capability observations, wire/receipt settings, runtime drift and worker-visible collection limits. See [current validation](docs/validation-0.4.0.dev7.md). HTTP model tests use a simulated loopback service, not a real model; GUI tests exercise the actual loopback HTTP server and real bounded preparation children. Routing tests use explicitly fabricated qualification records. The task lab supplies ten exposed jobs with independent grading keys outside each fixture root. All ten retain their required source spans on the diagnostic path. This is mechanical evidence coverage, not model accuracy. The saved previous candidate retained the required spans in nine of ten cases; the distant-condition case motivated the two-window retrieval change.
 
 ```bash
 PYTHONPATH=src python3 -B benchmarks/run_task_lab.py --evidence-only
@@ -179,3 +182,5 @@ Linux/POSIX is the development target; Windows remains refused pending an equiva
 Persistent job storage, qualified MCP connections, direct cloud clients, patching and execution of inspected-project tests remain future work. [Model selection and tuning](docs/model-selection.md) compares published statistics for Qwen 9B/4B, Gemma 4 12B and a conditional gpt-oss 20B challenger; none has been measured here. [The next controlled trial](docs/next-trial.md) puts correct completed work ahead of savings. [Engineering references](docs/engineering-references.md) connect primary sources and book chapters to concrete decisions and checks.
 
 [The native-capability study](docs/native-capability-study.md) compares existing ChatGPT/Codex and Claude features with the useful role of a local helper. The owner-controlled selector, `assist` CLI and local visual workbench are implemented. The setup wizard, automatic task classification, fully qualified host delivery, embeddings and vision input remain pending. No real profile has qualified for automatic selection. See [the visual workbench guide](docs/visual-workbench.md) and [the routing specification](docs/model-routing-and-usability.md).
+
+Development update (November 5): `0.4.0.dev7` adds saved Local AI settings, a supported-Python source launcher and external evaluation dataset support. See [validation and remaining gates](docs/validation-0.4.0.dev7.md). Historical `.dev5`/`.dev6` model and browser observations retain their original scope.

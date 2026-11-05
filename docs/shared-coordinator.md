@@ -1,4 +1,6 @@
-# Shared local coordinator: 0.4.0.dev4
+# Shared local coordinator
+
+Current update: `0.4.0.dev7` saves the shared Local AI choice across restart; see [preference boundaries](local-ai-preferences.md). The original `.dev4` implementation evidence below retains its stated scope. SDK 2.3.0 transport now has later development evidence; actual Claude/ChatGPT hosts remain unqualified.
 
 Shared mode connects the GUI and prepared assistant adapter to one real owner-thread/controller and one routed HelperSession. Projects, single-job admission, captured results, task categories, model-policy gates and this session's pause state are shared. The native loopback client is tested; actual official-SDK and Claude/ChatGPT interoperability still need qualification.
 
@@ -50,13 +52,13 @@ The private file permits only schema 1, numeric loopback port, host `127.0.0.1` 
 
 The endpoint checks exact Host, bearer capability and method/project scope; browser Origin/Fetch headers are refused on this native endpoint. GUI cookie/Origin/CSRF rules remain separate. Connection/body/resource bounds are still enforced. This design assumes a trusted single-owner local environment; it does not isolate malicious same-user processes or establish multi-user security. Independent review and deployment/daemon isolation remain open.
 
-Clean service shutdown removes only its exact unchanged connection file. Failed publication cleans its newly created partial file. An owner replacement is preserved. A hard kill can leave a stale private file: confirm the old service is stopped and handle that file explicitly before restarting. There is no automatic stale-file deletion or durable job recovery. This session's pause setting does not persist after service restart, and stopping a client/runner does not prove Ollama stopped GPU work.
+Clean service shutdown removes only its exact unchanged connection file. Failed publication cleans its newly created partial file. An owner replacement is preserved. A hard kill can leave a stale private file: confirm the old service is stopped and handle that file explicitly before restarting. There is no automatic stale-file deletion or durable job recovery. The normal GUI now saves its Local AI choice, while jobs still do not survive service restart, and stopping a client/runner does not prove Ollama stopped GPU work.
 
 ## UX changes in this build
 
 The existing interface now includes first-run guidance, Assistant/Workspace labels in recent activity, a pinned completed request/job identity and an expandable full original request. An earlier brief is explicitly labeled when a newer job is preparing, fails or is cancelled. Busy/controller-timeout messages give a next action. These changes reuse the current interface; actual desktop/phone/browser interaction remains unverified.
 
-Full guided project registration, automatic calibration, persistent preferences/profiles, a connected host-delivery UI and durable recovery remain future slices in UX-WORKFLOW.md. Manual copy/export still means the user must paste the brief and obtain the host's final judgment.
+Full guided project registration, automatic calibration, persistent model profiles and other settings, a connected host-delivery UI and durable recovery remain future slices in UX-WORKFLOW.md. Manual copy/export still means the user must paste the brief and obtain the host's final judgment.
 
 ## Qualification
 
