@@ -1,6 +1,6 @@
 # Model candidates and tuning plan
 
-Research checked 2026-11-04. These are candidates, not measured winners or installed models. The owner has reported RTX 5080 GPUs with about 16 GiB each and approximately 120 GiB system RAM on the PCs. Separate PCs do not automatically combine VRAM; other workloads reduce available GPU memory.
+Historical candidate research checked 2026-11-04. These registry observations are not a current inventory or qualified recommendation. Read [current evaluation status](evaluation-status.md) for measured local results and the next gate. These are candidates, not measured winners or installed models. The owner has reported RTX 5080 GPUs with about 16 GiB each and approximately 120 GiB system RAM on the PCs. Separate PCs do not automatically combine VRAM; other workloads reduce available GPU memory.
 
 | Role to test | Candidate | Registry observation | Decision |
 | --- | --- | --- | --- |
@@ -25,16 +25,16 @@ Author-reported results checked 2026-11-04:
 
 These numbers are screening evidence. Scores across author harnesses, reasoning budgets and quantization setups do not establish a controlled ranking. SWE-bench, LiveCodeBench, IFEval and BFCL measure different abilities; tool-calling performance is indirect evidence for our no-tools preparation worker. None measures faithful excerpts, omitted contradictions or our complete helper workflow. The reasoning-effort variation is a concrete reason to qualify a model-plus-profile rather than a bare model name.
 
-Decision: retain Qwen 9B as the initial reference candidate, add Gemma 4 12B as a genuine alternative, keep Qwen 4B as a smaller challenger, and admit gpt-oss 20B only after a memory check. First screen all eligible candidates locally; then run the host comparison with the two best qualified profiles. No winner is claimed. The independent Artificial Analysis small-model comparison is a secondary screening source; it does not provide RTX 5080/Ollama measurements for our exact candidate profiles.
+The November 4 research shortlist retained Qwen 9B as the initial reference candidate, added Gemma 4 12B as an alternative, kept Qwen 4B as a smaller challenger, and limited gpt-oss 20B to machines passing a memory check. That shortlist is historical. Choose the next explicitly permitted local candidate using current inventory and the retained failures; qualify its settings before a final-host comparison. No winner is claimed. The independent Artificial Analysis small-model comparison is a secondary screening source; it does not provide RTX 5080/Ollama measurements for our exact candidate profiles.
 
-Pin the selected full model digest, exact tag, quantization, Ollama version, GPU/driver, prompt version and settings. A tag alone can change. The current client checks reported local metadata but does not yet enforce digest pinning. Do not promote a model based on its own confidence or a published coding benchmark alone.
+Pin the selected full model digest, exact tag, quantization, Ollama version, GPU/driver, prompt version and settings. A tag alone can change. The current routed and explicit candidate paths pin the reported digest before and after inference; trial receipts also pin runtime and pipeline identity. This trusts daemon metadata and does not attest weight bytes or enforce the full proposed hardware profile. Do not promote a model based on its own confidence or a published coding benchmark alone.
 
 ## Tuning sequence
 
-1. Run the existing narrow evidence-handoff task before adding broader coding work. Freeze a held-out evaluation set before changing prompts or settings.
-2. Compare the 9B and 4B candidates with the same evidence and strict output schema. Preserve source text and identifiers regardless of summary quality.
+1. Use the exposed development cases for prompt/settings work. Freeze the final candidate configuration before authoring or reserving a fresh acceptance cohort; keep its keys outside worker-readable roots and do not tune against its results.
+2. Compare explicitly selected installed candidates with identical evidence and the strict output schema. The dated 9B/4B shortlist is not a detected installation or a winner; current 8B measurements are linked in evaluation status. Preserve source text and identifiers regardless of note quality.
 3. Compare the current mechanical baseline (`temperature=0`, 8,192 context tokens requested, 512 generated tokens, 30-second client deadline) against model-specific sampling recommendations. These existing limits are not tuned Qwen3.5 settings. Low temperature does not prove truth.
-4. Discover thinking controls with `/api/show`. Test supported thinking-off and bounded-thinking profiles separately; record defaults when controls are absent. Do not assume every model accepts a boolean switch. The current worker does not yet set an explicit thinking policy.
+4. Discover thinking controls with `/api/show`. Test supported thinking-off and bounded-thinking profiles separately; record defaults when controls are absent. Do not assume every model accepts a boolean switch. The shipped worker explicitly requests `think: false`, refuses declared controls that cannot honor it before source transmission, and rejects returned thinking. Larger-budget thinking experiments are private diagnostics; their final-content projection does not change production acceptance.
 5. Raise context/output limits only when a measured omission or truncation justifies it. The helper receives a small selected packet; it is not using a whole-repository agent context. Count cold loading separately from warm inference and measure CPU/GPU offload with `ollama ps`.
 6. Route only tasks for which a profile passed qualification. Do not repeatedly ask several local models the same question by default. A stalled or failed helper returns evidence and a visible failure to the host.
 

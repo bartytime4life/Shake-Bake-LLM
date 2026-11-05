@@ -56,13 +56,13 @@ Clean service shutdown removes only its exact unchanged connection file. Failed 
 
 ## UX changes in this build
 
-The existing interface now includes first-run guidance, Assistant/Workspace labels in recent activity, a pinned completed request/job identity and an expandable full original request. An earlier brief is explicitly labeled when a newer job is preparing, fails or is cancelled. Busy/controller-timeout messages give a next action. These changes reuse the current interface; actual desktop/phone/browser interaction remains unverified.
+The existing interface now includes first-run guidance, Assistant/Workspace labels in recent activity, a pinned completed request/job identity and an expandable full original request. An earlier brief is explicitly labeled when a newer job is preparing, fails or is cancelled. Busy/controller-timeout messages give a next action. These changes reuse the current interface. The original `.dev4` implementation had no browser acceptance; subsequent [readiness](pc-readiness-2026-11-05.md) and [copy-recovery](copy-and-screening-2026-11-05.md) checks cover selected installed flows. Broader desktop/phone and assistive-technology qualification remains open.
 
 Full guided project registration, automatic calibration, persistent model profiles and other settings, a connected host-delivery UI and durable recovery remain future slices in UX-WORKFLOW.md. Manual copy/export still means the user must paste the brief and obtain the host's final judgment.
 
 ## Qualification
 
-Nineteen new tests use actual private files, loopback HTTP, the controller and bounded children. They cover shared results/origins, scoped access, policy/pause/cancel behavior, cross-client single-job admission, refused browser/invalid credentials, private-file publication/cleanup/permissions, configuration bounds and explicit CLI modes. Model service tests use a simulation. The full program suite passes 121 tests; this is not real-model accuracy or actual host interoperability.
+Nineteen new tests use actual private files, loopback HTTP, the controller and bounded children. They cover shared results/origins, scoped access, policy/pause/cancel behavior, cross-client single-job admission, refused browser/invalid credentials, private-file publication/cleanup/permissions, configuration bounds and explicit CLI modes. Model service tests use a simulation. The original `.dev4` full suite passed 121 tests. The current suite has 176; [evaluation status](evaluation-status.md) separates source, installed, hosted, browser and actual-host evidence. Program tests do not establish real-model accuracy or full host interoperability.
 
 On a dependency-enabled machine, run `PYTHONPATH=src python3 -B integration/mcp_shared_smoke.py` to qualify the real SDK through the internal bridge. Missing SDK causes a failure rather than a skipped pass. Then qualify each supported host separately using permitted inert source before sensitive-project trials.
 

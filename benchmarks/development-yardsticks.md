@@ -1,6 +1,6 @@
 # Draft model qualification questions
 
-This is an exposed development set, not a blind held-out benchmark. No candidate model has answered it here. The expected findings below are grading keys; they must not be included in model prompts. Reserve new cases and different implementations for held-out qualification.
+This is an exposed development set, not a blind held-out benchmark. These prose questions are not a separate scored trial. Related runnable Task Lab cases now have retained model results in [evaluation status](../docs/evaluation-status.md). The expected findings below are grading keys; they must not be included in model prompts. Reserve new cases and different implementations for held-out qualification.
 
 The first two questions use the self-contained before/after guards in `task-lab/fixtures/change-review/`. The runnable ten-case set and separate grading keys are in `task-lab/`. These questions are development material, not a model-accuracy result.
 
@@ -23,4 +23,4 @@ Score critical required findings as present/absent, source references as valid/i
 
 For local screening, every applicable critical finding must be recoverable from the evidence handoff and critical unsupported claims must be absent. A reviewer must judge whether notes help the host or bias it; exact source preservation alone does not prove useful reasoning. Compare the best profiles in the host trial after screening. A finite development-set pass is not a general correctness guarantee.
 
-Candidate order is provisional: Qwen3.5 9B reference, Gemma 4 12B alternative, Qwen3.5 4B smaller challenger, and gpt-oss 20B conditional on actual memory headroom. Published scores and their origins are in `docs/model-selection.md`; the real inference and host trials remain pending.
+The dated candidate research is in [model selection](../docs/model-selection.md); it is not an installed inventory or qualified winner. Actual local inference and separate AI review are recorded in [evaluation status](../docs/evaluation-status.md). A paired final-host comparison and independent human qualification remain pending.

@@ -1,5 +1,7 @@
 # Task Lab: useful jobs with evidence and grading keys
 
+See [current evaluation status](../../docs/evaluation-status.md) for retained real-model results and [thinking-budget comparison](../../docs/thinking-budget-2026-11-05.md) for separately declared diagnostic caps. The normal replay below keeps the shipped baseline; no larger-budget CLI option or model qualification is implied.
+
 Ten synthetic, inert development cases are ready to replay. Each provides an exact task, source files, required evidence spans, critical findings and unsupported claims to watch for. This exposed set supports development; it is not a blind or independent evaluation.
 
 | Job | Work delegated to the helper | Host still decides |

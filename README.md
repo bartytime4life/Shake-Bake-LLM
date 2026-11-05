@@ -10,7 +10,7 @@ A standalone local preparation helper for Claude or ChatGPT, with an Ollama work
 | Verified in development | 176 offline program tests on the local PC; synthetic retrieval and ten exposed evidence-only Task Lab cases. Model-service tests use simulations. Official SDK 2.3.0 stdio/shared checks and actual Codex synthetic handoff/cancellation checks passed. |
 | Partially qualified | The [Codex smoke checks](docs/codex-host-handoff.md) cover an exposed synthetic task and cancellation of an explicitly stopped owned runner followed by a fresh successful task. Actual Claude/consumer ChatGPT, disconnect/deadline/restart, model-assisted host orchestration and private-source handoffs remain unqualified. |
 | Planned | Guided setup, automatic per-PC calibration, persistent profiles, durable job recovery and direct cloud-provider clients. Local AI on/off persistence is implemented. |
-| Unverified or unmeasured | Full owner-PC workflows, real-model accuracy/performance, broader host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
+| Unverified or unmeasured | Full owner-PC workflows, unseen/final-host model accuracy, controlled runtime performance and peak memory, broader host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
 
 ## Get the source
 
@@ -22,7 +22,7 @@ cd Shake-Bake-LLM
 
 Use Linux and Python 3.11+ for development. Run the model-free demo below before approving any real source. For reproducible core tests, wheel installation and optional SDK checks, follow [CONTRIBUTING.md](CONTRIBUTING.md). No model weights or third-party runtime distributions are bundled.
 
-The [prioritized to-do list](TODO.md) puts real-machine/model accuracy, host delegation and measured benefit first. Every pending item has a completion check; the [PC checklist](docs/PC-CHECKLIST.md) supplies the detailed runbook.
+The [documentation guide](docs/README.md) separates current instructions from dated experiments, acceptance records and research. The [prioritized to-do list](TODO.md) puts real-machine/model accuracy, host delegation and measured benefit first. Every pending item has a completion check; the [PC checklist](docs/PC-CHECKLIST.md) supplies the detailed runbook.
 
 The [whole-workflow UX plan](docs/UX-WORKFLOW.md) connects first setup, shared job/policy state, local preparation, evidence review, handoff and recovery. It records current code-level gaps and planned implementation slices; browser/user-flow qualification remains pending.
 
@@ -70,7 +70,9 @@ In Model details, expand **This computer & selected model** for explicit readine
 
 Fresh [owner-PC screening](docs/screening-2026-11-05.md) now has retained records: Qwen 3.5 4B timed out on the first case; Qwen 3 1.7B completed ten exposed cases but only four handoffs met the disclosed assistant-review rubric. Exact source survived, while the notes still missed or misread decisive facts. All profiles remain unqualified. These new runs do not reconstruct the missing historical screening or establish unseen accuracy or savings. A [follow-up prompt experiment](docs/validation-0.4.0.dev8.md) also met the rubric on only four cases and increased unsupported claims; that prompt was rejected and reverted. The shipped worker now refuses models whose declared thinking controls cannot honor its `think: false` request, before transmitting source. Missing controls remain unknown; they do not establish compatibility or accuracy.
 
-The trial tools now accept separate owner-selected datasets with pinned input identities and isolated grading keys. See [external evaluation datasets](docs/held-out-evaluation.md). A [frozen 8B reasoning experiment and separate AI review](docs/reasoning-screening-2026-11-05.md) now record a new synthetic cohort: the original prompt met the rubric on 2/10 handoffs and the experiment on 3/10. The experiment also regressed on a known case and was rejected. These are local handoff results, not independent human qualification or a paired final-host comparison. A [paired thinking-mode check](docs/thinking-probe-2026-11-05.md) then produced complete final JSON on only 3/10 thinking-on attempts at the unchanged 512-token cap; seven were truncated. The application remains unchanged.
+Read [current evaluation status](docs/evaluation-status.md) for the complete sequence of retained trials. The latest [four-arm thinking-budget comparison](docs/thinking-budget-2026-11-05.md) ran forty attempts: thinking off at 512 tokens produced 6/10 supported handoffs; thinking on produced 3/10 at 512 and 6/10 at both 1,024 and 2,048. Each larger budget still truncated the concurrency case and retained two critical unsupported claims, so both were rejected. These private diagnostics do not change the shipped thinking-off, 512-token worker or add GUI/CLI budget controls.
+
+The [earlier frozen-prompt comparison](docs/reasoning-screening-2026-11-05.md) includes a separately authored cohort with 2/10 supported original handoffs and 3/10 experimental handoffs. That cohort is now exposed and must not be reused as unseen. [External datasets](docs/held-out-evaluation.md) support pinned inputs and isolated grading keys; independent human qualification and a paired final-host comparison remain open.
 
 Start with the [Run on your PC checklist](docs/PC-CHECKLIST.md). Every owner-PC item stays unchecked until actually verified there.
 
@@ -171,7 +173,7 @@ See [the Task Lab guide](benchmarks/task-lab/README.md) before a real model repl
 | `examples/` | Inert demo and pinned-source receipts. |
 | `benchmarks/evaluate_selection.py` | Synthetic retrieval smoke check. |
 | `docs/` | Scope, research and qualification records. |
-| `integration/mcp_smoke.py` | Pending SDK client qualification. |
+| `integration/mcp_smoke.py` | Optional SDK compatibility checks; actual-host qualification is separate. |
 
 Package metadata, entry points, MIT license and ignore rules remain in their normal locations. Historical receipts describe their stated earlier environments; [the import record](docs/import/2026-11-05.md) records this checkout's validation.
 

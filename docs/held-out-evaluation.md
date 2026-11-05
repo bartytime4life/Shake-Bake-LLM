@@ -1,5 +1,7 @@
 # External evaluation datasets
 
+[Current evaluation status](evaluation-status.md) records the development and previously reserved cohorts separately. A larger output budget does not create unseen evidence; freeze and pass the candidate development gate before using a new reserved cohort.
+
 The trial tools can now read an owner-selected dataset outside the checkout. This removes the hardcoded ten-case restriction; it does not establish that any supplied case is unseen or qualifies a model. The bundled Task Lab always remains development data, even when selected with `--dataset`.
 
 Keep private cases out of Git and freeze them before tuning. Use a quiescent directory with this layout:

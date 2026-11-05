@@ -152,3 +152,5 @@ The [next paired thinking-mode diagnostic](thinking-probe-2026-11-05.md) retaine
 the current prompt and limits. Seven of ten thinking-on responses were truncated
 at 512 tokens; only three had complete final JSON. This configuration was also
 rejected, with the application unchanged.
+
+The later [larger-budget experiment](thinking-budget-2026-11-05.md) also failed its frozen development gate. [Current evaluation status](evaluation-status.md) keeps these experiments, their cohorts and the final-host qualification gap separate.
