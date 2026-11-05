@@ -176,6 +176,19 @@ def validate_active_cancel_trace(events, answer):
     return checked
 
 
+def require_runner_gate_environment():
+    """Refuse signal-based injection when procfs cannot identify our process IDs."""
+    require(sys.platform == "linux" and hasattr(os, "pidfd_open") and
+            hasattr(signal, "pidfd_send_signal"), "linux_pidfd_required")
+    try:
+        proc_pid = Path("/proc/self/stat").read_text().partition(" ")[0]
+        task_directory = Path("/proc/self/task").is_dir()
+    except OSError:
+        raise ValueError("runner_procfs_unavailable") from None
+    require(task_directory, "runner_procfs_unavailable")
+    require(proc_pid == str(os.getpid()), "runner_procfs_pid_namespace_mismatch")
+
+
 class RunnerGate:
     """Fault injection: stop only the first bounded child of our own service.
 
@@ -184,7 +197,7 @@ class RunnerGate:
     """
 
     def __init__(self, service_pid):
-        require(sys.platform == "linux" and hasattr(os, "pidfd_open") and hasattr(signal, "pidfd_send_signal"), "linux_pidfd_required")
+        require_runner_gate_environment()
         self.parent = service_pid
         self.parent_fd = os.pidfd_open(service_pid)
         self.pid = self.fd = None
@@ -309,8 +322,7 @@ def run(output, host_timeout=120, scenario="handoff"):
     require(type(host_timeout) is int and 10 <= host_timeout <= 180, "invalid_host_timeout")
     require(scenario in ("handoff", "active-cancel"), "invalid_host_scenario")
     if scenario == "active-cancel":
-        require(sys.platform == "linux" and Path("/proc/self/task").is_dir() and
-                hasattr(os, "pidfd_open") and hasattr(signal, "pidfd_send_signal"), "linux_pidfd_required")
+        require_runner_gate_environment()
         probe = os.pidfd_open(os.getpid())
         try:
             signal.pidfd_send_signal(probe, 0)

@@ -55,6 +55,31 @@ Python 3.12.14; Node 24; no real model was used in these checks.
 Hosted evidence: https://github.com/bartytime4life/Shake-Bake-LLM/actions/runs/42104211973.
 The local RunnerGate failure remains recorded above even though source CI passed.
 
+## Follow-up: local prerequisite identified
+
+After PR #8 merged, inspection found that this development runtime's process IDs
+do not match the IDs visible through procfs: the process's own `/proc/self/stat`
+PID differs from `os.getpid()`. The fault-injection watcher therefore cannot
+identify its child through `/proc/<pid>/task`. The new harness prerequisite
+refuses that environment before opening pidfds or signalling; its offline real
+process-gate test records an explicit skip. This explains the earlier local
+failure without reclassifying it as a passed cancellation check. Supported Linux
+CI must continue to execute the real gate. This does not change application
+cancellation, GUI behavior, Ollama behavior or historical host qualification.
+
+The follow-up source and isolated installed-wheel suites each ran 176 tests:
+175 passed, with the real process-gate test explicitly skipped for the namespace
+mismatch. Five new deterministic cases check matching/mismatched process IDs,
+unreadable/missing procfs and unsupported platforms. The actual `active-cancel`
+CLI returned `BLOCKED` with that mismatch code and created no output directory;
+it did not invoke a host or model. All 30 readiness JavaScript checks, wheel-byte
+verification and installed shared-controller/restart smoke still pass locally.
+
+The [PC checklist](PC-CHECKLIST.md) now distinguishes checkout and installed
+interface identity, includes readiness-refresh acceptance steps and leaves all
+actual-PC boxes unchecked. Post-merge PR #8 CI also passed all six jobs at
+https://github.com/bartytime4life/Shake-Bake-LLM/actions/runs/42104844494.
+
 ## Boundaries
 
 The backend, explicit evidence permissions, loopback Ollama restriction and
