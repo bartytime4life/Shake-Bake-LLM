@@ -7,6 +7,7 @@ PYTHONPATH=src python3 -B -m unittest discover -s tests -v
 PYTHONPATH=src python3 -B benchmarks/evaluate_selection.py
 PYTHONPATH=src python3 -B benchmarks/run_task_lab.py --evidence-only
 node --check src/shake_bake/web/app.js
+node scripts/frontend_smoke.cjs
 ```
 
 Node is only a developer JavaScript syntax check. It is not an application runtime dependency. The evidence-only lab verifies required source spans, hashes, cutoffs and unchanged fixtures; it does not grade a real model or assistant answer. CI repeats these checks and verifies an installed wheel. See `.github/workflows/ci.yml` for the exact commands and pinned action revisions. Local import evidence covers Python 3.12; other CI matrix results must be observed separately.
@@ -53,3 +54,5 @@ The import-time SDK attempt exited 2 because the SDK was absent. The current can
 Preserve original requests, exact source, contradictions, omissions and unknown measurements. Keep model notes unverified. Use synthetic or owner-permitted sanitized reproduction material. Never promote a model, claim token savings or close a security/owner-PC gap from program tests alone.
 
 Keep local policy, connection capabilities, captured private evidence, state, model files and build output out of Git. The archive checksum inventory in `docs/import/archive-MANIFEST.sha256` describes the recovered ZIP's original relative paths, not the evolving repository. Runtime/test parity was verified at import; future changes must carry their own tests and evidence.
+
+For source UI startup use `./scripts/run-workbench`; it selects an installed Python 3.11+ without downloading one. Use a separate `--state-dir` outside inspected roots for development. Private evaluation datasets and run receipts belong outside the checkout; see docs/held-out-evaluation.md.

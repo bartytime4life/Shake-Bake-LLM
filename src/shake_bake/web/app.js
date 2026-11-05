@@ -40,7 +40,6 @@ async function api(path, body) {
   let target=path, payload=body;
   if(path==='/api/result'){target='/api/tasks/'+body.job_id;payload=undefined;}
   if(path==='/api/start'){
-    await api('/api/pause',{paused:body.ai_mode==='off'});
     target='/api/tasks';payload={project_id:body.project_id,task:body.request,task_kind:body.task_kind};
     if(body.ai_mode==='trial')payload.candidate={model:body.model,digest:body.digest,acknowledged:$('trial-ack').checked};
   }
@@ -132,6 +131,7 @@ async function refreshState(initial=false){
   const next=await api('/api/state');state=next;csrf=next.csrf;
   $('version').textContent=`v${state.version} · ${state.shared_native?'Shared coordinator':'Local session'}`;
   $('connection-status').textContent='Local session connected';
+  $('local-ai-retention').textContent=nativeState.local_ai_preference_persistent?'Local AI choice is saved on this computer. Briefs expire with the session.':'Local AI choice and briefs last only for this diagnostic session.';
   if(initial){
     renderCatalog();
     $('project').replaceChildren();for(const id of state.projects){const option=new Option(id==='starter-demo'?'Synthetic demo':id,id);$('project').append(option);}
