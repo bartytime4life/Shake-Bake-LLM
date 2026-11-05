@@ -7,10 +7,10 @@ A standalone local preparation helper for Claude or ChatGPT, with an Ollama work
 | Status | Scope |
 | --- | --- |
 | Implemented | Exact evidence collection, bounded lexical retrieval, optional loopback Ollama preparation, local workbench, owner-record model gates, shared GUI/adapter job coordination, scoped project access and cancellation. |
-| Verified in development | 156 program tests; synthetic retrieval and ten exposed evidence-only Task Lab cases. Model-service tests use simulations. Current import validation is recorded separately from historical receipts. |
-| Prepared, unqualified | Official SDK 2.3.0 stdio/shared development checks; actual Claude/ChatGPT handoffs still need separate qualification. |
+| Verified in development | 165 offline program tests; synthetic retrieval and ten exposed evidence-only Task Lab cases. Model-service tests use simulations. Official SDK 2.3.0 stdio/shared checks and one actual Codex evidence-only demo handoff passed. |
+| Partially qualified | The [Codex smoke check](docs/codex-host-handoff.md) covers one exposed synthetic task. Actual Claude/consumer ChatGPT, active-work cancellation, model-assisted host orchestration and private-source handoffs remain unqualified. |
 | Planned | Guided setup, automatic per-PC calibration, persistent profiles, durable job recovery and direct cloud-provider clients. Local AI on/off persistence is implemented. |
-| Unverified or unmeasured | Owner-PC behavior, real-model accuracy/performance, actual host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
+| Unverified or unmeasured | Full owner-PC workflows, real-model accuracy/performance, broader host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
 
 ## Get the source
 
@@ -36,7 +36,7 @@ The local web server now caps active connections, expires stalled requests and c
 
 ## Shared GUI and assistant work
 
-The [shared-coordinator guide](docs/shared-coordinator.md) connects the workbench and prepared adapter to the same routed jobs, captured evidence and session pause state. Private connection files and explicit project scopes are tested. The interface adds first-run help, job-origin labels and pinned completed-result identity. Actual host qualification remains pending. Current SDK/browser development checks are recorded separately in [validation](docs/validation-0.4.0.dev6.md).
+The [shared-coordinator guide](docs/shared-coordinator.md) connects the workbench and prepared adapter to the same routed jobs, captured evidence and session pause state. Private connection files and explicit project scopes are tested. The interface adds first-run help, job-origin labels and pinned completed-result identity. One actual Codex evidence-only handoff now has [scoped evidence and a repeatable check](docs/codex-host-handoff.md); broader host qualification remains pending. SDK/browser development checks are recorded separately in [validation](docs/validation-0.4.0.dev6.md).
 
 ## Open the visual workbench
 
@@ -111,7 +111,7 @@ The new Linux `HelperSession` accepts tasks only for owner-configured projects. 
 
 Every completed preparation result sets `final_answer_ready=false` and `requires_host_reasoning=true`. Worker confidence is never a verification signal. Tests check that an injected incorrect note stays unverified and cannot remove source. They do not prove that a model detects the incorrect note.
 
-The optional `mcp` extra and `shake-bake-mcp` entry point prepare an official-SDK stdio adapter. The installed official SDK 2.3.0 stdio/shared replay is recorded in [current validation](docs/validation-0.4.0.dev6.md); actual Claude/ChatGPT connections remain unqualified. See [helper-contract.md](docs/helper-contract.md) for the five methods, candidate launch command and qualification gate. `integration/mcp_shared_smoke.py` prepares the shared-path SDK check; the legacy `mcp_smoke.py` is a separate diagnostic. Neither is counted in the passed base suite.
+The optional `mcp` extra and `shake-bake-mcp` entry point provide an official-SDK stdio adapter. The installed official SDK 2.3.0 stdio/shared replay is recorded in [validation](docs/validation-0.4.0.dev6.md), and the first actual Codex check in [host handoff](docs/codex-host-handoff.md). Actual Claude/consumer ChatGPT connections remain unqualified. See [helper-contract.md](docs/helper-contract.md) for the five methods, launch command and qualification gate. The SDK and live-host scripts are separate from the offline base suite; the live cloud check is opt-in and never runs in CI.
 
 ## Accuracy-gated model choice
 
@@ -136,7 +136,7 @@ PYTHONPATH=src python3 -B -m unittest discover -s tests -v
 PYTHONPATH=src python3 -B benchmarks/evaluate_selection.py
 ```
 
-The current candidate passed 156 program tests. The recovered tests remain, with coverage for candidate boundaries, capability observations, wire/receipt settings, runtime drift and worker-visible collection limits. See [current validation](docs/validation-0.4.0.dev7.md). HTTP model tests use a simulated loopback service, not a real model; GUI tests exercise the actual loopback HTTP server and real bounded preparation children. Routing tests use explicitly fabricated qualification records. The task lab supplies ten exposed jobs with independent grading keys outside each fixture root. All ten retain their required source spans on the diagnostic path. This is mechanical evidence coverage, not model accuracy. The saved previous candidate retained the required spans in nine of ten cases; the distant-condition case motivated the two-window retrieval change.
+The current candidate passed 165 offline program tests. The recovered tests remain, with coverage for candidate boundaries, capability observations, wire/receipt settings, runtime drift and worker-visible collection limits; nine additional tests cover synthetic host-trace acceptance and configuration. See [runtime validation](docs/validation-0.4.0.dev7.md) and [host validation](docs/codex-host-handoff.md). HTTP model tests use a simulated loopback service, not a real model; GUI tests exercise the actual loopback HTTP server and real bounded preparation children. Routing tests use explicitly fabricated qualification records. The task lab supplies ten exposed jobs with independent grading keys outside each fixture root. All ten retain their required source spans on the diagnostic path. This is mechanical evidence coverage, not model accuracy. The saved previous candidate retained the required spans in nine of ten cases; the distant-condition case motivated the two-window retrieval change.
 
 ```bash
 PYTHONPATH=src python3 -B benchmarks/run_task_lab.py --evidence-only

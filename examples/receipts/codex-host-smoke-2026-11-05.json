@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic_actual_codex_host_smoke",
+  "observed_utc": "2026-11-05T18:34:10.519422+00:00",
+  "runtime_source_revision": "b3c0edacde39b3f5e4d1dd6ed592cb12589923d4",
+  "helper_version": "0.4.0.dev7",
+  "pipeline_id": "8fe2b5296b6f0eb2e1f946724ce1ef77e27bef6a0706c71f7ea6e6046282812d",
+  "host_version": "codex-cli 0.162.0-alpha.17.2",
+  "sdk_version": "2.3.0",
+  "host_model": null,
+  "status": "PASSED",
+  "qualification": "single exposed synthetic host smoke only",
+  "task": "Does validate_structure require the reported slice count to equal slices_detected? Give one concrete accepted mismatch and cite exact captured source lines.",
+  "fixture_sha256": {
+    "readme.md": "26b0ce7060da052b10884ee58557596bd9f0592299e55c685709c32be8ec3262",
+    "validator.py": "0661539c11dbd15405b5a2a0a186ed8408db75cc685256b004dc3cbe79d8097c"
+  },
+  "tool_calls": 7,
+  "source_bytes": 455,
+  "elapsed_seconds": 29.002,
+  "local_model_calls": 0,
+  "checks": {
+    "original_task_preserved": true,
+    "project_refusal_observed": true,
+    "terminal_cancellation_observed": true,
+    "service_survived_host_exit": true,
+    "local_ai_stayed_off": true,
+    "private_connection_cleaned": true,
+    "demo_unchanged": true
+  },
+  "host_exit_code": 0,
+  "service_exit_code": 0,
+  "trace_sha256": "c4e46e9649c7a65361add13cd7c1b6238bc64de7896388dc1cc40be03377e8e5",
+  "trace_revalidated_with": {
+    "path": "integration/codex_host_smoke.py",
+    "sha256": "7a527ac022a06685e200333a1b35343007c0e5f4ff9f18cb796d4cbe7c2eee1e",
+    "mode": "offline revalidation of actual saved trace after final validator changes"
+  },
+  "answer_review": {
+    "reviewer": "Codex assistant; not independent",
+    "accepted_reported_count": 1,
+    "accepted_detected_count": 2,
+    "decisive_line": "validator.py:6",
+    "result": "correct for this exposed known-answer synthetic case; not a semantic qualification study"
+  },
+  "preliminary_attempts": [
+    "Exploratory request paraphrasing did not pass exact-request preservation.",
+    "An experimental host flag produced an error event and failed validation; the flag was removed, not its warning suppressed."
+  ],
+  "unseen_model_accuracy": null,
+  "native_host_comparison": null,
+  "cloud_savings": null,
+  "private_source_handoff_qualified": false,
+  "actual_claude_qualification": false,
+  "consumer_chatgpt_qualification": false,
+  "limits": [
+    "One successful exposed synthetic task; no independent unseen review.",
+    "Only terminal-job cancellation was exercised, not interruption of active work.",
+    "No local model orchestration, host disconnect/restart or private-source trial.",
+    "Host used its default model; exact hosted model identity was not established.",
+    "Raw logs and host-reported cumulative usage remain private; no equivalent baseline or billed-savings claim."
+  ]
+}

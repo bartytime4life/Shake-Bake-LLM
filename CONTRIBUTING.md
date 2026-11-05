@@ -37,7 +37,7 @@ The wheel verifier compares all packaged code, web/demo assets and legal files w
 
 ## Optional MCP SDK gate
 
-The current package pins the tested optional adapter to `mcp==2.3.0` (the imported archive used `mcp>=2,<3`). The earlier repository bootstrap's exact `mcp==2.3.0` input and hashed transitive lock are retained in `requirements/`; they are not new dependencies or redistributed SDK code. Current SDK 2.3.0 transport evidence is recorded in docs/validation-0.4.0.dev5.md; actual hosts remain unqualified. On a dependency-enabled machine, review the lock and upstream notices, then explicitly install it into a separate environment:
+The current package pins the tested optional adapter to `mcp==2.3.0` (the imported archive used `mcp>=2,<3`). The earlier repository bootstrap's exact `mcp==2.3.0` input and hashed transitive lock are retained in `requirements/`; they are not new dependencies or redistributed SDK code. SDK 2.3.0 transport evidence is recorded in docs/validation-0.4.0.dev5.md. One actual Codex evidence-only demo now has scoped evidence; broader host qualification remains open. On a dependency-enabled machine, review the lock and upstream notices, then explicitly install it into a separate environment:
 
 ```bash
 python3 -m venv /tmp/shake-bake-sdk-test
@@ -48,6 +48,8 @@ env -u PYTHONPATH /tmp/shake-bake-sdk-test/bin/python integration/mcp_shared_smo
 ```
 
 The import-time SDK attempt exited 2 because the SDK was absent. The current candidate explicitly declares structured tool output and passes both recovered in-process checks plus `integration/mcp_subprocess_smoke.py` against an installed SDK/wheel. Run that subprocess check from outside the checkout with PYTHONPATH unset. The obsolete bootstrap `integration/mcp_stdio_smoke.py` targets a different API and is preserved in Git history only. Each actual host needs its own handoff, scope, failure and cancellation qualification after the SDK checks.
+
+The [opt-in Codex host check](docs/codex-host-handoff.md) invokes a real cloud-backed assistant with the existing login and only the bundled inert demo. It is separate from these offline/SDK checks and must never be added to routine CI. `tests/test_host_smoke.py` tests its validator using fabricated synthetic traces without calling Codex. Keep actual-host raw events and account-related logs private and outside Git.
 
 ## Evidence and publication
 

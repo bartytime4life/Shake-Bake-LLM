@@ -1,8 +1,8 @@
 # Shared local coordinator
 
-Current update: `0.4.0.dev7` saves the shared Local AI choice across restart; see [preference boundaries](local-ai-preferences.md). The original `.dev4` implementation evidence below retains its stated scope. SDK 2.3.0 transport now has later development evidence; actual Claude/ChatGPT hosts remain unqualified.
+Current update: `0.4.0.dev7` saves the shared Local AI choice across restart; see [preference boundaries](local-ai-preferences.md). SDK 2.3.0 transport and one [actual Codex evidence-only demo handoff](codex-host-handoff.md) have later scoped evidence. The original `.dev4` implementation evidence below retains its stated scope; broader host behavior and actual Claude/consumer ChatGPT remain unqualified.
 
-Shared mode connects the GUI and prepared assistant adapter to one real owner-thread/controller and one routed HelperSession. Projects, single-job admission, captured results, task categories, model-policy gates and this session's pause state are shared. The native loopback client is tested; actual official-SDK and Claude/ChatGPT interoperability still need qualification.
+Shared mode connects the GUI and prepared assistant adapter to one real owner-thread/controller and one routed HelperSession. Projects, single-job admission, captured results, task categories, model-policy gates and this session's pause state are shared. Native loopback and installed SDK clients are tested; actual-host qualification remains limited to the synthetic Codex check above.
 
 ## Start the service and connect the adapter
 
@@ -22,7 +22,7 @@ PYTHONPATH=src python3 -B -m shake_bake.mcp_server \
   --connection-file "$HOME/.local/state/shake-and-bake/connection.json"
 ```
 
-The adapter uses the official SDK for MCP stdio. Its internal connection to the workbench is a small authenticated local RPC, not an MCP HTTP server, remote service or OAuth implementation. No host configuration is installed automatically and no actual host connection has been qualified here.
+The adapter uses the official SDK for MCP stdio. Its internal connection to the workbench is a small authenticated local RPC, not an MCP HTTP server, remote service or OAuth implementation. No host configuration is installed automatically. The later Codex smoke used a temporary configuration with only the inert demo exposed; it did not qualify private-source handoffs.
 
 Only `starter-demo` is exposed to the adapter by default. Configure a real project and explicitly permit its ID at service launch:
 
