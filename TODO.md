@@ -2,6 +2,8 @@
 
 Updated November 5, 2026 for `0.4.0.dev8`. The application baseline has 176 passing tests. [Current evaluation status](docs/evaluation-status.md) records the retained model, browser, installed and host evidence. The latest [forty-attempt budget comparison](docs/thinking-budget-2026-11-05.md) produced 6/10 supported handoffs with thinking off and 6/10 at each larger thinking budget. Both larger budgets completed only nine answers, lost the concurrency case and retained two critical unsupported claims; both are rejected. No model is promoted, no new reserved cohort was started, and production settings are unchanged. Missing original `.dev6` outputs, human qualification, broader host behavior and whole-task savings remain open.
 
+The subsequent [host-note diagnostic](docs/host-note-diagnostic-2026-11-05.md) completed all twenty answers. Evidence alone met the rubric on 9/10 cases; adding retained local notes met it on 8/10. Neither arm made a counted false claim, but the assisted arm omitted one uncertainty present in baseline, so its no-regression gate failed. This does not qualify local notes or complete a native-host benefit study.
+
 Cross-cutting product priority: connect setup, local preparation, evidence review, host handoff and recovery into one understandable experience. `docs/UX-WORKFLOW.md` specifies the target journey, shared-state gap and implementation slices. This work proceeds alongside accuracy qualification.
 
 ## Next qualification steps
@@ -14,7 +16,7 @@ Cross-cutting product priority: connect setup, local preparation, evidence revie
 
 - [ ] **4. Compare correctness on unseen tasks (partial).** External datasets, frozen identities and separate review are implemented. Ten separately authored cases were kept out of prompt tuning and then evaluated with original/experimental prompts; the cohort is now exposed. See [the retained comparison](docs/reasoning-screening-2026-11-05.md). The latest budget candidates failed development, so a new reserved cohort has not begun. Once a candidate passes, freeze it before authoring/reserving fresh cases, then compare the same native host/settings with deterministic evidence and local-model-assisted evidence. Review final outcomes, critical misses, unsupported claims and useful abstention. AI assessment, repeated known cases and instruction-masked labels are not independent human qualification or promotion authority.
 
-- [ ] **5. Measure the whole-task benefit.** Include local preparation, host/tool descriptions, evidence follow-ups, retries, failures, correction time and available cached/uncached usage. Complete when accuracy, elapsed time and actual provider usage can be compared per successful task. Keep unavailable usage/savings unknown; do not convert prompt shrinkage into a subscription-quota promise. See MET-01.
+- [ ] **5. Measure the whole-task benefit.** The bounded host-note comparison is complete and did not show added accuracy; its counters exclude local preparation and review. Next compare competent native retrieval with deterministic evidence on larger development tasks, before adding a local-note arm that has its own quality justification. Include local preparation, host/tool descriptions, evidence follow-ups, retries, failures, correction time and available cached/uncached usage. Complete when accuracy, elapsed time and actual provider usage can be compared per successful task. Keep unavailable usage/savings unknown; do not convert prompt shrinkage into a subscription-quota promise. See MET-01.
 
 ## Product and release work
 

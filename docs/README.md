@@ -24,6 +24,7 @@ Read these as successive experiments with separate identities and preserved fail
 - [Installed readiness](pc-readiness-2026-11-05.md), [readiness invalidation](readiness-invalidation-2026-11-05.md), and [copy recovery plus 8B baseline](copy-and-screening-2026-11-05.md).
 - [Frozen 8B prompt and separately authored cohort](reasoning-screening-2026-11-05.md).
 - [Thinking at 512 tokens](thinking-probe-2026-11-05.md) and [the four-arm budget comparison](thinking-budget-2026-11-05.md).
+- [Host correction of imperfect local notes](host-note-diagnostic-2026-11-05.md), a separate development diagnostic.
 
 Public receipts contain synthetic evidence and reviewed final notes. Private raw
 responses, local settings, captured owner source, stores, keys, environments and
