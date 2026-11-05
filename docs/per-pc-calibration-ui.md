@@ -1,6 +1,6 @@
 # Your computer & tuning: GUI plan
 
-Status: partially implemented. Model details now has explicit computer and selected-model metadata checks with detected/unknown fields. The full navigation/dashboard, automatic calibration, durable test recovery, comparisons and saved per-PC profiles below remain planned. Current readiness data does not complete this design or qualify a model.
+Status: partially implemented. Model details now has explicit computer and selected-model metadata checks with detected/unknown fields. The full navigation/dashboard, automatic calibration, durable test recovery, comparisons and saved per-PC profiles below remain planned. Current readiness data does not complete this design or qualify a model. Read [evaluation status](evaluation-status.md) for the actual readiness, copy-recovery and model-trial evidence; the private budget probes do not expose new tuning controls in this GUI.
 
 ## Make the computer's state visible
 

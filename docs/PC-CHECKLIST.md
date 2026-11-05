@@ -1,6 +1,6 @@
 # Run on your PC: checklist
 
-Updated November 5, 2026 · Shake and Bake 0.4.0.dev8, including PR #8
+Updated November 5, 2026 · Shake and Bake 0.4.0.dev8, including the PR #11 clipboard build
 
 Nothing below is marked complete until it has been checked on your actual PC. The development environment's program tests and recorded preview do not complete these items. Commands run from the extracted `shake-and-bake` folder on Linux.
 
@@ -14,16 +14,17 @@ installation has passed.
 
 ## First: identify the code you are actually running
 
-The readiness correction merged in [PR #8](https://github.com/bartytime4life/Shake-Bake-LLM/pull/8)
-at `4ddb4b5274ddd6fb1d47170aba5841d9d7c2e0b0`. The package version is still
+The copy-recovery build was verified at `afc181f3f33485fce13f7cda26ae1fe005ec67a7`
+and merged in [PR #11](https://github.com/bartytime4life/Shake-Bake-LLM/pull/11).
+It includes the earlier readiness corrections. The package version is still
 `0.4.0.dev8`; the version label alone cannot distinguish an older installation.
 Use a supported Python 3.11+ interpreter for the commands below.
 
 - [ ] In the trusted checkout, record `git rev-parse HEAD` and `git status --short`.
-  Verify that `git merge-base --is-ancestor 4ddb4b5274ddd6fb1d47170aba5841d9d7c2e0b0 HEAD`
+  Verify that `git merge-base --is-ancestor afc181f3f33485fce13f7cda26ae1fe005ec67a7 HEAD`
   exits 0. This checks checkout history; it does not identify an installed wheel.
-- [ ] Record `sha256sum src/shake_bake/web/app.js`. For the PR #8 interface it is
-  `8fabff47c2707f82d1958ef158e5dc73aaca66aead508413caa1cfc359c0d2bf`.
+- [ ] Record `sha256sum src/shake_bake/web/app.js`. For that clipboard build it is
+  `235ecf0dad6171db60a7f39a63c635a385ae732959aee6013b547e52c6ff4fa4`.
   A later interface change needs a fresh expected hash from its reviewed commit.
 - [ ] For an installed wheel, use its own Python with `PYTHONPATH` unset and
   record the actual imported location, version and interface hash:
@@ -104,6 +105,8 @@ and hosted CI are development evidence, separate from these unchecked PC gates.
   and UI selection. The [November 5 follow-up](copy-and-screening-2026-11-05.md)
   records one exact native/manual in-app transfer plus earlier empty readbacks;
   broader timing, permission and device checks remain open.
+
+The [current evaluation record](evaluation-status.md) includes separately frozen thinking-budget probes. Their diagnostic final-content acceptance is not production acceptance; the standard trial commands below keep the shipped thinking-off, 512-token baseline.
 
 ## Then: one small trial
 

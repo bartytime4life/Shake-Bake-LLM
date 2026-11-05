@@ -1,6 +1,6 @@
 # Goal-first model selection
 
-Development candidate 0.4.0.dev1 implements the local graphical workbench; see [visual-workbench.md](visual-workbench.md). The owner-controlled policy engine and `assist` CLI remain available. Automated setup, learned task classification and independent model qualification remain pending. No real profile has been qualified.
+The current `0.4.0.dev8` includes the local graphical workbench; see [visual-workbench.md](visual-workbench.md) and [current evaluation status](evaluation-status.md). The interaction table below includes planned controls, not a claim that every setting is exposed today. The owner-controlled policy engine and `assist` CLI remain available. Automated setup, learned task classification and independent model qualification remain pending. No real profile has been qualified.
 
 The user chooses the work and the desired quality. The system chooses a local model/profile only after that profile has qualified for the task. Accuracy is the default; speed and token counts cannot excuse unsupported answers or critical misses. Model confidence is not a selection certificate.
 
@@ -20,7 +20,7 @@ Use “Best tested for Code on this device” only after comparable task tests j
 
 ## Category shortlist to qualify
 
-Checked against the Ollama registry and author documentation on 2026-11-04. These are screening candidates, not definitive global winners. Local weights are available without per-call model API billing; the connected cloud assistant has its own usage. Hardware, storage and license requirements still depend on the exact release.
+Historical shortlist checked against the Ollama registry and author documentation on 2026-11-04. Recheck exact tags, licenses and local availability before a new trial or download. These are screening candidates, not detected installations or qualified winners. Local weights are available without per-call model API billing; the connected cloud assistant has its own usage. Hardware, storage and license requirements still depend on the exact release.
 
 | Task family | Initial candidates | What earns the role |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ First-run setup should discover the actual Ollama version, installed model ident
 
 Record full model digest, quantization, runtime and driver versions, chat template, prompt/schema versions, supported thinking mode, sampling, context/output budgets, hardware, task category and evaluation-set version. A result qualifies a profile, not an entire model family. Development-3 implements selection from owner-reviewed records, pipeline identity and reported tag-digest checks. Full runtime/hardware fingerprinting, persistent setup and independent qualification remain pending. Store those settings in Shake and Bake's own data store.
 
-The current policy distinguishes candidate, qualified and disabled, and rejects stale identities, failed records and incomparable trials. Richer testing/failed/stale lifecycle management remains future work. Changed model digests and pipeline fingerprints are gated automatically; other runtime and hardware changes still require owner review and retesting. Retain a last-qualified profile for rollback.
+The current policy distinguishes candidate, qualified and disabled, and rejects stale identities, failed records and incomparable trials. Richer testing/failed/stale lifecycle management remains future work. Changed model digests and pipeline fingerprints are gated automatically; the worker also refuses a runtime change during a call. Full persisted runtime/settings/hardware qualification still requires owner review and retesting. Retain a last-qualified profile for rollback.
 
 ## Routing rules
 

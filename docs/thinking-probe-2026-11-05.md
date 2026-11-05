@@ -109,3 +109,5 @@ thinking-off arm. Completion alone already fails. The settings therefore remain
 unqualified. Any later output-budget experiment must declare its new cap before
 generation, keep the deadline and source boundaries explicit, retain these failed
 responses and use another reserved cohort only after development checks pass.
+
+The [subsequent four-arm budget comparison](thinking-budget-2026-11-05.md) added fresh controls and explicitly declared 1,024/2,048-token thinking arms. Each larger budget completed nine answers but supported only six, retained two critical unsupported claims and lost concurrency to truncation. Both were rejected; this earlier 512-token record remains unchanged in scope.

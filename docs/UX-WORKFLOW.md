@@ -1,14 +1,14 @@
 # Whole-workflow user experience
 
-November 4, 2026 · source-informed design plan for Shake and Bake.
+November 4 design plan, with implementation status refreshed November 5, 2026 for `0.4.0.dev8`. See [evaluation status](evaluation-status.md) for current evidence and remaining gates.
 
-This plan joins setup, local preparation, evidence review, assistant handoff and recovery into one product journey. It is grounded in the current HTML/JavaScript, GUI controller, helper and prepared SDK adapter. It is not a screenshot audit or a completed user test. Earlier automatic approval review blocked cloud-browser inspection because it could expose project data; no alternate browser route was attempted. Desktop/phone behavior and accessibility still need direct testing.
+This plan joins setup, local preparation, evidence review, assistant handoff and recovery into one product journey. It is grounded in the current HTML/JavaScript, GUI controller, helper and prepared SDK adapter. It is not a screenshot audit or a completed user test. The earlier cloud-browser inspection was blocked and remains a historical limitation. Later [installed readiness](pc-readiness-2026-11-05.md) and [copy-recovery](copy-and-screening-2026-11-05.md) walkthroughs cover selected local flows; broader desktop/phone and accessibility qualification remains open.
 
 ## The experience we want
 
 A user should be able to choose a job, choose permitted source, see what the local helper actually did, inspect the evidence and gaps, and hand the unresolved judgment to their chosen assistant. The primary screen should make three things clear: what is happening, what is trustworthy or missing, and the next useful action. Model names and technical settings remain expandable.
 
-Two entry points must serve the same job: a person starting in the GUI, or an assistant delegating through a qualified adapter. The core owns the project permissions, task identity, model policy, status, evidence and pause controls. The GUI explains that state; the adapter requests bounded work. The shared coordinator is implemented for explicit shared mode in 0.4.0.dev4; native clients are tested. Actual SDK/host qualification and the complete guided setup/persistence journey remain pending.
+Two entry points must serve the same job: a person starting in the GUI, or an assistant delegating through a qualified adapter. The core owns the project permissions, task identity, model policy, status, evidence and pause controls. The GUI explains that state; the adapter requests bounded work. The shared coordinator is implemented for explicit shared mode in 0.4.0.dev4; native clients are tested. SDK 2.3.0 and scoped Codex synthetic handoff/cancellation checks have evidence; broader host qualification and the full guided setup/persistence journey remain pending.
 
 ```mermaid
 flowchart TD
@@ -24,7 +24,7 @@ flowchart TD
     S --> F["Assistant judgment and final answer"]
 ```
 
-The diagram is the proposed connected workflow. Actual host integration remains unqualified. The current app supports explicit manual copy/export; that does not establish delivery to a host or a completed final answer.
+The diagram is the target connected workflow. Actual host evidence is limited to the scoped Codex synthetic handoff/cancellation check; broader integration remains unqualified. The current app supports explicit manual copy/export; that does not establish delivery to a host or a completed final answer.
 
 ## What the source shows now
 
@@ -32,10 +32,10 @@ The diagram is the proposed connected workflow. Actual host integration remains 
 | --- | --- | --- |
 | 1. Open and understand the app | Partial | The GUI provides a demo, task cards and model/evidence views. Real projects are configured through launch arguments in `gui.py::main`; guided source/setup selection is missing. |
 | 2. Check this computer/model | Partial | Doctor and inventory checks exist; calibration and device-profile management are planned. The workflow needs a clear next action when no model is installed or qualified. |
-| 3. Start a job | Shared core implemented; host qualification pending | Shared-mode adapter clients connect through private scoped RPC to the GUI Controller, sharing one routed HelperSession, job registry and session pause. Explicit standalone diagnostics remain separate. See shared-coordinator.md. |
-| 4. Prepare and monitor | Implemented contracts; browser behavior unverified | The GUI polls actual status and offers cancellation; the core bounds jobs. A human-readable stage/status contract must cover both entry points. |
-| 5. Review a brief | Implemented data views; workflow risks remain | Exact excerpts, hashes, gaps and unverified model notes are shown. `app.js::startTask` retains the previous result; failed/cancelled `showResult` returns before replacing it. The interface now pins completed request/job identity and labels an earlier brief during a new or failed/cancelled job. This mitigation is implemented in source; browser/user testing remains pending. |
-| 6. Handoff to the assistant | Manual copy/export implemented; connection pending | Clipboard/download actions exist. The SDK/host path is not qualified; copy success cannot be labeled host delivery or final-task completion. |
+| 3. Start a job | Shared core and scoped Codex check verified; broader host qualification pending | Shared-mode adapter clients connect through private scoped RPC to the GUI Controller, sharing one routed HelperSession, job registry and session pause. Explicit standalone diagnostics remain separate. See shared-coordinator.md. |
+| 4. Prepare and monitor | Implemented contracts; selected browser flows checked | The GUI polls actual status and offers cancellation; the core bounds jobs. A human-readable stage/status contract must cover both entry points. |
+| 5. Review a brief | Implemented data views; workflow risks remain | Exact excerpts, hashes, gaps and unverified model notes are shown. `app.js::startTask` retains the previous result; failed/cancelled `showResult` returns before replacing it. The interface now pins completed request/job identity and labels an earlier brief during a new or failed/cancelled job. Selected installed identity, selection and late-copy flows are checked; broader user testing remains pending. |
+| 6. Handoff to the assistant | Manual recovery checked; scoped Codex delivery checked | Job-bound pending/completion feedback, selectable exact text and JSON export are implemented. One installed brief passed exact native/manual transfer. SDK and scoped Codex delivery have evidence; broader host qualification remains open. Copy success is not host delivery or final-task completion. |
 | 7. Return, retry or restart | Partial | Question drafts use browser localStorage. History and captured evidence remain session-only. The normal GUI now persists Local AI on/off in private service state and a new installation starts off; session-only Controllers are explicit test/SDK diagnostics. Users need explicit retention/reset information and a deliberate persistent-settings design. |
 
 Useful foundations already exist: job-first task choices; exact source kept alongside notes; published model statistics separated from local records; no candidate silently treated as a qualified winner; and an evidence-only path when model preparation is unavailable. These controls need one understandable path through them.
@@ -53,7 +53,7 @@ Useful foundations already exist: job-first task choices; exact source kept alon
 
 ## One coordinator and one state contract
 
-Shared-mode GUI and native adapter clients now use one authenticated local controller with the same admission and model-policy rules. Actual SDK and host connections still require qualification. Preserve the existing approved-project-ID boundary and give each client only the fields/permissions it needs. Do not expose the service publicly to solve the UI integration problem.
+Shared-mode GUI and native adapter clients now use one authenticated local controller with the same admission and model-policy rules. SDK and scoped Codex synthetic checks passed; other hosts and broader lifecycle behavior still require qualification. Preserve the existing approved-project-ID boundary and give each client only the fields/permissions it needs. Do not expose the service publicly to solve the UI integration problem.
 
 Each job should carry: job/request identity, source scope/snapshot, preparation mode/profile identity, stage, terminal outcome, evidence/gaps, usage origin and handoff status. Separate a new editable draft from the last completed result. Changes to a draft do not rewrite a previous receipt or silently change the model explanation for that receipt.
 

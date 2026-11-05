@@ -1,5 +1,7 @@
 # Per-PC model calibration
 
+Manual thinking-budget experiments and their limits are tracked in [evaluation status](evaluation-status.md). They do not implement automatic calibration or change the shipped worker settings.
+
 Status: explicit capability/model metadata checks and per-call runtime stability are implemented in 0.4.0.dev6. Automatic tuning, persisted installation profiles and full hardware-aware policy enforcement remain planned. See validation-0.4.0.dev6.md.
 
 Every installation needs a local performance/accuracy profile. A published model ranking can shortlist candidates, but cannot select a proven winner for a particular computer, quantization, runtime and task. No paid inference or cloud test is required by the local calibration design.

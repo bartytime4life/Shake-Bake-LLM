@@ -1,5 +1,7 @@
 # Getting ready for an actual local-model trial
 
+For the latest owner-PC outcomes, read [evaluation status](evaluation-status.md). The standard commands below still request the shipped thinking-off, 512-token baseline. Separately frozen thinking-budget diagnostics do not add CLI settings or qualify a profile.
+
 This build adds startup diagnostics and a repeatable development-trial runner. It does not install anything on your PC, tune a model automatically, qualify a model for routing, or measure the main assistant's final-answer accuracy.
 
 ## Check startup
@@ -19,7 +21,7 @@ PYTHONPATH=src python3 -B -m shake_bake doctor \
   --check-ollama --model qwen3.5:9b-q4_K_M --json
 ```
 
-Use the exact installed model name. The command checks inventory, local model metadata and a stable reported digest. It sends no source and never calls `/api/chat` or `/api/pull`. Remote metadata is refused. It cannot attest loaded weight bytes or verify the daemon's cloud-disable setting; configure the daemon separately using the linked guidance in README. RAM describes the machine running the command; GPU memory and speed stay unknown rather than inferred from a model name. This environment's report is not a report about Andy's PC.
+Use the exact installed model name. The command checks inventory, local model metadata and a stable reported digest. It sends no source and never calls `/api/chat` or `/api/pull`. Remote metadata is refused. It cannot attest loaded weight bytes or verify the daemon's cloud-disable setting; configure the daemon separately using the linked guidance in README. RAM describes the machine running the command; GPU memory and speed stay unknown rather than inferred from a model name. A report describes only the machine and runtime that actually produced it; identify that environment in its receipt.
 
 Start the workbench after checks:
 

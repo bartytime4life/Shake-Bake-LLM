@@ -9,6 +9,7 @@ PYTHONPATH=src python3 -B benchmarks/run_task_lab.py --evidence-only
 node --check src/shake_bake/web/app.js
 node scripts/frontend_smoke.cjs
 node scripts/model_readiness_test.cjs
+node scripts/clipboard_test.cjs
 ```
 
 Node runs developer JavaScript checks. It is not an application runtime dependency. Worker regression tests also verify that incompatible or malformed thinking controls refuse before source transmission while retaining exact evidence; legacy missing controls remain unknown. See docs/validation-0.4.0.dev8.md. The evidence-only lab verifies required source spans, hashes, cutoffs and unchanged fixtures; it does not grade a real model or assistant answer. CI repeats these checks and verifies an installed wheel. See `.github/workflows/ci.yml` for the exact commands and pinned action revisions. Local import evidence covers Python 3.12; other CI matrix results must be observed separately.
@@ -64,4 +65,6 @@ For source UI startup use `./scripts/run-workbench`; it selects an installed Pyt
 
 `node scripts/model_readiness_test.cjs` runs deterministic DOM-event and deferred-response checks without browser dependencies. Pass an installed `shake_bake/web/app.js` path as its optional argument to test wheel bytes.
 
-The isolated `readiness-browser` CI job installs pinned Playwright development tools and checks source and installed interfaces over loopback HTTP with synthetic metadata. To reproduce with Playwright available, run `node scripts/browser_readiness_test.cjs`, or append the isolated installed Python path. The 14 Chromium scenarios cover replacement, removal, empty/unavailable inventories, late success/failure, selection changes and Local AI off/on. They do not call Ollama or measure model accuracy, fit or speed.
+The isolated `readiness-browser` CI job installs pinned Playwright development tools and checks source and installed interfaces over loopback HTTP with synthetic metadata. To reproduce with Playwright available, run `node scripts/browser_readiness_test.cjs`, or append the isolated installed Python path. The 14 readiness Chromium scenarios cover replacement, removal, empty/unavailable inventories, late success/failure, selection changes and Local AI off/on. The same job runs `node scripts/browser_clipboard_test.cjs` against source and the installed package; the manual keyboard-copy check first writes and verifies a distinct clipboard marker. Twelve dependency-free Promise checks in `scripts/clipboard_test.cjs` cover delayed/failing/missing APIs, retry, job switching and exact text. These synthetic checks do not call Ollama or establish model accuracy, owner-PC clipboard behavior in every browser, fit or speed.
+
+For current measured outcomes and the difference between production settings and private diagnostic budgets, read [evaluation status](docs/evaluation-status.md). Update affected current guides and status pages when results change; retain dated experiment/acceptance records, failed attempts and original source requests. Public receipts use synthetic source and validated final notes; raw owner records and model reasoning stay private.
