@@ -1,6 +1,6 @@
 # Your computer & tuning: GUI plan
 
-Status: planned for a future interface milestone. The current visual workbench has model explanations and evidence views; it does not yet provide hardware detection, automatic calibration or a saved per-PC tuning dashboard. The doctor command supplies limited readiness information now.
+Status: partially implemented. Model details now has explicit computer and selected-model metadata checks with detected/unknown fields. The full navigation/dashboard, automatic calibration, durable test recovery, comparisons and saved per-PC profiles below remain planned. Current readiness data does not complete this design or qualify a model.
 
 ## Make the computer's state visible
 

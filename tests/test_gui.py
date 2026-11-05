@@ -101,6 +101,31 @@ class WorkbenchAcceptance(unittest.TestCase):
         self.assertEqual(self.request("POST","/api/tasks",{"project_id":"/etc","task":"Find source","task_kind":"code"})[0],400)
         self.assertEqual(self.request("POST","/api/tasks",{"project_id":"starter-demo","task":"Find source","task_kind":"unknown"})[0],400)
 
+    def test_readiness_requires_session_csrf_and_fixed_metadata_scope(self):
+        self.assertEqual(self.request("POST","/api/computer",{})[0],403)
+        self.authenticate()
+        with patch("shake_bake.gui.computer_snapshot", return_value={"kind":"synthetic_capability_snapshot"}) as snapshot:
+            self.assertEqual(self.request("POST","/api/computer",{},headers={"X-SB-CSRF":"wrong"})[0],403)
+            snapshot.assert_not_called()
+            self.assertEqual(json.loads(self.request("POST","/api/computer",{})[2])["kind"],"synthetic_capability_snapshot")
+        self.assertEqual(self.request("POST","/api/computer",{"root":"/etc"})[0],400)
+
+    def test_readiness_model_http_check_sends_no_source_or_generation(self):
+        from test_worker import stub_server
+        with stub_server() as (port, requests):
+            self.controller.close()
+            self.controller=Controller({"starter-demo":DEMO},port=port)
+            self.server.controller=self.controller
+            self.authenticate()
+            status,_,raw=self.request("POST","/api/model-check",{"model":"fixture:local","digest":"a"*64})
+            self.assertEqual(status,200)
+            self.assertEqual(json.loads(raw)["runtime_version"],"0.0.0-test")
+            self.assertFalse(any(path=="/api/chat" for path,_ in requests))
+            self.request("POST","/api/settings",{"enabled":False})
+            before=len(requests)
+            self.assertEqual(self.request("POST","/api/model-check",{"model":"fixture:local","digest":"a"*64})[0],400)
+            self.assertEqual(len(requests),before)
+
     def test_off_switch_does_not_contact_a_model_and_updates_state(self):
         self.authenticate()
         self.assertEqual(self.request("POST","/api/settings",{"enabled":False})[0],200)

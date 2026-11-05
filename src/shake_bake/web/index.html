@@ -57,7 +57,13 @@
           </div>
           <p class="small muted">Best tested uses only reviewed, comparable profiles for this pipeline. No qualifying profile keeps the brief evidence-only. No automatic downloads or provider fallback.</p>
           <details class="technical"><summary>Installation &amp; profile identity</summary><p class="small muted">Pipeline and saved model identity are qualification inputs, not hardware or accuracy certificates.</p><pre id="profile-identity"></pre></details>
-
+          <details class="technical readiness"><summary>This computer &amp; selected model</summary>
+            <p class="small muted">Read local capability data and, with Local AI on, the selected model's reported metadata. These checks send no project source and run no generation.</p>
+            <div class="readiness-actions"><button type="button" id="check-computer" class="secondary compact">Check this computer</button><button type="button" id="check-model" class="secondary compact">Check selected model</button></div>
+            <p id="readiness-status" class="small muted" role="status" aria-live="polite">No readiness check has run. Model fit and accuracy are unmeasured.</p>
+            <div class="readiness-grid"><section aria-labelledby="computer-heading"><h3 id="computer-heading">Observed here</h3><dl id="computer-facts" class="fact-list"><dt>Computer</dt><dd>Not checked</dd></dl></section><section aria-labelledby="model-heading"><h3 id="model-heading">Ollama-reported</h3><dl id="model-facts" class="fact-list"><dt>Model</dt><dd>No check for this selection</dd></dl></section></div>
+            <p class="small muted">Availability is separate from accuracy. No model is recommended until reviewed task trials meet the native-host baseline. Coarse capability data does not qualify a different PC or attest model weight bytes.</p>
+          </details>
           <details class="technical"><summary>Published statistics &amp; local results</summary><div id="catalog"></div></details>
         </section>
         <div class="action-row"><button type="submit" class="primary" id="prepare">Prepare for my assistant</button><button type="button" class="secondary stop" id="stop" disabled>Stop</button><span id="progress" class="small muted" aria-live="polite"></span></div>

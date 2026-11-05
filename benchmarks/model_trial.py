@@ -17,10 +17,11 @@ import uuid
 
 import run_task_lab as lab
 from shake_bake import __version__
+from shake_bake.capabilities import computer_snapshot
 from shake_bake.contracts import Refusal
 from shake_bake.doctor import inspect_model
 from shake_bake.routing import pipeline_id
-from shake_bake.worker import generation_settings, parse_json
+from shake_bake.worker import worker_configuration, parse_json
 
 REVIEW_FIELDS = ("supported_handoff", "critical_misses", "unsupported_claims", "unsupported_critical_claims", "useful_abstention")
 
@@ -81,9 +82,8 @@ def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeat
                "mode": "evidence_only" if evidence_only else "local_model_candidate",
                "requested_model": model, "model_preflight": None,
                "environment": {"system": platform.system(), "machine": platform.machine(), "python": platform.python_version(),
-                               "model_load_state": "uncontrolled", "gpu_throughput": None},
-               "requested_worker_settings": {"options": generation_settings(), "keep_alive": "5m", "deadline_seconds": 30,
-                                             "message_bytes_cap": 6000, "settings_are_requests_not_attested_runtime": True},
+                               "model_load_state": "uncontrolled", "gpu_throughput": None, "computer": computer_snapshot()},
+               "requested_worker_settings": worker_configuration(),
                "attempts": [], "status": "RUNNING", "stop_reason": None,
                "semantic_model_accuracy": None, "cloud_usage_measured": False, "native_host_baseline": None,
                "auto_promotion_allowed": False,
@@ -104,7 +104,8 @@ def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeat
                     sha((lab.LAB / "grading-keys.json").read_bytes()) != receipt["grading_keys_sha256"]):
                     receipt["stop_reason"] = "trial_inputs_changed"
                     break
-                result = lab.run_cases(model=model, port=port, case_ids=[case_id], expected_digest=digest)
+                result = lab.run_cases(model=model, port=port, case_ids=[case_id], expected_digest=digest,
+                    expected_runtime=(receipt["model_preflight"] or {}).get("runtime_version"))
                 attempt = {**result["cases"][0], "attempt_id": item["attempt_id"], "round": item["round"]}
                 attempt["fixture_matches_trial_start"] = attempt["fixture_sha256"] == fixture_hashes[case_id]
                 receipt["attempts"].append(attempt)
@@ -115,7 +116,7 @@ def run_trial(output_dir, *, model=None, evidence_only=False, port=11434, repeat
                     receipt["stop_reason"] = "fixture_changed"
                     break
                 if error in ("qualified_model_digest_changed", "local_model_metadata_required", "worker_model_mismatch", "remote_worker_response_refused",
-                             "worker_timeout", "worker_transport_failed"):
+                             "worker_timeout", "worker_transport_failed", "worker_runtime_changed", "invalid_local_runtime"):
                     receipt["stop_reason"] = error
                     break
         receipt["status"] = "STOPPED" if receipt["stop_reason"] else "FINISHED"

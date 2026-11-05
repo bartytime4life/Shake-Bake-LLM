@@ -35,7 +35,7 @@ def grade_coverage(brief, key):
             "mechanical_pass": not missing and hashes_valid and not missing_cutoffs}
 
 
-def run_cases(*, model=None, port=11434, case_ids=None, expected_digest=None):
+def run_cases(*, model=None, port=11434, case_ids=None, expected_digest=None, expected_runtime=None):
     cases = json.loads((LAB / "manifest.json").read_text())["cases"]
     keys = json.loads((LAB / "grading-keys.json").read_text())["cases"]
     if case_ids and set(case_ids) - {case["id"] for case in cases}:
@@ -49,7 +49,7 @@ def run_cases(*, model=None, port=11434, case_ids=None, expected_digest=None):
         started = time.monotonic()
         try:
             # Grading keys are never passed into build_brief or the worker packet.
-            brief = build_brief(root, case["task"], model=model, port=port, limits=SearchLimits(**case["limits"]), expected_digest=expected_digest)
+            brief = build_brief(root, case["task"], model=model, port=port, limits=SearchLimits(**case["limits"]), expected_digest=expected_digest, expected_runtime=expected_runtime)
             coverage = grade_coverage(brief, keys[case["id"]])
             payload = brief.to_dict()
             error = None

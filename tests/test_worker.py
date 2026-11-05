@@ -14,7 +14,7 @@ from shake_bake.worker import organize, parse_json
 
 
 @contextmanager
-def stub_server(*, remote=False, content=None, status=200, delay=0, override=None, chunked=False, inventory=None, after_digest=None):
+def stub_server(*, remote=False, content=None, status=200, delay=0, override=None, chunked=False, inventory=None, after_digest=None, runtime_version="0.0.0-test", after_runtime=None):
     requests = []
     chat_seen = False
     class Handler(BaseHTTPRequestHandler):
@@ -54,8 +54,11 @@ def stub_server(*, remote=False, content=None, status=200, delay=0, override=Non
         def do_GET(self):
             requests.append((self.path, None))
             models = inventory if inventory is not None else {"fixture:local": "a" * 64}
-            raw = json.dumps({"models": [{"name": name, "digest": after_digest if chat_seen and after_digest else digest}
-                                         for name, digest in models.items()]}).encode()
+            result = {"models": [{"name": name, "digest": after_digest if chat_seen and after_digest else digest}
+                                  for name, digest in models.items()]}
+            if self.path == "/api/version":
+                result = {"version": after_runtime if chat_seen and after_runtime is not None else runtime_version}
+            raw = json.dumps(result).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(raw)))
@@ -84,9 +87,9 @@ class WorkerAcceptance(unittest.TestCase):
         with stub_server() as (port, requests):
             with patch.dict("os.environ", {"HTTP_PROXY": "http://example.invalid:9", "OLLAMA_HOST": "https://example.invalid"}):
                 note = organize(self.packet, "fixture:local", port=port)
-        self.assertEqual([p for p, _ in requests], ["/api/show", "/api/chat"])
+        self.assertEqual([p for p, _ in requests], ["/api/show", "/api/version", "/api/chat", "/api/version"])
         self.assertNotIn("evidence", requests[0][1])
-        payload = requests[1][1]
+        payload = next(body for path, body in requests if path == "/api/chat")
         self.assertFalse(payload["stream"])
         self.assertNotIn("tools", payload)
         self.assertEqual(payload["options"]["num_predict"], 512)

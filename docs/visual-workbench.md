@@ -1,4 +1,4 @@
-# Visual workbench: 0.4.0.dev5
+# Visual workbench: 0.4.0.dev6
 
 The owner selected the third proposed design: a graphite workbench with amber actions, a project/history rail, broad task composer and paired exact-source panels. It runs on the recovered application's existing controller and bounded child, using Python's standard library and bundled HTML/CSS/JavaScript/SVG. No external frontend service, fonts, icon service or business application is required.
 
@@ -36,4 +36,8 @@ The numeric-loopback service uses an HttpOnly SameSite cookie, Host/Origin/CSRF 
 
 `tools/export_preview.py` captures only the bundled inert demo into self-contained HTML. It embeds local assets, marks the recorded state, refuses new jobs/model operations and permits inspecting/copying that recorded evidence. It is distinct from the live application.
 
-Current browser, wheel, model and SDK observations are in [validation](validation-0.4.0.dev5.md) and [design QA](../design-qa.md). The archive import record remains historical and unchanged. Formal accessibility, wider devices, independent security, held-out accuracy, actual native-host UX and savings remain open.
+Current browser, wheel, model and SDK observations are in [validation](validation-0.4.0.dev6.md) and [design QA](../design-qa.md). The archive import record remains historical and unchanged. Formal accessibility, wider devices, independent security, held-out accuracy, actual native-host UX and savings remain open.
+
+## Explicit readiness checks
+
+Inside Model details, expand This computer & selected model. Check this computer reads bounded local CPU/memory/GPU metadata without commands or network; it works with Local AI off. Check selected model reads the pinned candidate digest, Ollama version, quantization, context and capabilities without source or generation. It requires Local AI on; changing selection clears the old check. Values identify their observation origin/time and leave unknowns explicit. They do not qualify accuracy or prove memory fit. Full automatic tuning, installation identity and persisted qualified profiles remain planned.

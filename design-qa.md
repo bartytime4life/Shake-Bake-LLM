@@ -2,7 +2,7 @@
 
 final result: passed
 
-The owner chose option 3 on November 4, 2026. Reference: `/home/user/.codex/generated_images/01a1aa18-5744-7d43-86b0-2ce6efc72a49/exec-e5e4e955-8247-4fa9-a89e-f06b0f798e1e.png`; retained locally as `.local/design/selected.png`. Current implementation is `0.4.0.dev5` on the recovered application, not the earlier bootstrap engine.
+The owner chose option 3 on November 4, 2026. Reference: `/home/user/.codex/generated_images/01a1aa18-5744-7d43-86b0-2ce6efc72a49/exec-e5e4e955-8247-4fa9-a89e-f06b0f798e1e.png`; retained locally as `.local/design/selected.png`. The original main-view comparison covered `0.4.0.dev5` on the recovered application. The readiness increment below records `0.4.0.dev6`; neither uses the earlier bootstrap engine.
 
 ## Comparison and fixes
 
@@ -27,3 +27,13 @@ Actual Chrome checks on the reconciled application: prepare evidence-only/best-w
 Phone viewport 390 × 844: document client/scroll width both 375 (scrollbar included), with no horizontal document overflow. Native radio arrows select Troubleshoot; Tab moves from the group to the request. Phone Recent briefs/Workspace navigation works. Candidate identity/preferences survive reload; jobs/pause remain session-only. Final browser warning/error log is empty.
 
 No actionable P0/P1/P2 visual issue remains in the tested states. Follow-up P3s are closer system-font/control metrics, optional syntax highlighting and icon/surface polish. Wider devices, formal assistive-technology review, complete workflow qualification and actual native hosts remain open. Program/browser checks are not model or security certification.
+
+## Readiness follow-up: 0.4.0.dev6
+
+The selected main view is retained. A nested disclosure in Model details adds two explicit checks and paired definition lists using the existing typography, graphite/amber tokens and controls. CPU/memory observations and Ollama-reported metadata have separate headings, units and observation times; unknown VRAM, measured fit and accuracy remain explicit.
+
+Chrome verified real computer/model metadata and selection before the workspace interruption. Its expanded candidate view revealed a phone overflow: the saved 64-character digest escaped the paragraph (520-pixel scroll width versus 375-pixel client width). `overflow-wrap: anywhere` fixes that paragraph. Chrome was unavailable after restart; the final installed wheel was checked in the in-app browser. At CSS viewport 390 × 844, client and scroll widths both measure 375. The new facts stack, labels/values wrap and buttons remain reachable. The viewport override was reset afterward.
+
+The final browser also verified that changing the selected model clears old metadata, Local AI off disables the model check, a computer check remains available, Tab from the disclosure reaches Check this computer, and evidence-only preparation still completes. The metadata check invokes no generation; real model screening is a separate recorded operation. Screenshots remain private: `.local/design/intelligence-desktop.png` (earlier Chrome), `intelligence-phone-final.png` and `intelligence-final.png` (final installed in-app view). The earlier pre-fix phone image is not evidence for the fixed layout.
+
+No actionable P0/P1/P2 issue remains in these tested states. Formal accessibility, wider devices and the complete calibration dashboard remain open. Final browser error/warning output was empty.

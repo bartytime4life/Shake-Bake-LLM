@@ -96,7 +96,7 @@ class RoutingAcceptance(unittest.TestCase):
         self.assertEqual(decision.mode, "local_model")
         self.assertEqual(brief.worker.observed_model_digest, "a" * 64)
         self.assertEqual(brief.worker.label, "unverified_worker_interpretation")
-        self.assertEqual([p for p, _ in requests], ["/api/tags", "/api/tags", "/api/show", "/api/chat", "/api/tags"])
+        self.assertEqual([p for p, _ in requests], ["/api/tags", "/api/tags", "/api/show", "/api/version", "/api/chat", "/api/tags", "/api/version"])
         self.assertFalse(any(payload and "messages" in payload for path, payload in requests if path != "/api/chat"))
 
     def test_identity_change_after_inference_discards_note_and_keeps_source(self):
