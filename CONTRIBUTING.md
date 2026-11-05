@@ -10,7 +10,7 @@ node --check src/shake_bake/web/app.js
 node scripts/frontend_smoke.cjs
 ```
 
-Node is only a developer JavaScript syntax check. It is not an application runtime dependency. The evidence-only lab verifies required source spans, hashes, cutoffs and unchanged fixtures; it does not grade a real model or assistant answer. CI repeats these checks and verifies an installed wheel. See `.github/workflows/ci.yml` for the exact commands and pinned action revisions. Local import evidence covers Python 3.12; other CI matrix results must be observed separately.
+Node is only a developer JavaScript syntax check. It is not an application runtime dependency. Worker regression tests also verify that incompatible or malformed thinking controls refuse before source transmission while retaining exact evidence; legacy missing controls remain unknown. See docs/validation-0.4.0.dev8.md. The evidence-only lab verifies required source spans, hashes, cutoffs and unchanged fixtures; it does not grade a real model or assistant answer. CI repeats these checks and verifies an installed wheel. See `.github/workflows/ci.yml` for the exact commands and pinned action revisions. Local import evidence covers Python 3.12; other CI matrix results must be observed separately.
 
 ## Build and verify a wheel
 

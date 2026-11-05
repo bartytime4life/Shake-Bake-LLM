@@ -200,7 +200,17 @@ def organize(packet: Packet, model: str, *, port: int = 11434, seconds: float = 
             raise Refusal("invalid_expected_digest")
         if local_inventory(port, deadline).get(canonical_model(model)) != expected_digest:
             raise Refusal("qualified_model_digest_changed")
-    local_model_metadata(model, port, deadline)
+    metadata = local_model_metadata(model, port, deadline)
+    thinking = metadata.get("thinking")
+    if thinking is not None:
+        values = thinking.get("values") if isinstance(thinking, dict) else None
+        if (not isinstance(values, list) or not 1 <= len(values) <= 16 or
+                any(type(value) is not bool and
+                    (not isinstance(value, str) or not 1 <= len(value) <= 64 or not value.strip())
+                    for value in values)):
+            raise Refusal("worker_invalid_thinking_metadata")
+        if not any(value is False for value in values):
+            raise Refusal("worker_thinking_mode_unsupported")
     ids = [f"E{index + 1}" for index in range(len(packet.evidence))]
     schema = {"type": "object", "additionalProperties": False, "required": ["summary", "evidence_ids", "questions"],
               "properties": {"summary": {"type": "string"}, "evidence_ids": {"type": "array", "items": {"type": "string", "enum": ids}},
