@@ -46,8 +46,14 @@ Python 3.12.14; Node 24; no real model was used in these checks.
   also blocked file URLs; no local browser acceptance is claimed. The new
   isolated GitHub CI job runs 14 real Chromium DOM/event scenarios against both
   source and installed-wheel interfaces over HTTP with synthetic metadata and
-  deterministic request barriers. Its observed outcome must be recorded after
-  the pushed commit; adding a test does not establish that it passed.
+  deterministic request barriers. GitHub run 42104211973 passed both sets of
+  14 scenarios on Chromium 151.0.7922.34 for commit `909dce5`. All four source
+  Python matrix jobs (3.11–3.14), the deterministic UI checks and installed-wheel
+  smoke/optional SDK checks also passed in that run. The expanded installed
+  full-suite CI step is verified separately on the follow-up commit.
+
+Hosted evidence: https://github.com/bartytime4life/Shake-Bake-LLM/actions/runs/42104211973.
+The local RunnerGate failure remains recorded above even though source CI passed.
 
 ## Boundaries
 

@@ -52,6 +52,11 @@ jobs:
           cd /tmp
           env -u PYTHONPATH /tmp/shake-bake-installed/bin/shake-bake doctor
           env -u PYTHONPATH /tmp/shake-bake-installed/bin/python "$GITHUB_WORKSPACE/scripts/installed_smoke.py"
+      - name: Verify installed program and readiness regressions
+        run: |
+          cd /tmp
+          env -u PYTHONPATH /tmp/shake-bake-installed/bin/python -B -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v
+          node "$GITHUB_WORKSPACE/scripts/model_readiness_test.cjs" /tmp/shake-bake-installed/lib/python3.12/site-packages/shake_bake/web/app.js
       - name: Verify optional official SDK over stdio and shared service
         run: |
           /tmp/shake-bake-installed/bin/python -m pip install --require-hashes -r requirements/mcp.lock
