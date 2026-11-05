@@ -47,6 +47,9 @@ async function scenario(mode,run) {
     assert.equal(JSON.parse(text.split('\n')[3]),capturedRequest);assert.ok(text.includes('return len(reported_slices) <= slices_detected'));
     await page.locator('#copy').click();await page.waitForFunction(()=>document.querySelector('#copy-status').textContent.startsWith('Browser reported copying'));
     assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),text);
+    const manualMarker='synthetic marker: manual copy has not run';
+    await page.evaluate(marker=>navigator.clipboard.writeText(marker),manualMarker);
+    assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),manualMarker);
     await page.locator('#handoff-copy summary').click();await page.locator('#select-handoff').click();
     const selection=await page.locator('#handoff-text').evaluate(el=>({readonly:el.readOnly,selected:el.value.slice(el.selectionStart,el.selectionEnd),focused:document.activeElement===el}));
     assert.deepEqual(selection,{readonly:true,selected:text,focused:true});

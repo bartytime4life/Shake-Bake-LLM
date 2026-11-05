@@ -54,6 +54,13 @@ disposable browser context, plus synthetic delayed success/failure and missing-A
 recovery. CI runs them against source and an installed wheel; these are distinct
 from the owner's in-app browser and do not change its permissions.
 
+A separate GPT-6.1 Sol code review found one P2 test gap: the CI keyboard-copy
+assertion could reuse the preceding button copy. The test now writes and verifies
+a distinct synthetic marker before selecting and copying the handoff. This
+matches the already-recorded owner-PC procedure. The review found no further
+actionable issues in the submitted diff; it is an AI review, not independent
+human qualification. Updated hosted results are recorded on the pull request.
+
 ## Source and installed-package validation
 
 The final candidate passed all 176 program tests on Python 3.12.3 from source
