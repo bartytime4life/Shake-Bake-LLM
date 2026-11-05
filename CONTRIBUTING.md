@@ -8,9 +8,10 @@ PYTHONPATH=src python3 -B benchmarks/evaluate_selection.py
 PYTHONPATH=src python3 -B benchmarks/run_task_lab.py --evidence-only
 node --check src/shake_bake/web/app.js
 node scripts/frontend_smoke.cjs
+node scripts/model_readiness_test.cjs
 ```
 
-Node is only a developer JavaScript syntax check. It is not an application runtime dependency. Worker regression tests also verify that incompatible or malformed thinking controls refuse before source transmission while retaining exact evidence; legacy missing controls remain unknown. See docs/validation-0.4.0.dev8.md. The evidence-only lab verifies required source spans, hashes, cutoffs and unchanged fixtures; it does not grade a real model or assistant answer. CI repeats these checks and verifies an installed wheel. See `.github/workflows/ci.yml` for the exact commands and pinned action revisions. Local import evidence covers Python 3.12; other CI matrix results must be observed separately.
+Node runs developer JavaScript checks. It is not an application runtime dependency. Worker regression tests also verify that incompatible or malformed thinking controls refuse before source transmission while retaining exact evidence; legacy missing controls remain unknown. See docs/validation-0.4.0.dev8.md. The evidence-only lab verifies required source spans, hashes, cutoffs and unchanged fixtures; it does not grade a real model or assistant answer. CI repeats these checks and verifies an installed wheel. See `.github/workflows/ci.yml` for the exact commands and pinned action revisions. Local import evidence covers Python 3.12; other CI matrix results must be observed separately.
 
 ## Build and verify a wheel
 
@@ -58,3 +59,9 @@ Preserve original requests, exact source, contradictions, omissions and unknown 
 Keep local policy, connection capabilities, captured private evidence, state, model files and build output out of Git. The archive checksum inventory in `docs/import/archive-MANIFEST.sha256` describes the recovered ZIP's original relative paths, not the evolving repository. Runtime/test parity was verified at import; future changes must carry their own tests and evidence.
 
 For source UI startup use `./scripts/run-workbench`; it selects an installed Python 3.11+ without downloading one. Use a separate `--state-dir` outside inspected roots for development. Private evaluation datasets and run receipts belong outside the checkout; see docs/held-out-evaluation.md.
+
+## Model readiness UI regression checks
+
+`node scripts/model_readiness_test.cjs` runs deterministic DOM-event and deferred-response checks without browser dependencies. Pass an installed `shake_bake/web/app.js` path as its optional argument to test wheel bytes.
+
+The isolated `readiness-browser` CI job installs pinned Playwright development tools and checks source and installed interfaces over loopback HTTP with synthetic metadata. To reproduce with Playwright available, run `node scripts/browser_readiness_test.cjs`, or append the isolated installed Python path. The 14 Chromium scenarios cover replacement, removal, empty/unavailable inventories, late success/failure, selection changes and Local AI off/on. They do not call Ollama or measure model accuracy, fit or speed.
