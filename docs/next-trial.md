@@ -1,6 +1,6 @@
 # Next trial: does the whole helper improve the work?
 
-The next milestone is one real question delegated through Claude Code to local Ollama and returned with evidence. Unit tests and simulated HTTP do not complete that milestone. ChatGPT integration needs its own supported connection and independent test; it is not assumed from Claude Code support.
+One [actual Codex evidence-only synthetic handoff](codex-host-handoff.md) now passes. The next host milestone is failure/recovery coverage and one real question delegated through an authenticated host to local Ollama and returned with evidence. Claude Code was signed out when inspected. Unit tests, simulated HTTP and the evidence-only smoke do not complete that milestone. Consumer ChatGPT needs its own supported connection and independent test; Codex authentication through ChatGPT does not establish it.
 
 ## Planning priorities
 
@@ -24,4 +24,4 @@ Use actual provider usage records when available. If a chat interface does not e
 
 ## Current boundary
 
-Linux task core and simulated-service acceptance are implemented. Exposed real Ollama screening and SDK 2.3.0 transport have development evidence in validation-0.4.0.dev6.md. Screening includes incorrect claims and has no completed semantic score. Actual host orchestration, blind final-task accuracy and savings remain unqualified. The external dataset harness is described in held-out-evaluation.md; no unseen study has run. The source package is self-contained; future real-project trials require an explicitly configured source root and do not create an application dependency.
+Linux task core and simulated-service acceptance are implemented. Exposed real Ollama screening and SDK 2.3.0 transport have development evidence in validation-0.4.0.dev6.md. Screening includes incorrect claims and has no completed semantic score. The first actual Codex smoke preserves task/source identity, project refusal and paused AI; broader orchestration, blind final-task accuracy and savings remain unqualified. The external dataset harness is described in held-out-evaluation.md; no unseen study has run. The source package is self-contained; future real-project trials require an explicitly configured source root and do not create an application dependency.

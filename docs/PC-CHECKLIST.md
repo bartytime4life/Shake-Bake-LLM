@@ -35,7 +35,7 @@ Use the [prioritized to-do list](../TODO.md) to choose the next item. Start with
 
 - [ ] Expand to the full development set, compare candidates with matching cases/settings, and test timeouts, cancellation and source/model changes on the real machine.
 - [ ] Create an unseen evaluation set and compare against a well-configured native Claude/ChatGPT baseline. Review final task correctness and critical omissions before speed or tokens.
-- [ ] Qualify the actual host connection separately. No current SDK/Claude/ChatGPT connection is proven by these local tests.
+- [ ] Qualify the actual host connection separately. Installed SDK 2.3.0 and one [actual Codex evidence-only demo](codex-host-handoff.md) passed. Broader failure/recovery, local-model orchestration and Claude/consumer ChatGPT checks remain pending; the full gate stays open.
 - [ ] Promote only an owner-reviewed profile meeting the held-out baseline and identity gates. The trial runner never promotes a model; all shipped profiles remain unqualified.
 - [ ] Measure actual cloud usage and successful-task time before claiming savings. Do not promise subscription-limit improvements from estimated tokens.
 
@@ -44,7 +44,7 @@ Use the [prioritized to-do list](../TODO.md) to choose the next item. Start with
 - [ ] Walk through first setup, an inert demo, source selection, preparation, evidence review and assistant handoff using the [UX workflow plan](UX-WORKFLOW.md).
 - [ ] Verify a user can distinguish evidence-only, actual model preparation, copied/delivered brief and final-answer-pending states.
 - [ ] Verify current request, active job and completed result remain distinct through a new draft, failed/cancelled job, retry and export.
-- [ ] Qualify the [shared coordinator](shared-coordinator.md) through the actual SDK and host: native loopback tests already cover shared jobs, scoped permissions and pause/cancel, but do not complete real-client qualification.
+- [ ] Qualify the [shared coordinator](shared-coordinator.md) through the actual SDK and each supported host: SDK and the scoped Codex demo have evidence, while active-work cancellation, failure/recovery and other hosts still need actual-client trials.
 - [ ] Make missing models, stale profiles, limited evidence and connection errors offer specific next actions.
 - [ ] Explain and test draft/history/evidence/settings retention, clearing, expiry and restart behavior.
 - [ ] Complete actual desktop/phone/keyboard/reduced-motion walkthroughs and record findings before closing UX-01/UI-01.

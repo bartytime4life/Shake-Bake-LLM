@@ -1,6 +1,6 @@
 # Shake and Bake: prioritized to-do list
 
-Updated November 5, 2026 for `0.4.0.dev7`. The current build has 156 passing program tests. Readiness, exposed real-model screening and official SDK transport have scoped evidence; full semantic review, actual host qualification and savings remain open. Accuracy takes priority over speed or smaller prompts.
+Updated November 5, 2026 for `0.4.0.dev7`. The current build has 165 passing offline program tests. Readiness, exposed real-model screening, official SDK transport and one actual Codex evidence-only demo handoff have scoped evidence; full semantic review, broader host qualification and savings remain open. Accuracy takes priority over speed or smaller prompts.
 
 Cross-cutting product priority: connect setup, local preparation, evidence review, host handoff and recovery into one understandable experience. `docs/UX-WORKFLOW.md` specifies the target journey, shared-state gap and implementation slices. This work proceeds alongside accuracy qualification.
 
@@ -10,7 +10,7 @@ Cross-cutting product priority: connect setup, local preparation, evidence revie
 
 - [ ] **2. Finish reviewing the real Ollama screening (partial).** Two ten-case exposed runs are summarized in docs/validation-0.4.0.dev6.md; structural checks passed but incorrect claims keep the model unqualified. Complete the separate semantic reviews before expanding the screening. Keep exact source, output, settings, failures, time and available usage. Complete when actual model handoffs have a separate evidence-backed review; a completed run or valid JSON is insufficient. This is development screening, not held-out qualification. See `docs/pc-readiness-and-trials.md` and ACC-01.
 
-- [ ] **3. Qualify real host delegation.** Official SDK 2.3.0 stdio/shared checks passed on the prior main build; verify them again for a host candidate, then qualify a supported Claude Code handoff; qualify ChatGPT separately. Native shared-coordinator tests now cover common jobs/policy/pause but do not complete these host gates. Use inert/permitted source first. Complete when each supported host can delegate, retrieve exact evidence, receive uncertainties and handle failure/cancellation without an unsupported final-answer claim. Prepared adapters alone do not complete INT-01.
+- [ ] **3. Qualify real host delegation (partial).** Installed SDK 2.3.0 stdio/shared checks and one actual Codex evidence-only handoff passed; see docs/codex-host-handoff.md. Exact task/source, refused project access, paused AI and completed-job cancellation were verified. Active-work cancellation, timeout/disconnect/restart and local-model orchestration remain pending. Claude Code was signed out; qualify it when authenticated and qualify consumer ChatGPT separately. Complete when each supported host can delegate, retrieve exact evidence, receive uncertainties and handle failure/cancellation without an unsupported final-answer claim. This synthetic smoke does not close INT-01 or qualify private source.
 
 - [ ] **4. Compare correctness on unseen tasks.** External dataset loading, input identity checks and separate review are now implemented; see docs/held-out-evaluation.md. Freeze genuinely unseen defective and clean cases outside tuning inputs. Compare the same native host/settings with deterministic evidence and local-model-assisted evidence; assess final task outcomes, critical misses, unsupported claims and useful abstention. Complete when reviewed, comparable records meet the native baseline and existing critical-error/identity gates. Repeated known cases are not independent evidence or promotion authority.
 
@@ -36,7 +36,8 @@ Steps 1–2 require the actual local model/PC. Host-dependent steps need the sup
 - Evidence collector, optional bounded Ollama transport, local interface and recorded demo preview.
 - Startup diagnostics, checkpointed trial capture and separate review scoring.
 - Shared local GUI/adapter jobs, routed policy, scoped project access and session pause/cancel verified through native clients.
-- Selected local connection/queued-expiry regressions; 156 program tests passed in the development environment.
+- Selected local connection/queued-expiry regressions; 165 offline program tests passed in the development environment.
+- One actual Codex evidence-only synthetic handoff, with opt-in replay and a sanitized receipt; full host qualification remains open.
 - PC checklist, Known Issues/release rules, licensing inventory and per-PC GUI/calibration specifications.
 
 Keep `KNOWN_ISSUES.md` as the issue-status record and `docs/PC-CHECKLIST.md` as the detailed real-machine runbook. Mark items complete only with the relevant recorded evidence.
