@@ -1,6 +1,6 @@
 # Shake and Bake: prioritized to-do list
 
-Updated November 5, 2026 for `0.4.0.dev7`. The current build has 168 passing offline program tests. Readiness, exposed real-model screening, official SDK transport and actual Codex synthetic handoff/cancellation checks have scoped evidence; full semantic review, broader host qualification and savings remain open. Accuracy takes priority over speed or smaller prompts.
+Updated November 5, 2026 for `0.4.0.dev7`. The current build has 168 passing offline program tests. New owner-PC screening includes a retained Qwen 3.5 4B timeout and an unblinded assistant review of Qwen 3 1.7B: 4 of 10 exposed handoffs met the disclosed rubric. See docs/screening-2026-11-05.md. Original `.dev6` reviews, independent/unseen accuracy, broader host qualification and savings remain open. Accuracy takes priority over speed or smaller prompts.
 
 Cross-cutting product priority: connect setup, local preparation, evidence review, host handoff and recovery into one understandable experience. `docs/UX-WORKFLOW.md` specifies the target journey, shared-state gap and implementation slices. This work proceeds alongside accuracy qualification.
 
@@ -8,7 +8,7 @@ Cross-cutting product priority: connect setup, local preparation, evidence revie
 
 - [ ] **1. Complete actual-PC/model qualification (partial).** Run the startup/GUI checks, inspect trusted cloud-disabled Ollama, and record actual CPU/GPU/RAM, OS/runtime versions, exact model digest and quantization. Mark unknown hardware values explicitly. Complete when the real-machine readiness report and selected installed-model identity are recorded. Use `docs/PC-CHECKLIST.md`.
 
-- [ ] **2. Recover and review the real Ollama screening (partial).** Two ten-case exposed runs are summarized in docs/validation-0.4.0.dev6.md; structural checks passed but incorrect claims keep the model unqualified. Their original private folders were not located in the checked current workspace, parent folders or connected Drive. Recover the original receipts/outputs and matching review inputs before scoring; committed `.dev2` evidence-only receipts cannot substitute. Keep exact source, output, settings, failures, time and available usage. Complete when actual model handoffs have a separate evidence-backed review; a completed run or valid JSON is insufficient. This is development screening, not held-out qualification. See `docs/pc-readiness-and-trials.md` and ACC-01.
+- [ ] **2. Improve and review real Ollama screening (partial).** The missing `.dev6` folders remain unscored; new runs do not reconstruct them. Fresh owner-PC trials are captured and reviewed in docs/screening-2026-11-05.md: Qwen 3.5 4B stopped after a timeout; Qwen 3 1.7B completed ten cases but met the assistant-review rubric on only four. Source coverage passed, but decisive misses and unsupported claims keep profiles unqualified. Preserve these records and failures; find an eligible candidate/task design that meets exposed checks before unseen qualification. Independent review and original receipt recovery remain open. See `docs/pc-readiness-and-trials.md` and ACC-01.
 
 - [ ] **3. Qualify real host delegation (partial).** Installed SDK 2.3.0 stdio/shared checks and actual Codex synthetic handoff/cancellation checks passed; see docs/codex-host-handoff.md. Exact task/source, refused project access, paused AI and completed-job cancellation were verified. A follow-up explicitly stopped one owned preparation runner: Codex observed RUNNING/busy, cancelled it, was refused cancelled evidence, then completed a fresh task. Timeout/disconnect/restart, cancellation during actual model work and local-model orchestration remain pending. Claude Code was signed out; qualify it when authenticated and qualify consumer ChatGPT separately. Complete when each supported host can delegate, retrieve exact evidence, receive uncertainties and handle failure/cancellation without an unsupported final-answer claim. These synthetic checks do not close INT-01 or qualify private source.
 
@@ -35,6 +35,7 @@ Steps 1–2 require the actual local model/PC. Host-dependent steps need the sup
 - Standalone source package with self-contained synthetic fixtures.
 - Evidence collector, optional bounded Ollama transport, local interface and recorded demo preview.
 - Startup diagnostics, checkpointed trial capture and separate review scoring.
+- New owner-PC exposed screening with a retained timeout, ten reviewed smaller-model notes and a checksummed portable review packet; no model promotion.
 - Shared local GUI/adapter jobs, routed policy, scoped project access and session pause/cancel verified through native clients.
 - Selected local connection/queued-expiry regressions; 168 offline program tests passed in the development environment.
 - Actual Codex evidence-only synthetic handoff and injected cancellation/recovery, with opt-in replay and sanitized receipts; full host qualification remains open.
