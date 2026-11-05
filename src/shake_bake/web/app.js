@@ -192,6 +192,7 @@ $('refresh-models').addEventListener('click',async()=>{
     }
     // Names are not unique across saved/installed artifacts. Never silently switch digests.
     if(pinnedOption)pinnedOption.selected=true;
+    $('readiness-status').textContent='Inventory refreshed. Previous model metadata cleared; check the selected model again.';
     message(models.length?`${models.length} installed local candidate${models.length===1?'':'s'} found. No model was loaded or downloaded.`:'No installed local candidates found. Exact evidence preparation remains available.');
   }catch(error){
     for(const option of $('model').options)option.dataset.availability='unknown';

@@ -62,8 +62,10 @@ for(const [name,items] of [['unchanged',[A,B]],['changed digest',[C,B]],['disapp
   test(`refresh ${name} clears immediately and keeps the explicit pin`,async()=>{
     const h=harness();await checked(h);const wait=deferred();h.respond(()=>wait.promise);
     const refresh=h.fire('refresh-models');cleared(h);assert.equal(h.elements['check-model'].disabled,true);
+    assert.match(h.text('readiness-status'),/Refreshing inventory/);
     const count=h.requests.length;await h.fire('check-model');assert.equal(h.requests.length,count);
     wait.resolve(inventory(items));await refresh;cleared(h);assert.deepEqual(h.selection(),A);
+    assert.match(h.text('readiness-status'),/Inventory refreshed/);
     if(!items.includes(A))assert.match(h.text('model-identity'),/unavailable or changed/);
     if(items.includes(C)){h.choose(C);cleared(h);await checked(h);assert.match(h.text('model-facts'),new RegExp(C.digest));}
   });
