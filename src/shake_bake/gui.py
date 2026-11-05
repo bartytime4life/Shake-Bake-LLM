@@ -34,11 +34,12 @@ CONTROLLER_TIMEOUT_SECONDS = 8
 class Controller:
     """One persistent owner thread supervises children across short HTTP requests."""
 
-    def __init__(self, projects, policy_path=DEFAULT_POLICY, port=11434):
+    def __init__(self, projects, policy_path=DEFAULT_POLICY, port=11434, *, allow_trials=False):
         self.projects = dict(projects)
         self.policy_path = Path(policy_path)
         self.ollama_port = port
         self.disabled = False
+        self.allow_trials = allow_trials
         self.records = {}
         self.inventory_status = {"state": "not_checked", "models": []}
         self._queue = queue.Queue(maxsize=32)
@@ -101,6 +102,8 @@ class Controller:
 
     def _result(self, identifier):
         result = self._session.get_result(identifier)
+        result["project_id"] = self.records.get(identifier, {}).get("project_id")
+        result["created_at"] = self.records.get(identifier, {}).get("created")
         result["task_kind"] = self.records.get(identifier, {}).get("task_kind", "code")
         result["entry_point"] = self.records.get(identifier, {}).get("entry_point", "workspace")
         if result["state"] == "DONE":
@@ -134,9 +137,13 @@ class Controller:
         return result
 
     def _start(self, payload, *, entry_point="workspace"):
-        if not isinstance(payload, dict) or set(payload) != {"project_id", "task", "task_kind"}:
+        required = {"project_id", "task", "task_kind"}
+        if not isinstance(payload, dict) or set(payload) not in (required, required | {"candidate"}):
             raise Refusal("invalid_task_request")
-        started = self._session.start_task(payload["project_id"], payload["task"], task_kind=payload["task_kind"], disabled=self.disabled)
+        candidate = payload.get("candidate")
+        if candidate is not None and (not self.allow_trials or self.disabled or not self._policy()["enabled"]):
+            raise Refusal("candidate_trial_not_allowed")
+        started = self._session.start_task(payload["project_id"], payload["task"], task_kind=payload["task_kind"], disabled=self.disabled, candidate=candidate)
         self.records[started["task_id"]] = {"project_id": payload["project_id"], "task_kind": payload["task_kind"],
                                            "task": payload["task"], "created": time.time(), "entry_point": entry_point}
         while len(self.records) > 8:
@@ -158,6 +165,7 @@ class Controller:
             return {"version": __version__, "projects": [{"id": name, "label": name.replace("-", " ").title(), "path": str(root), "demo": root == DEMO} for name, root in self.projects.items()],
                     "local_ai_enabled": not self.disabled and policy["enabled"], "policy": policy,
                     "recent": list(reversed(recent)), "inventory": self.inventory_status,
+                    "allow_candidate_trials": self.allow_trials, "pipeline_id": pipeline_id(),
                     "catalog": json.loads((ASSETS / "models.json").read_text())}
         if operation == "start":
             return self._start(payload)
@@ -177,6 +185,8 @@ class Controller:
                         pass
             return {"enabled": not self.disabled and self._policy()["enabled"]}
         if operation == "inventory":
+            if self.disabled:
+                return {"state": "paused", "models": []}
             try:
                 inventory = local_inventory(self.ollama_port, time.monotonic()+5)
                 self.inventory_status = {"state": "connected", "models": [{"name": name, "digest": digest} for name, digest in inventory.items()]}
@@ -327,6 +337,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(403, {"error": "host_not_allowed"}); return
         path = urlsplit(self.path).path
         static = {"/": ("index.html", "text/html; charset=utf-8"), "/styles.css": ("styles.css", "text/css; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8")}
+        for name in ("folder", "clock", "document", "copy", "download", "chevron-down", "map-pin", "x-mark"):
+            static[f"/icons/{name}.svg"] = (f"icons/{name}.svg", "image/svg+xml")
         if path in static:
             name, mime = static[path]
             self._send(200, (ASSETS / name).read_bytes(), mime, cookie=path=="/"); return
@@ -336,6 +348,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/state":
                 state = self.server.controller.call("state")
                 state["csrf_token"] = self.server.csrf_token
+                state["shared_native"] = self.server.adapter_token is not None
                 self._send(200, state)
             elif re.fullmatch(r"/api/tasks/[a-f0-9]{32}", path):
                 self._send(200, self.server.controller.call("result", path.rsplit("/", 1)[-1]))
@@ -399,6 +412,7 @@ def main(argv=None):
     parser.add_argument("--port", type=int, default=8421)
     parser.add_argument("--ollama-port", type=int, default=11434)
     parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--allow-candidate-trials", action="store_true", help="Allow acknowledged pinned model trials; never qualifies a candidate")
     parser.add_argument("--connection-file", type=Path, help="Publish a private local adapter connection file outside inspected projects")
     parser.add_argument("--adapter-project", action="append", help="Project ID permitted to the adapter; default starter-demo only")
     args = parser.parse_args(argv)
@@ -413,7 +427,7 @@ def main(argv=None):
             parser.error("use distinct ID=/absolute/folder entries")
         projects[name] = Path(path)
     try:
-        controller = Controller(projects, args.policy, args.ollama_port)
+        controller = Controller(projects, args.policy, args.ollama_port, allow_trials=args.allow_candidate_trials)
     except Refusal as error:
         print("The workbench could not start: "+error.code, file=sys.stderr)
         return 2

@@ -21,3 +21,7 @@ The root MIT LICENSE applies to original Shake and Bake material. External softw
 - Candidate model sources: MODEL_LICENSES.json.
 
 When vendoring or redistributing actual third-party code/binaries, add their exact copyright/license/NOTICE texts and version/source identifiers. Links alone are not a substitute for required distributed notices. This starter currently references external components rather than embedding those distributions. There is no claim that all future versions or models use the same license.
+
+## Bundled interface icons
+
+Heroicons outline SVGs are bundled under their MIT license, copyright Tailwind Labs, Inc. The unmodified license is in `src/shake_bake/web/icons/LICENSE`. Assets were retrieved from immutable upstream revision `616b7a4dbbf3d011760af8066262cd5c6b3868f3`; no icon service or runtime dependency is used.

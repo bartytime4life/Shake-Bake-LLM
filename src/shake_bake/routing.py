@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import time
 
-from .briefing import Brief
+from .briefing import Brief, build_brief
 from .collector import _read
 from .contracts import Refusal
 from .search import prepare
@@ -204,4 +204,21 @@ def assist(root: Path, task: str, task_kind: str, *, policy_path: Path | None, p
             decision = replace(failed, attempted_profile_id=decision.profile_id, attempted_model=decision.model,
                                why=f"The attempted profile {decision.profile_id} could not produce a qualified handoff ({refusal.code}). Exact evidence is retained; no substitute was tried.")
     brief = Brief("ANSWER" if worker else "ABSTAIN", search, worker, error or (decision.reason if not worker else None))
+    return decision, brief
+
+
+def candidate_trial(root, task, task_kind, candidate, *, port=11434):
+    """An acknowledged diagnostic run cannot promote an owner routing profile."""
+    if task_kind not in TASK_KINDS or not isinstance(candidate, dict) or set(candidate) != {"model", "digest", "acknowledged"} or candidate["acknowledged"] is not True:
+        raise Refusal("invalid_candidate_trial")
+    validate_settings(candidate["model"], port)
+    if not isinstance(candidate["digest"], str) or not re.fullmatch(r"[a-f0-9]{64}", candidate["digest"]):
+        raise Refusal("invalid_expected_digest")
+    brief = build_brief(root, task, model=candidate["model"], port=port, expected_digest=candidate["digest"])
+    decision = Decision(task_kind, "candidate_trial", "unqualified_candidate_trial",
+        "Explicit candidate trial. Notes are unverified; this run does not qualify accuracy or change routing policy.",
+        model=candidate["model"], expected_digest=candidate["digest"])
+    if brief.worker_error:
+        decision = replace(decision, reason=brief.worker_error,
+            why=f"Candidate notes were withheld ({brief.worker_error}). Exact evidence is retained; no substitute was tried.")
     return decision, brief

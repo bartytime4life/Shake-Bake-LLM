@@ -1,43 +1,83 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#10141f"><title>Shake &amp; Bake — Local AI Workbench</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script></head>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shake &amp; Bake — Local workbench</title>
+  <link rel="icon" href="/icons/folder.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
 <body>
-<svg class="icon-library" aria-hidden="true"><defs>
-<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></symbol>
-<symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 2.8 7.2L22 12l-7.2 2.8L12 22l-2.8-7.2L2 12l7.2-2.8Z"/></symbol>
-<symbol id="i-trouble" viewBox="0 0 24 24"><path d="M2 13h4l3-8 5 15 3-7h5"/></symbol>
-<symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 2h9l4 4v16H6ZM14 2v5h5M9 11h7m-7 4h7m-7 4h4"/></symbol>
-<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="m15 15 7 7M7 10h6m-3-3v6"/></symbol>
-<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
-<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
-<symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
-<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></symbol>
-<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 2v14m-5-5 5 5 5-5M3 16v6h18v-6"/></symbol>
-<symbol id="i-folder" viewBox="0 0 24 24"><path d="M2 6h8l2 3h10l-3 12H2ZM2 6V3h8l2 3h8v3"/></symbol>
-<symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 8 3v7c0 5-8 10-8 10S4 17 4 12V5Z"/><path d="m8 12 3 3 5-6"/></symbol>
-</defs></svg>
-<header class="topbar"><a class="brand" href="#top" aria-label="Shake and Bake home"><span class="brand-mark"><svg><use href="#i-spark"/></svg></span><span>shake<span class="brand-and">&amp;</span>bake<small>LOCAL AI WORKBENCH</small></span></a><nav aria-label="Workspace"><a href="#compose" class="active">Workspace</a><a href="#models">Models</a><a href="#activity">Activity</a></nav><span class="top-status"><span class="dot mint"></span>Read-only source access</span></header>
-<main id="top">
-<section class="hero" aria-labelledby="hero-title"><div class="hero-copy"><div class="eyebrow"><span class="small-orbit"></span> YOUR ASSISTANT’S LOCAL ADVANTAGE</div><h1 id="hero-title">Give your assistant<br><span>better evidence.</span></h1><p>Bring the right local help to the hard part.<br>Clear sources. Visible gaps. Accuracy comes first.</p><div class="hero-tags"><span><svg><use href="#i-check"/></svg>Exact source excerpts</span><span><svg><use href="#i-check"/></svg>You stay in control</span></div></div>
-<div class="hero-visual" aria-label="Workflow overview: source evidence and local preparation feed a brief for your assistant"><div class="visual-grain"></div><span class="diagram-label">HOW YOUR BRIEF COMES TOGETHER</span>
-<svg class="flow-art" viewBox="0 0 620 290" aria-hidden="true"><defs><linearGradient id="flow-gradient"><stop stop-color="#a3f0cb"/><stop offset=".5" stop-color="#bbb2ff"/><stop offset="1" stop-color="#ffb985"/></linearGradient><radialGradient id="orb-glow"><stop stop-color="#bcaaff" stop-opacity=".25"/><stop offset="1" stop-color="#bcaaff" stop-opacity="0"/></radialGradient></defs><circle cx="320" cy="142" r="130" fill="url(#orb-glow)"/><g class="fine-grid"><path d="M0 70h620M0 140h620M0 210h620M100 0v290M240 0v290M380 0v290M520 0v290"/></g><g class="flow-path"><path d="M118 78C220 78 185 145 275 145M118 210c100 0 75-65 157-65M360 145h90"/><path class="moving-flow" d="M118 78C220 78 185 145 275 145M118 210c100 0 75-65 157-65M360 145h90"/></g><g class="input-node"><rect x="30" y="50" width="105" height="60" rx="14"/><path d="m50 69-7 7 7 7m11-14 7 7-7 7"/><text x="83" y="80">Source</text></g><g class="input-node purple"><rect x="30" y="180" width="130" height="60" rx="14"/><circle cx="53" cy="208" r="9"/><path d="m53 194 3 8 8 3-8 3-3 8-3-8-8-3 8-3"/><text x="77" y="213">Local prep</text></g><g class="core-orbits"><circle cx="318" cy="145" r="63"/><ellipse cx="318" cy="145" rx="88" ry="31" transform="rotate(-35 318 145)"/><ellipse cx="318" cy="145" rx="88" ry="31" transform="rotate(35 318 145)"/></g><circle class="core" cx="318" cy="145" r="43"/><path class="core-symbol" d="m318 120 6 19 19 6-19 6-6 19-6-19-19-6 19-6Z"/><g class="output-node"><rect x="448" y="108" width="145" height="75" rx="16"/><rect x="463" y="126" width="21" height="30" rx="3"/><path d="M468 134h11m-11 6h11m-11 6h7"/><text x="498" y="139">Your brief</text><text class="node-small" x="498" y="157">FOR THE HOST</text></g><text class="center-caption" x="318" y="253" text-anchor="middle">Evidence stays connected.</text></svg>
-<div class="visual-key"><span><i class="mint"></i>Source</span><span><i class="purple-bg"></i>Preparation</span><span><i class="peach"></i>Handoff</span></div></div></section>
-<div class="workspace-grid">
-<section id="compose" class="panel composer"><div class="panel-heading"><div><span class="eyebrow">01 / START WITH THE JOB</span><h2>What are we working on?</h2></div><span class="quiet-badge">Best accuracy</span></div>
-<div class="task-grid" role="radiogroup" aria-label="Task type"><button class="task-card code selected" data-kind="code" role="radio" aria-checked="true"><span class="task-art"><svg><use href="#i-code"/></svg><i></i><b></b></span><strong>Code</strong><span>Understand &amp; review</span></button><button class="task-card troubleshoot" data-kind="troubleshoot" role="radio" aria-checked="false"><span class="task-art"><svg><use href="#i-trouble"/></svg><i></i><b></b></span><strong>Troubleshoot</strong><span>Follow the failure</span></button><button class="task-card documents" data-kind="documents" role="radio" aria-checked="false"><span class="task-art"><svg><use href="#i-doc"/></svg><i></i><b></b></span><strong>Documents</strong><span>Find the useful facts</span></button><button class="task-card search" data-kind="search" role="radio" aria-checked="false"><span class="task-art"><svg><use href="#i-search"/></svg><i></i><b></b></span><strong>Search</strong><span>Locate the evidence</span></button></div>
-<details class="why-detail"><summary><span>First time? Start here</span><svg class="chevron"><use href="#i-chevron"/></svg></summary><div class="why-content"><ol><li>Try the starter demo to see exact evidence without installing a model.</li><li>Choose an approved working folder. Additional folders are configured when this workbench starts.</li><li>Check Ollama when ready. Automatic selection uses qualified profiles; evidence-only preparation stays available.</li><li>Review the brief and its gaps, then copy it into your assistant for the final judgment.</li></ol><p class="micro">History and the local-AI choice last for this service session. Question drafts are saved in this browser.</p></div></details>
-<form id="task-form"><div class="field-row"><label for="project"><svg><use href="#i-folder"/></svg>Working folder</label><select id="project" name="project_id" required><option>Loading projects…</option></select></div><p id="project-note" class="field-note"></p><label class="request-label" for="task">What would you like to find out?</label><textarea id="task" name="task" maxlength="16384" required placeholder="For example: Find the coverage check and show what it actually allows."></textarea><div class="example-row"><span>Try a demo</span><button type="button" data-example="coverage">Review a guard <span>↗</span></button><button type="button" data-example="tour">Explore the source <span>↗</span></button></div><div class="form-footer"><span class="source-promise"><svg><use href="#i-shield"/></svg>Source files stay unchanged</span><button id="prepare" class="primary" type="submit">Prepare my brief <svg><use href="#i-arrow"/></svg></button></div></form><div id="form-error" class="error-message" role="alert" hidden></div>
-</section>
-<aside class="right-stack"><section class="panel model-panel"><div class="panel-heading"><div><span class="eyebrow">02 / THE RIGHT LOCAL HELP</span><h2>Accuracy, by design.</h2></div><span class="quality-orb"><svg><use href="#i-spark"/></svg></span></div><div class="auto-choice"><span class="auto-logo">A<span>↗</span></span><div><strong id="choice-title">Automatic selection</strong><p id="choice-subtitle">Only reviewed profiles qualify.</p></div></div><div class="mode-toggle"><div><strong>Allow local AI</strong><small>Shared session · qualified models only</small></div><label class="switch"><input id="local-ai" type="checkbox" checked aria-label="Allow qualified local AI"><span></span></label></div><details class="why-detail" id="why-detail"><summary><span><svg><use href="#i-search"/></svg><span id="why-label">Why this model?</span></span><svg class="chevron"><use href="#i-chevron"/></svg></summary><div class="why-content"><p id="why-text">A model is chosen by its recorded accuracy for your task. Published benchmarks help select candidates; they do not qualify a model on this device.</p><div id="why-facts" class="why-facts"><span>Qualification</span><strong>Not run here</strong></div><p class="micro">No confidence score is treated as proof.</p></div></details><div class="gate-preview"><span class="gate-symbol">◎</span><div><strong id="profile-count">Checking profile records…</strong><small id="profile-caption">Recorded results and live availability are separate checks.</small></div></div></section>
-<section class="panel connection-panel"><div><span class="eyebrow">LOCAL CONNECTION</span><h3 id="connection-title">Ollama not checked</h3><p id="connection-caption">Evidence collection works without a model.</p></div><button id="check-ollama" class="icon-button" aria-label="Check local Ollama connection">↗</button></section></aside>
-<section id="brief-section" class="panel result-panel"><div class="panel-heading"><div><span class="eyebrow">03 / EVIDENCE YOU CAN INSPECT</span><h2>Your evidence brief</h2></div><span id="result-state" class="status-pill">Ready when you are</span></div><p id="result-request" class="field-note">A completed brief will show its original request and job identity here.</p>
-<div id="job-progress" class="job-progress" hidden><span class="spinner"></span><div><strong>Preparing your source handoff</strong><small>Collecting evidence and checking the model policy.</small></div><button id="cancel-job" class="text-button">Cancel job</button></div>
-<div id="empty-result" class="empty-result"><div class="empty-constellation"><span></span><span></span><span></span><i>✧</i></div><h3>The useful parts, with the proof.</h3><p>Run a task to see exact excerpts, connected sources,<br>model reasoning and anything still unknown.</p><span class="empty-tag">No invented results. No hidden gaps.</span></div>
-<div id="result-content" hidden><details class="hash-detail"><summary>Read the full original request for this brief</summary><pre id="full-request"></pre></details><div class="result-metrics"><div><span>Evidence excerpts</span><strong id="metric-evidence">—</strong></div><div><span>Files examined</span><strong id="metric-files">—</strong></div><div><span>Selected source</span><strong id="metric-bytes">—</strong></div></div><div class="result-note" id="result-note"></div><div class="evidence-visual"><div><h3>Evidence map</h3><p>Choose a source to inspect its captured lines.</p></div><svg id="evidence-map" viewBox="0 0 560 210" role="group" aria-label="Collected evidence sources"></svg></div><div id="evidence-list"></div><details class="scope-detail"><summary>Scope, gaps &amp; source receipt <svg class="chevron"><use href="#i-chevron"/></svg></summary><div id="scope-content"></div></details><div class="handoff"><div><strong>Ready for the next thinking step.</strong><p>Copy this brief into Claude or ChatGPT. Direct host connection remains unverified.</p></div><div class="handoff-actions"><button id="copy-brief" class="secondary"><svg><use href="#i-copy"/></svg>Copy this brief</button><button id="download-brief" class="icon-button" aria-label="Download evidence receipt"><svg><use href="#i-download"/></svg></button></div></div></div></section>
-<aside class="right-stack"><section class="panel route-panel"><span class="eyebrow">THE HANDOFF</span><h2>Keep the thread.</h2><ol class="route-steps"><li id="step-source"><span>01</span><div><strong>Collect exact source</strong><small>Paths, lines and source hashes</small></div></li><li id="step-model"><span>02</span><div><strong>Choose qualified help</strong><small>Accuracy before speed</small></div></li><li id="step-evidence"><span>03</span><div><strong>Preserve the evidence</strong><small>Contradictions stay visible</small></div></li><li id="step-host"><span>04</span><div><strong>Your assistant reasons</strong><small>Claude or ChatGPT decides</small></div></li></ol><p class="route-footnote">A brief prepares the answer. It is not a completed review.</p></section><section id="activity" class="panel activity-panel"><span class="eyebrow">THIS SESSION</span><h3>Recent briefs</h3><div id="recent-list"><p class="muted">Your first brief starts here.</p></div></section></aside>
-<section id="models" class="panel models-panel"><div class="panel-heading"><div><span class="eyebrow">UNDER THE HOOD</span><h2>Meet your local candidates.</h2><p>Expand a model for published statistics, local results and selection details.</p></div><span class="quiet-badge">Candidates ≠ winners</span></div><div id="model-cards" class="model-cards"></div><p class="models-footnote">Published results use different test conditions. Local accuracy, memory use and speed require a trial on the actual device.</p></section>
-</div><footer class="page-footer"><span>shake&amp;bake <i>·</i> <span id="version">Development workbench</span></span><span>Built for better-supported answers. Token savings are not yet measured.</span></footer></main>
-<dialog id="model-dialog" class="model-dialog"><button id="close-model" class="dialog-close" aria-label="Close model details">×</button><div id="model-dialog-content"></div></dialog>
-<dialog id="copy-dialog" class="copy-dialog"><h2>Your handoff</h2><p>Select and copy the text below.</p><textarea id="copy-text" readonly aria-label="Brief text"></textarea><button id="close-copy" class="secondary">Done</button></dialog>
-<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-</body></html>
+  <a class="skip" href="#workspace">Skip to workspace</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Workspace navigation">
+      <header class="brand"><span>Shake &amp; Bake</span><small>Local workbench</small></header>
+      <nav>
+        <button class="nav-button selected" id="workspace-nav"><img src="/icons/folder.svg" alt="">Workspace</button>
+        <button class="nav-button" id="history-nav"><img src="/icons/clock.svg" alt="">Recent briefs</button>
+      </nav>
+      <section id="recent-section" aria-label="Recent briefs">
+        <h2 class="eyebrow">Recent briefs</h2>
+        <div id="recent-list" class="recent-list"><p class="muted small">Your completed briefs will appear here.</p></div>
+      </section>
+      <footer class="sidebar-footer"><span class="eyebrow">On your computer</span><p>Exact source. Visible gaps.<br>A clear next step.</p><span id="version" class="small muted"></span></footer>
+    </aside>
+    <main id="workspace" tabindex="-1">
+      <div class="topline"><span id="today" class="eyebrow"></span><span class="small muted" id="connection-status">Connecting to local session…</span></div>
+      <h1>Turn local source into a clear brief.</h1>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <form id="task-form">
+        <div class="task-options">
+          <label class="project-label" for="project">Project</label>
+          <select id="project" name="project" aria-describedby="project-help"></select>
+          <fieldset class="task-types"><legend>Task type</legend>
+            <label><input type="radio" name="task-kind" value="code" checked><span>Code</span></label>
+            <label><input type="radio" name="task-kind" value="troubleshoot"><span>Troubleshoot</span></label>
+            <label><input type="radio" name="task-kind" value="documents"><span>Documents</span></label>
+            <label><input type="radio" name="task-kind" value="search"><span>Search</span></label>
+          </fieldset>
+        </div>
+        <p id="project-help" class="sr-only">Only projects approved in the owner's launch configuration are available.</p>
+        <label for="request" class="sr-only">Describe your task</label>
+        <textarea id="request" name="request" rows="4" required maxlength="16384" spellcheck="false" placeholder="Describe what you want your assistant to investigate…">Find the executable slice coverage guard. Can it accept fewer reported slices than detected? Provide exact evidence and gaps.</textarea>
+        <div class="model-strip">
+          <label class="switch-label"><input type="checkbox" id="local-ai"><span>Local AI</span></label>
+          <span id="mode-summary" class="muted">Best accuracy · evidence only</span>
+          <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="/icons/chevron-down.svg" alt=""></button>
+        </div>
+        <section id="model-details" class="details-surface" hidden aria-label="Model details">
+          <div class="details-heading"><div><h2>Choose how local AI helps</h2><p id="model-help" class="muted small">Exact evidence remains available with Local AI off.</p></div><button type="button" id="refresh-models" class="secondary compact">Refresh installed models</button></div>
+          <label for="ai-mode">Preparation mode</label>
+          <select id="ai-mode"><option value="best">Best tested for this task</option><option value="trial">Try a candidate — unqualified</option></select>
+          <div id="candidate-controls" hidden>
+            <label for="model">Installed local model</label><select id="model"><option value="">Refresh models, then choose a candidate</option></select>
+            <p class="small muted" id="model-identity">No installed model selected.</p>
+            <label class="check-label"><input id="trial-ack" type="checkbox">I understand candidate notes are unverified. My trusted local Ollama must have cloud features disabled.</label>
+          </div>
+          <p class="small muted">Best tested uses only reviewed, comparable profiles for this pipeline. No qualifying profile keeps the brief evidence-only. No automatic downloads or provider fallback.</p>
+          <details class="technical"><summary>Installation &amp; profile identity</summary><p class="small muted">Pipeline and saved model identity are qualification inputs, not hardware or accuracy certificates.</p><pre id="profile-identity"></pre></details>
+
+          <details class="technical"><summary>Published statistics &amp; local results</summary><div id="catalog"></div></details>
+        </section>
+        <div class="action-row"><button type="submit" class="primary" id="prepare">Prepare for my assistant</button><button type="button" class="secondary stop" id="stop" disabled>Stop</button><span id="progress" class="small muted" aria-live="polite"></span></div>
+      </form>
+      <section class="brief-bar" id="brief-bar" aria-label="Pinned brief">
+        <img src="/icons/map-pin.svg" alt="" class="pin">
+        <div class="brief-identity"><h2 id="brief-title">Your next brief starts here</h2><p class="small muted" id="brief-subtitle">Choose a project and prepare exact local evidence.</p></div>
+        <div class="export-actions"><button class="secondary compact" id="copy" disabled><img src="/icons/copy.svg" alt="">Copy brief</button><button class="secondary compact" id="download" disabled><img src="/icons/download.svg" alt="">Download JSON</button></div>
+      </section>
+      <p id="worker-status" class="small" hidden></p>
+      <div id="brief-details" hidden><details class="original"><summary>Original request &amp; job identity</summary><p id="job-identity" class="small muted"></p><pre id="original-request"></pre><p class="small muted" id="route-reason"></p></details></div>
+      <section class="evidence-section" aria-labelledby="evidence-heading">
+        <div class="section-heading"><div><h2 id="evidence-heading">Exact evidence <span>(local source)</span></h2><p class="muted">Unmodified excerpts from the selected source files.</p></div><span id="evidence-count" class="small muted"></span></div>
+        <div id="evidence" class="evidence-grid"><div class="empty"><h3>A place for the source, not a guess.</h3><p class="muted">Prepare the synthetic demo to see exact lines, source identities and a copyable handoff. Your investigation stays open.</p></div></div>
+      </section>
+      <section id="gaps-section" class="supplement" hidden><h2>Gaps &amp; collection limits</h2><ul id="gaps"></ul><p id="scan-limits" class="small muted"></p></section>
+      <section id="notes-section" class="supplement" hidden><h2>Unverified model interpretations</h2><p class="muted small">These notes are separate from exact source. Citations are checked; correctness still needs review.</p><ul id="notes"></ul><h3>Uncertainties</h3><ul id="uncertainties"></ul></section>
+      <details id="receipt-section" class="technical" hidden><summary>Usage receipt &amp; limitations</summary><pre id="receipt"></pre><ul id="limitations"></ul></details>
+      <footer class="workspace-footer">Standalone local preparation · Your assistant makes the final judgment.</footer>
+    </main>
+  </div>
+</body>
+</html>

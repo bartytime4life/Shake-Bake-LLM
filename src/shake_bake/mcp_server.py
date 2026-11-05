@@ -4,7 +4,7 @@ import argparse
 from contextlib import asynccontextmanager
 from pathlib import Path
 import sys
-from typing import Literal
+from typing import Any, Literal
 
 from .contracts import Refusal
 from .helper import HelperSession
@@ -31,28 +31,28 @@ def create_server(helper):
         except Refusal as refusal:
             return {"outcome": "DENY", "code": refusal.code}
 
-    @server.tool(annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
-    def list_projects() -> dict:
+    @server.tool(structured_output=True, annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
+    def list_projects() -> dict[str, Any]:
         """List owner-approved project IDs and helper mode. Does not disclose host paths."""
         return helper.list_projects()
 
-    @server.tool()
-    def start_task(project_id: str, task: str, task_kind: Literal["code", "troubleshoot", "documents", "search"] = "code") -> dict:
+    @server.tool(structured_output=True)
+    def start_task(project_id: str, task: str, task_kind: Literal["code", "troubleshoot", "documents", "search"] = "code") -> dict[str, Any]:
         """Start bounded local preparation. Use a listed project ID. No shell commands, paths or model changes are accepted. Busy requests are refused; do not retry automatically."""
         return guarded(helper.start_task, project_id, task, task_kind=task_kind)
 
-    @server.tool(annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
-    def get_result(task_id: str) -> dict:
+    @server.tool(structured_output=True, annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
+    def get_result(task_id: str) -> dict[str, Any]:
         """Get task state, unverified worker notes and all evidence references. Retained for at most five minutes/eight session jobs. Avoid rapid polling."""
         return guarded(helper.get_result, task_id)
 
-    @server.tool(annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
-    def fetch_evidence(task_id: str, evidence_id: str) -> dict:
+    @server.tool(structured_output=True, annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
+    def fetch_evidence(task_id: str, evidence_id: str) -> dict[str, Any]:
         """Fetch a captured E1-E4 source excerpt, line range and hashes. It is the recorded snapshot, not a claim about current disk contents."""
         return guarded(helper.fetch_evidence, task_id, evidence_id)
 
-    @server.tool()
-    def cancel_task(task_id: str) -> dict:
+    @server.tool(structured_output=True)
+    def cancel_task(task_id: str) -> dict[str, Any]:
         """Cancel only this helper's task runner and release its handles. Does not attest cancellation of inference inside the separate Ollama daemon."""
         return guarded(helper.cancel_task, task_id)
 

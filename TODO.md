@@ -1,3 +1,5 @@
+Current development update (November 5): `0.4.0.dev5` preserves the imported 121-test application and passes 127 tests. The selected GUI, acknowledged pinned candidate trials, browser model preferences and installed official-SDK subprocess path are implemented. One actual inert-model trial and limited desktop/phone interactions ran; accuracy, actual host UX, durable recovery, full calibration and broader qualification below remain open. See docs/validation-0.4.0.dev5.md.
+
 # Shake and Bake: prioritized to-do list
 
 Updated November 4, 2026. All items below are pending. The current development build has 121 passing program tests; real-model accuracy, actual host connections and cloud savings remain unmeasured. Accuracy takes priority over speed or smaller prompts.

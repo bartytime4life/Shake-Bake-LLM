@@ -1,45 +1,39 @@
-# Visual workbench: 0.4.0.dev4
+# Visual workbench: 0.4.0.dev5
 
-The graphical interface is a local browser application backed by the same evidence collector and accuracy-gated router. It uses Python's standard library, plain JavaScript, CSS and inline SVG; no external fonts, image servers or frontend dependencies are loaded. The current runtime targets Linux/Python 3.11+. Windows and physical owner-PC behavior remain unqualified.
+The owner selected the third proposed design: a graphite workbench with amber actions, a project/history rail, broad task composer and paired exact-source panels. It runs on the recovered application's existing controller and bounded child, using Python's standard library and bundled HTML/CSS/JavaScript/SVG. No external frontend service, fonts, icon service or business application is required.
 
-## The user flow
+## Open and prepare
 
-1. Start `PYTHONPATH=src python3 -B -m shake_bake gui` from the extracted project. A browser opens to the local loopback service; use `--no-browser` when appropriate.
-2. Choose an approved working folder and a task card: Code, Troubleshoot, Documents or Search. Accuracy remains the policy priority. The bundled demo needs no model download.
-3. Enter the question and click Prepare my brief. A bounded child collects source and checks the task policy. One job runs at a time; the page shows the actual running/terminal state, not a fabricated progress percentage.
-4. Inspect the evidence map and source cards. Every excerpt includes its path, line range, full-file/excerpt hashes and captured-state limitation. Source text is inserted as text, never interpreted as HTML.
-5. Expand Why this model? or Why evidence only? and open a model card for details. Copy the evidence brief into Claude/ChatGPT, or download the captured result as JSON. Direct host connection remains unverified.
+```bash
+PYTHONPATH=src python3 -B -m shake_bake gui
+```
 
-Documents currently covers supported text files. PDF/image extraction, semantic embedding search and automated setup/downloads are not implemented. The interface is not a general chat model replacement.
+The bundled inert demo needs no model. Add owner-approved folders at launch with `--project my-project=/absolute/folder` and a routing policy outside source roots with `--policy /absolute/owner-policy.json`. The UI cannot expand these grants. Up to eight projects include the demo. `--no-browser` and `--port 8422` are available; an installed wheel provides `shake-bake-ui`.
 
-## Visuals and model disclosure
+Choose a project and task type, enter the request and select Prepare for my assistant. Exact excerpts, line ranges and full-file hashes are visible; the original request, job identity, route explanation, cutoffs and usage are inspectable. Copy and JSON export refer to the pinned result even while a new task runs or fails. The JSON also retains the recovered coordinator's full native result, evidence identities and excerpt hashes. No final diagnosis is implied.
 
-The interface uses an ink background, peach/mint/lavender accents, illustrated task cards, an animated conceptual handoff diagram and a live evidence map populated from captured source records. The top diagram explains the workflow; it is not inference telemetry. Source-map nodes open the corresponding source card. A four-step handoff panel reflects available results without claiming a completed host review.
+Documents currently means supported text files. PDF/image extraction, semantic embeddings and guided folder setup remain planned. Lexical selection is bounded and can omit relevant source. The current GUI does not provide explicit range selection.
 
-Model panels separate author-published benchmarks from owner-recorded local trials. They show model tag, benchmark source/date, candidate role, selection explanation when applicable and known limits. A published score does not become a local measurement or automatic qualification. Current shipped profiles remain candidates. Valid owner records are labeled as records; live identity checks remain separate.
+## Local AI modes
 
-The layout includes compact-screen CSS and reduced-motion rules, visible focus states, labeled form controls, keyboard-operable disclosures and source-map nodes. Text-size adjustments were made for readability. Browser rendering, phone layout, keyboard/focus behavior, clipboard/download interactions and animation behavior have not been visually or interactively verified in a browser.
+Local AI off disables new model use and cancels this controller's owned active runner. It does not stop the separate Ollama daemon or attest GPU cancellation. Off also prevents inventory requests. Best tested selects only eligible owner-record profiles on comparable reviewed trials; the shipped candidates do not qualify. Model availability and reported digest are checked on use. No model is downloaded and no cloud-provider fallback exists.
 
-## Local boundaries and state
+For an explicit diagnostic candidate trial:
 
-The server binds only to `127.0.0.1`. It validates Host, uses an HttpOnly/SameSite=Strict session cookie, checks same-origin CSRF headers on writes, limits request bodies and serves only a fixed asset allowlist. It is not a public hosted service or multi-user security boundary.
+```bash
+PYTHONPATH=src python3 -B -m shake_bake gui --allow-candidate-trials
+```
 
-The server admits at most eight active connections, applies a three-second initial idle timeout and a cooperative twelve-second absolute connection deadline. Excess connections close with a best-effort 503. A controller request that times out is cancelled if still queued. See [connection-limit scope and tests](connection-limits.md). These controls do not establish sustained-load or multi-user security qualification.
+In Model details, refresh inventory, choose Try a candidate, select an installed model and acknowledge unverified notes and the trusted cloud-disabled daemon requirement. The launch flag, enabled owner policy, acknowledgement and pinned digest are enforced outside the model. Native tools cannot select candidates or alter policy. A trial cannot promote a profile. Failures discard notes while retaining captured source; full task cancellation produces no new completed result.
 
-A persistent owner thread launches and supervises trusted preparation children, so a short HTTP-request thread ending does not kill a running job. Sources are not executed or modified. Temporary task streams remain outside inspected roots. The workbench uses approved project IDs rather than accepting arbitrary file paths through task requests.
+Candidate notes remain separate from source. Structured-output/reference checks do not establish correctness. The client requests `think: false` and `keep_alive: 0`; returned thinking/tool output is refused. The daemon remains separately trusted. Published catalog statistics retain their source links and a distinct statement that no local qualification is inferred.
 
-Add a folder at launch with `--project my-project=/absolute/folder`; up to eight total folders are supported, including the demo. A real owner policy must stay outside inspected roots. `--policy /absolute/owner-policy.json` selects it. Current setup uses these launch options; a native folder-picker/setup wizard remains future work.
+## State and boundaries
 
-The local-AI switch disables new model calls and cancels this workbench's active owned runner. It does not terminate the separate Ollama daemon or prove GPU-work cancellation. Session history and switch state last only for the running service; task access expires after five minutes/eight jobs. Question drafts are saved in browser localStorage. Captured source remains in session memory unless the user explicitly copies/downloads it.
+The browser remembers the original request draft, project/task/mode and selected candidate identity in localStorage. It does not persist captured source there. The checkbox follows the running controller's pause/policy state; pause and up to eight/five-minute jobs remain session-only. There is no SQLite/durable job recovery in this recovered runtime. Restart invalidates old task handles. Root grants and profile policy remain owner launch configuration.
 
-## Recorded preview
+The numeric-loopback service uses an HttpOnly SameSite cookie, Host/Origin/CSRF checks, a fixed asset allowlist and bounded request/connection handling. It is a trusted local owner session, not multi-user isolation or a public service. `--connection-file` publishes a private shared-adapter capability outside source; each host needs separate qualification. See [shared coordinator](shared-coordinator.md).
 
-`tools/export_preview.py` creates a self-contained HTML inspector from a real run of the bundled inert demo. The export has no project paths, session cookie, CSRF token, real-model output or user project data. It embeds CSS, SVG and JavaScript, labels itself Recorded demo preview, disables new-job/model operations, and supports inspecting the recorded evidence and model catalog. It is a design-review artifact, not a second live server.
+`tools/export_preview.py` captures only the bundled inert demo into self-contained HTML. It embeds local assets, marks the recorded state, refuses new jobs/model operations and permits inspecting/copying that recorded evidence. It is distinct from the live application.
 
-The export deliberately contains the demo code and captured hashes so the user can inspect real evidence rather than invented results. Its published model numbers retain source links and pending local-trial labels.
-
-## Verification and remaining limits
-
-121 program tests pass. Real local HTTP checks cover assets, session/Host/Origin/CSRF checks, task admission, a child surviving its request thread, source preservation, model disclosure, owned-job cancellation, file-path restrictions and offline-export data/escaping. JavaScript syntax checks pass. A no-index wheel build includes the required GUI/demo assets.
-
-Automatic approval review denied opening the local app in the cloud browser because the operation could expose application/project data to an unverified destination. No browser-policy workaround was attempted; the preview server was stopped. Consequently no desktop/mobile visual review or end-to-end browser interaction is claimed. Users can run the local app and inspect the recorded preview on their own device. Real Ollama inference, model accuracy, hosted handoffs and token savings remain pending.
+Current browser, wheel, model and SDK observations are in [validation](validation-0.4.0.dev5.md) and [design QA](../design-qa.md). The archive import record remains historical and unchanged. Formal accessibility, wider devices, independent security, held-out accuracy, actual native-host UX and savings remain open.

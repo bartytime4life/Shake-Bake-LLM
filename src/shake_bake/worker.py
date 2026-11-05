@@ -194,7 +194,7 @@ def organize(packet: Packet, model: str, *, port: int = 11434, seconds: float = 
     if len(system.encode("utf-8")) + len(source_text.encode("utf-8")) > MAX_CHAT_TEXT_BYTES:
         raise Refusal("worker_context_budget")
     result = _post("/api/chat", {"model": model, "stream": False, "format": schema,
-                   "options": generation_settings(), "keep_alive": "5m",
+                   "options": generation_settings(), "keep_alive": 0, "think": False,
                    "messages": [{"role": "system", "content": system}, {"role": "user", "content": source_text}]}, port, deadline)
     if result.get("remote_host") or result.get("remote_model"):
         raise Refusal("remote_worker_response_refused")
@@ -203,7 +203,7 @@ def organize(packet: Packet, model: str, *, port: int = 11434, seconds: float = 
     if result.get("done") is not True or result.get("done_reason") not in (None, "stop"):
         raise Refusal("worker_incomplete")
     message = result.get("message")
-    if not isinstance(message, dict) or message.get("tool_calls") or not isinstance(message.get("content"), str):
+    if not isinstance(message, dict) or message.get("tool_calls") or message.get("thinking") or not isinstance(message.get("content"), str):
         raise Refusal("worker_invalid_response")
     note = parse_json(message["content"])
     if not isinstance(note, dict) or set(note) != {"summary", "evidence_ids", "questions"}:

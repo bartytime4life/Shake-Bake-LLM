@@ -2,15 +2,15 @@
 
 A standalone local preparation helper for Claude or ChatGPT, with an Ollama worker option. Ask a repository question and get a traceable source handoff. Claude or ChatGPT supplies the demanding judgment and final answer. The diagnostic evidence path needs no model, network connection or runtime package beyond Python 3.11+.
 
-**Current source: `0.4.0.dev4`, imported from the tested standalone development package.** This replaces the separate `0.1.0.dev0` repository bootstrap while preserving it in Git history. The original runtime, tests, fixtures and technical documentation have been recovered; see the [import and publication review](docs/import/2026-11-05.md). This is a development preview, not a qualified production release.
+**Current source: `0.4.0.dev5`, built on the recovered standalone `0.4.0.dev4` package.** This replaces the separate `0.1.0.dev0` repository bootstrap while preserving it in Git history. The original runtime, tests, fixtures and technical documentation have been recovered; see the [import and publication review](docs/import/2026-11-05.md). This is a development preview, not a qualified production release.
 
 | Status | Scope |
 | --- | --- |
 | Implemented | Exact evidence collection, bounded lexical retrieval, optional loopback Ollama preparation, local workbench, owner-record model gates, shared GUI/adapter job coordination, scoped project access and cancellation. |
-| Verified in development | 121 program tests; synthetic retrieval and ten exposed evidence-only Task Lab cases. Model-service tests use simulations. Current import validation is recorded separately from historical receipts. |
-| Prepared, unqualified | Optional official-SDK MCP adapter and integration scripts; actual Claude/ChatGPT handoffs still need separate checks. |
-| Planned | Guided setup, automatic per-PC calibration, persistent profiles/preferences, durable job recovery and direct cloud-provider clients. |
-| Unverified or unmeasured | Owner-PC behavior, real-model accuracy/performance, actual host delivery, desktop/phone/browser interactions, Windows support, independent security qualification and whole-task cloud savings. |
+| Verified in development | 127 program tests; synthetic retrieval and ten exposed evidence-only Task Lab cases. Model-service tests use simulations. Current import validation is recorded separately from historical receipts. |
+| Prepared, unqualified | Official SDK 2.3.0 stdio/shared development checks; actual Claude/ChatGPT handoffs still need separate qualification. |
+| Planned | Guided setup, automatic per-PC calibration, persistent profiles, durable job recovery and direct cloud-provider clients. |
+| Unverified or unmeasured | Owner-PC behavior, real-model accuracy/performance, actual host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
 
 ## Get the source
 
@@ -36,7 +36,7 @@ The local web server now caps active connections, expires stalled requests and c
 
 ## Shared GUI and assistant work
 
-The [shared-coordinator guide](docs/shared-coordinator.md) connects the workbench and prepared adapter to the same routed jobs, captured evidence and session pause state. Private connection files and explicit project scopes are tested. The interface adds first-run help, job-origin labels and pinned completed-result identity. Actual SDK/host and browser interaction qualification remains pending.
+The [shared-coordinator guide](docs/shared-coordinator.md) connects the workbench and prepared adapter to the same routed jobs, captured evidence and session pause state. Private connection files and explicit project scopes are tested. The interface adds first-run help, job-origin labels and pinned completed-result identity. Actual host qualification remains pending. Current SDK/browser development checks are recorded separately in [validation](docs/validation-0.4.0.dev5.md).
 
 ## Open the visual workbench
 
@@ -47,11 +47,19 @@ PYTHONPATH=src python3 -B -m shake_bake doctor
 PYTHONPATH=src python3 -B -m shake_bake gui
 ```
 
-This opens the loopback-only browser interface at `http://127.0.0.1:8421`. It includes a bundled inert demo, task cards, an evidence map, expandable model statistics/selection details, exact source receipts, copy/download controls and a local-AI off switch. No model installation is needed for the evidence-only demo. Published benchmarks and owner-recorded local trials have separate labels.
+This opens the loopback-only browser interface at `http://127.0.0.1:8421`. The owner-selected graphite/amber interface includes a bundled inert demo, task choices, paired source excerpts, expandable model details, pinned request/job identity, copy/JSON export and a local-AI off switch. No model installation is needed for the evidence-only demo. Published benchmarks and owner-recorded local trials have separate labels.
 
 Add an approved source folder at launch with `--project my-project=/absolute/project/folder`; choose it from the interface. Use `--policy /absolute/path/outside-the-project/routing.json` for an owner policy. `--no-browser` starts the service without opening a browser; `--port 8422` selects a different local port. Installed packages also provide `shake-bake-ui`.
 
-The offline preview is a **recorded demo inspector**, with synthetic source and no model inference. It is a separate export; it does not run new jobs. Read [the workbench guide](docs/visual-workbench.md) for scope and setup. Cloud-browser visual QA was blocked by automatic approval review, so desktop/phone rendering and live browser interactions remain unverified. The backend and JavaScript syntax checks passed.
+The offline preview is a **recorded demo inspector**, with synthetic source and no model inference. It is a separate export; it does not run new jobs. Read [the workbench guide](docs/visual-workbench.md) for scope and setup. Current local Chrome interaction and comparison evidence is in [design-qa.md](design-qa.md). The earlier blocked cloud-browser attempt remains historical; current checks do not establish a formal accessibility audit.
+
+Start with evidence-only or **Best tested**; the shipped candidate profiles do not qualify for automatic model use. To enable an explicit diagnostic candidate trial on inert source:
+
+```bash
+PYTHONPATH=src python3 -B -m shake_bake gui --allow-candidate-trials
+```
+
+In Model details, refresh installed models, choose **Try a candidate — unqualified**, select a pinned installed model and acknowledge the trial. No download or daemon start occurs. Selection preferences persist in this browser; job history and pause remain session-only. The owner launch flag and enabled routing policy are required. Candidate runs never promote profiles.
 
 ## Prepare a real model trial
 
@@ -98,7 +106,7 @@ The new Linux `HelperSession` accepts tasks only for owner-configured projects. 
 
 Every completed preparation result sets `final_answer_ready=false` and `requires_host_reasoning=true`. Worker confidence is never a verification signal. Tests check that an injected incorrect note stays unverified and cannot remove source. They do not prove that a model detects the incorrect note.
 
-The optional `mcp` extra and `shake-bake-mcp` entry point prepare an official-SDK stdio adapter. **SDK interoperability and actual Claude/ChatGPT connections are unverified.** The SDK is absent in this development environment. See [helper-contract.md](docs/helper-contract.md) for the five methods, candidate launch command and qualification gate. `integration/mcp_shared_smoke.py` prepares the shared-path SDK check; the legacy `mcp_smoke.py` is a separate diagnostic. Neither is counted in the passed base suite.
+The optional `mcp` extra and `shake-bake-mcp` entry point prepare an official-SDK stdio adapter. The installed official SDK 2.3.0 stdio/shared replay is recorded in [current validation](docs/validation-0.4.0.dev5.md); actual Claude/ChatGPT connections remain unqualified. See [helper-contract.md](docs/helper-contract.md) for the five methods, candidate launch command and qualification gate. `integration/mcp_shared_smoke.py` prepares the shared-path SDK check; the legacy `mcp_smoke.py` is a separate diagnostic. Neither is counted in the passed base suite.
 
 ## Accuracy-gated model choice
 
@@ -123,7 +131,7 @@ PYTHONPATH=src python3 -B -m unittest discover -s tests -v
 PYTHONPATH=src python3 -B benchmarks/evaluate_selection.py
 ```
 
-The current candidate passed 121 program tests. HTTP model tests use a simulated loopback service, not a real model; GUI tests exercise the actual loopback HTTP server and real bounded preparation children. Routing tests use explicitly fabricated qualification records. The task lab supplies ten exposed jobs with independent grading keys outside each fixture root. All ten retain their required source spans on the diagnostic path. This is mechanical evidence coverage, not model accuracy. The saved previous candidate retained the required spans in nine of ten cases; the distant-condition case motivated the two-window retrieval change.
+The current candidate passed 127 program tests. The original 121 tests remain; six new synthetic checks cover candidate acknowledgement, exact evidence, digest changes, pause/inventory and thinking-output refusal. See [current validation](docs/validation-0.4.0.dev5.md). HTTP model tests use a simulated loopback service, not a real model; GUI tests exercise the actual loopback HTTP server and real bounded preparation children. Routing tests use explicitly fabricated qualification records. The task lab supplies ten exposed jobs with independent grading keys outside each fixture root. All ten retain their required source spans on the diagnostic path. This is mechanical evidence coverage, not model accuracy. The saved previous candidate retained the required spans in nine of ten cases; the distant-condition case motivated the two-window retrieval change.
 
 ```bash
 PYTHONPATH=src python3 -B benchmarks/run_task_lab.py --evidence-only

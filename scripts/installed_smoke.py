@@ -4,6 +4,7 @@ import sys
 import tempfile
 import threading
 import time
+import tomllib
 from pathlib import Path
 
 import shake_bake
@@ -12,7 +13,7 @@ from shake_bake.shared import ConnectionPublication, SharedClient
 
 checkout = Path(__file__).resolve().parent.parent
 assert not Path(shake_bake.__file__).resolve().is_relative_to(checkout), "Run with installed wheel and PYTHONPATH unset."
-assert shake_bake.__version__ == "0.4.0.dev4"
+assert shake_bake.__version__ == tomllib.loads((checkout / "pyproject.toml").read_text())["project"]["version"]
 with tempfile.TemporaryDirectory() as directory:
     controller = Controller({"starter-demo": DEMO})
     server = WorkbenchServer(("127.0.0.1", 0), controller, adapter_projects=("starter-demo",))

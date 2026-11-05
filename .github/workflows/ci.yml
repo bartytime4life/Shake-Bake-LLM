@@ -49,3 +49,10 @@ jobs:
           cd /tmp
           env -u PYTHONPATH /tmp/shake-bake-installed/bin/shake-bake doctor
           env -u PYTHONPATH /tmp/shake-bake-installed/bin/python "$GITHUB_WORKSPACE/scripts/installed_smoke.py"
+      - name: Verify optional official SDK over stdio and shared service
+        run: |
+          /tmp/shake-bake-installed/bin/python -m pip install --require-hashes -r requirements/mcp.lock
+          cd /tmp
+          env -u PYTHONPATH /tmp/shake-bake-installed/bin/python "$GITHUB_WORKSPACE/integration/mcp_subprocess_smoke.py"
+          env -u PYTHONPATH /tmp/shake-bake-installed/bin/python "$GITHUB_WORKSPACE/integration/mcp_shared_smoke.py"
+          env -u PYTHONPATH /tmp/shake-bake-installed/bin/python "$GITHUB_WORKSPACE/integration/mcp_smoke.py"

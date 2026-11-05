@@ -153,7 +153,7 @@ class HelperSession:
             raise Refusal("unknown_or_expired_task")
         return job
 
-    def start_task(self, project_id: str, task: str, *, task_kind: str = "code", disabled: bool = False) -> dict:
+    def start_task(self, project_id: str, task: str, *, task_kind: str = "code", disabled: bool = False, candidate: dict | None = None) -> dict:
         with self._lock:
             if self._closed:
                 raise Refusal("helper_closed")
@@ -163,6 +163,12 @@ class HelperSession:
                 raise Refusal("invalid_request")
             if task_kind not in ("code", "troubleshoot", "documents", "search") or type(disabled) is not bool:
                 raise Refusal("invalid_task_options")
+            if candidate is not None:
+                if self.policy_path is None or disabled or not isinstance(candidate, dict) or set(candidate) != {"model", "digest", "acknowledged"} or candidate["acknowledged"] is not True:
+                    raise Refusal("invalid_candidate_trial")
+                validate_settings(candidate["model"], self.port)
+                if not isinstance(candidate["digest"], str) or not re.fullmatch(r"[a-f0-9]{64}", candidate["digest"]):
+                    raise Refusal("invalid_expected_digest")
             for job in self._jobs.values():
                 self._refresh(job)
             if any(job.state in ACTIVE for job in self._jobs.values()):
@@ -178,6 +184,8 @@ class HelperSession:
                 request = {"root": str(self._projects[project_id]), "task": task, "model": self.model, "port": self.port}
                 if self.policy_path is not None:
                     request.update(policy_path=str(self.policy_path), task_kind=task_kind, disabled=disabled)
+                    if candidate is not None:
+                        request["candidate"] = candidate
                 raw = json.dumps(request, ensure_ascii=False).encode("utf-8")
                 if len(raw) > 128 * 1024:
                     raise Refusal("task_input_too_large")

@@ -33,10 +33,17 @@ def main() -> int:
         from pathlib import Path
         request = parse_json(raw.decode("utf-8"))
         base = {"root", "task", "model", "port"}
-        if not isinstance(request, dict) or set(request) not in (base, base | {"policy_path", "task_kind", "disabled"}):
+        routed = base | {"policy_path", "task_kind", "disabled"}
+        if not isinstance(request, dict) or set(request) not in (base, routed, routed | {"candidate"}):
             raise RuntimeError("invalid request")
         try:
-            if "policy_path" in request:
+            if "candidate" in request:
+                from .routing import candidate_trial
+                decision, brief = candidate_trial(Path(request["root"]), request["task"], request["task_kind"],
+                    request["candidate"], port=request["port"])
+                result = brief.to_dict()
+                result["routing"] = decision.to_dict()
+            elif "policy_path" in request:
                 from .routing import assist
                 decision, brief = assist(Path(request["root"]), request["task"], request["task_kind"],
                                          policy_path=Path(request["policy_path"]), port=request["port"], disabled=request["disabled"])

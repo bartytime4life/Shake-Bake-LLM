@@ -1,6 +1,7 @@
 """Create an offline, recorded-demo inspector; never include user project data."""
 
 import argparse
+import base64
 import json
 from pathlib import Path
 import time
@@ -38,6 +39,10 @@ def render_preview(record):
     html=(ASSETS/"index.html").read_text()
     html=html.replace('<link rel="stylesheet" href="/styles.css">', '<style>'+css+'</style>')
     html=html.replace('<script src="/app.js" defer></script>', '')
+    for icon in (ASSETS / "icons").glob("*.svg"):
+        inline = "data:image/svg+xml;base64," + base64.b64encode(icon.read_bytes()).decode()
+        html = html.replace("/icons/" + icon.name, inline)
+        script = script.replace("/icons/" + icon.name, inline)
     return html.replace('</body>', '<script>window.__SB_RECORDED_PREVIEW__='+payload+';</script><script>'+script+'</script></body>')
 
 

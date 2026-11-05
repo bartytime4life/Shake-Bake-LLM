@@ -3,10 +3,12 @@
 from email.parser import BytesParser
 from pathlib import Path
 from zipfile import ZipFile
+import tomllib
 
 root = Path(__file__).resolve().parent.parent
-wheels = list((root / "dist").glob("*.whl"))
-assert len(wheels) == 1, "Use an empty dist directory and build exactly one wheel."
+version = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
+wheels = list((root / "dist").glob(f"shake_and_bake_assistant-{version}-*.whl"))
+assert len(wheels) == 1, "Build exactly one wheel for the current package version."
 with ZipFile(wheels[0]) as archive:
     names = archive.namelist()
     source = root / "src"
@@ -24,7 +26,7 @@ with ZipFile(wheels[0]) as archive:
     metadata_name, = [p for p in names if p.endswith(".dist-info/METADATA")]
     metadata = BytesParser().parsebytes(archive.read(metadata_name))
     assert metadata["Name"] == "shake-and-bake-assistant"
-    assert metadata["Version"] == "0.4.0.dev4"
+    assert metadata["Version"] == version
     assert metadata["License-Expression"] == "MIT"
     requirements = metadata.get_all("Requires-Dist", [])
     assert len(requirements) == 1 and requirements[0].startswith("mcp") and 'extra == "mcp"' in requirements[0], requirements

@@ -1,131 +1,169 @@
 'use strict';
-const $ = id => document.getElementById(id);
-const icon = name => { const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); const use=document.createElementNS(svg.namespaceURI,'use'); use.setAttribute('href','#i-'+name); svg.append(use); return svg; };
-const el = (tag,cls,text) => { const node=document.createElement(tag); if(cls)node.className=cls; if(text!==undefined)node.textContent=text; return node; };
-const preview=window.__SB_RECORDED_PREVIEW__ || null;
-let state=null, taskKind='code', activeTask=null, currentResult=null, pollTimer=null, toastTimer=null;
-const errors={helper_busy:'One job is already running. Let it finish or cancel it first.',workbench_busy:'The local workbench is busy. Wait briefly, then check the current job in Activity.',workbench_request_timeout:'The local request timed out. Check Activity before starting another job; any previous brief is retained.',invalid_request:'Enter a question for your brief.',invalid_project_id:'Choose an approved working folder.',project_not_allowed:'This folder is not available to this workbench.',request_size:'That request is too large. Try a shorter question.',session_required:'Reload the workbench to restore its local session.',request_not_allowed:'The local session expired. Reload the workbench.',workbench_unavailable:'The workbench could not complete that request. Your source is unchanged.',unknown_or_expired_task:'This brief is no longer retained. Prepare a fresh one.'};
-function friendly(code){return errors[code] || 'The task could not be completed ('+String(code)+'). Your source is unchanged.';}
-async function api(path,payload){
-  if(preview){if(path==='/api/state')return preview.state;if(path==='/api/tasks/'+preview.result.task_id)return preview.result;throw new Error('recorded_preview_only');}
-  const options={credentials:'same-origin',headers:{}};
-  if(payload!==undefined){options.method='POST';options.headers={'Content-Type':'application/json','X-SB-CSRF':state?.csrf_token||''};options.body=JSON.stringify(payload);}
-  const response=await fetch(path,options);const value=await response.json();if(!response.ok)throw new Error(value.error||'workbench_unavailable');return value;
+const $ = (id) => document.getElementById(id);
+let csrf = '', state = null, active = null, pinned = null, models = [], timer = null, polling = false;
+let inventoryLoading = false, noticeTimer = null, historySignature = '', serviceTimer = null;
+function message(text, error = false) { clearTimeout(noticeTimer);$('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text;if(text&&!error)noticeTimer=setTimeout(()=>{$('notice').hidden=true;},5000); }
+const preview = window.__SB_RECORDED_PREVIEW__ || null;
+let nativeState = null;
+function savedPreferences() {
+  try { const p=JSON.parse(localStorage.getItem('shake-bake-preferences')||'{}');return p&&typeof p==='object'?p:{}; } catch { return {}; }
 }
-function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500);}
-function formatBytes(number){return number>=1024?(number/1024).toFixed(1)+' KiB':number+' B';}
-function setKind(kind){taskKind=kind;for(const button of document.querySelectorAll('[data-kind]')){const selected=button.dataset.kind===kind;button.classList.toggle('selected',selected);button.setAttribute('aria-checked',String(selected));}if(state)renderModels();saveDraft();}
-function saveDraft(){if(preview)return;try{localStorage.setItem('sb-workbench-draft',JSON.stringify({task:$('task').value,kind:taskKind,project:$('project').value}));}catch{}}
-function projectNote(){const project=state?.projects.find(p=>p.id===$('project').value);$('project-note').textContent=project?.demo?'Starter demo · an inert source fixture, read only.':project?.path||'';}
-function showConnection(value){
- const connected=value?.state==='connected';$('connection-title').textContent=connected?'Ollama is reachable':value?.state==='unavailable'?'Ollama is unavailable':'Ollama not checked';
- $('connection-caption').textContent=connected?value.models.length+' model entries reported. Availability does not establish qualification.':value?.state==='unavailable'?'Start your local Ollama service to check models. Evidence preparation is still available.':'Evidence collection works without a model.';
+function viewState(value) {
+  nativeState=value;
+  const saved=savedPreferences();
+  const project=value.projects.some(p=>p.id===saved.project_id)?saved.project_id:value.projects[0].id;
+  const kind=['code','troubleshoot','documents','search'].includes(saved.task_kind)?saved.task_kind:'code';
+  const recent=value.recent.map(r=>({...r,job_id:r.task_id,request_preview:r.task,created_at:new Date(r.created*1000).toISOString(),status:r.state==='DONE'?'prepared':r.state.toLowerCase()}));
+  return {version:value.version,csrf:value.csrf_token,projects:value.projects.map(p=>p.id),
+    preferences:{project_id:project,task_kind:kind,ai_mode:value.local_ai_enabled?(saved.ai_mode==='trial'?'trial':'best'):'off',model:saved.model||null,digest:saved.digest||null},
+    recent,active:recent.find(r=>r.status==='running')||null,local_ai_allowed:value.policy.enabled,local_ai_paused:!value.local_ai_enabled,
+    pipeline_sha256:value.pipeline_id,shared_native:value.shared_native===true,allow_candidate_trials:value.allow_candidate_trials};
 }
-function renderModels(){
- const container=$('model-cards');container.replaceChildren();
- for(const model of state.catalog.models){
-   const button=el('button','model-card');button.type='button';button.setAttribute('aria-label','Model details: '+model.title);
-   const header=el('div','model-card-header');header.append(el('span','model-avatar',model.initial));const name=el('div');name.append(el('strong',null,model.title),el('small',null,model.publisher));header.append(name);
-   const valid=state.policy.profiles.some(p=>p.model===model.tag&&p.task_kind===taskKind&&p.status==='review_record_valid');
-   button.append(header,el('span','candidate-badge',valid?'Review record valid · identity checked on use':'Candidate · local trial pending'),el('p',null,model.role));
-   const foot=el('div','model-card-footer');foot.append(el('span',null,model.download),el('span',null,'Explore model  ↗'));button.append(foot);button.addEventListener('click',()=>showModel(model.tag));container.append(button);
- }
+function viewJob(value) {
+  const meta=nativeState?.recent.find(r=>r.task_id===value.task_id);
+  const base={job_id:value.task_id,project_id:value.project_id||meta?.project_id||$('project').value,
+    completed_at:new Date((value.created_at||meta?.created||Date.now()/1000)*1000).toISOString(),native_result:value};
+  if(value.state!=='DONE'||['DENY','ERROR'].includes(value.outcome))return {...base,status:value.state==='RUNNING'?'running':value.state==='CANCELLED'?'cancelled':'failed',error:{message:value.code||value.state}};
+  const route=value.routing||{}, evidence=(value.evidence||[]).map(e=>({...e,content:e.text}));
+  const note=value.worker;
+  return {...base,status:evidence.length?'prepared':'incomplete',packet:{original_request:value.original_request,task_kind:value.task_kind,started_at:base.completed_at,evidence,
+    gaps:evidence.length?[]:[{code:'no_usable_evidence',message:'No usable source matched within the scan. Clarify the request; this is not an exhaustive review.'}],
+    routing:{...route,status:note?(route.mode==='candidate_trial'?'candidate_notes':'qualified_profile_notes'):route.model||value.worker_error&&route.reason!=='no_qualified_profile'&&route.reason!=='local_ai_disabled'?'abstained':'evidence_only',reason:route.why||value.worker_error||'Exact evidence only.',final_answer_ready:false},
+    model_notes:note?{notes:[{text:note.summary,evidence_ids:note.evidence_ids}],uncertainties:note.questions}:null,
+    receipt:{files_examined:value.files_examined,source_bytes_read:value.source_bytes_read,excerpt_bytes:value.selected_excerpt_bytes,local_server_reported_usage:note?.usage||null,cloud_tokens:null,token_savings:null,
+      discovery:{files_read:value.files_examined,cutoffs:value.cutoffs||[],refusals:value.exclusions||{}}},
+    limitations:['Selected excerpts are not a complete repository review.','Source identities refer to captured bytes; later changes require a fresh task.','Model notes are unverified. Real host delivery, accuracy, hardware calibration and savings remain unqualified.','Jobs are retained only in this running session, up to eight and approximately five minutes.']}};
 }
-function showModel(tag){
- const model=state.catalog.models.find(m=>m.tag===tag)||{tag,title:tag,publisher:'Owner-configured model',role:'Local preparation profile',download:'Package size not recorded',stats:[],source:null,limits:'Actual local accuracy and memory use require qualification.'};
- const panel=$('model-dialog-content');panel.replaceChildren();panel.append(el('span','eyebrow','MODEL DETAILS · INSPECT THE CHOICE'),el('h2',null,model.title),el('div','tag',model.tag),el('p',null,model.role));
- panel.append(el('h3',null,'Why it is being considered'),el('p',null,model.reason||'This model is listed by the owner as a candidate. No winning result is inferred.'));
- const chosen=currentResult?.routing?.model===tag;
- if(chosen){panel.append(el('h3',null,'Why it was selected for this brief'),el('p',null,currentResult.routing.why));}
- panel.append(el('h3',null,'Published statistics'));
- if(model.stats.length){const table=el('table');const head=el('tr');head.append(el('th',null,'Author-reported benchmark'),el('th',null,'Reported score'));table.append(head);for(const metric of model.stats){const row=el('tr');row.append(el('td',null,metric.name),el('td',null,metric.value));table.append(row);}panel.append(table);}
- else panel.append(el('p',null,'No published statistics are recorded for this exact entry.'));
- panel.append(el('p','micro','Publisher figures use their own test setup. They are not measurements of this quantized model on your PC. Checked '+(model.checked||'not recorded')+'.'));
- if(model.source){const link=el('a',null,'Open the primary benchmark source ↗');link.href=model.source;link.target='_blank';link.rel='noopener noreferrer';panel.append(link);}
- panel.append(el('h3',null,'Local results for this task'));
- const detailKind=chosen?(currentResult.task_kind||taskKind):taskKind;
- const profile=state.policy.profiles.find(p=>p.model===tag&&p.task_kind===detailKind&&p.evaluation);
- const local=el('div','local-pending');
- if(profile){const record=profile.evaluation;local.append(el('p',null,'Owner-recorded trial: '+Math.round(record.accuracy*100)+'% final-task accuracy across '+record.case_count+' cases. Dataset: '+record.dataset_id+'.'),el('p',null,'Record status: '+profile.status+'. '+(profile.reason||'Live model availability is checked when a task runs.')));}
- else local.append(el('p',null,'No reviewed local trial is recorded for this task. Accuracy, speed and memory use have not been measured here.'));
- panel.append(local);
- const details=el('details');const summary=el('summary',null,'Version, hardware notes & limits');details.append(summary,el('p',null,'Registry tag: '+model.tag+'. '+model.download+'. Download size is not runtime VRAM.'),el('p',null,model.limits));
- const digest=currentResult?.worker?.observed_model_digest;if(chosen&&digest)details.append(el('p',null,'Observed local tag digest: '+digest));
- details.append(el('p',null,'A profile needs a reviewed held-out trial, a matching pipeline and model identity, and no recorded critical errors before automatic selection. Records and metadata are not a guarantee of future answers.'));panel.append(details);
- $('model-dialog').showModal();
+async function api(path, body) {
+  if(path==='/api/preferences'){if(!preview)localStorage.setItem('shake-bake-preferences',JSON.stringify(body));return body;}
+  if(preview){if(path==='/api/state')return viewState(preview.state);if(path==='/api/result'&&body.job_id===preview.result.task_id)return viewJob(preview.result);throw new Error('This is a recorded inert demo. New tasks run in the local application.');}
+  let target=path, payload=body;
+  if(path==='/api/result'){target='/api/tasks/'+body.job_id;payload=undefined;}
+  if(path==='/api/start'){
+    await api('/api/pause',{paused:body.ai_mode==='off'});
+    target='/api/tasks';payload={project_id:body.project_id,task:body.request,task_kind:body.task_kind};
+    if(body.ai_mode==='trial')payload.candidate={model:body.model,digest:body.digest,acknowledged:$('trial-ack').checked};
+  }
+  if(path==='/api/cancel'){target='/api/tasks/'+body.job_id+'/cancel';payload={};}
+  if(path==='/api/pause'){target='/api/settings';payload={enabled:!body.paused};}
+  if(path==='/api/models')target='/api/inventory';
+  const options=payload===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-SB-CSRF':csrf},body:JSON.stringify(payload)};
+  const response=await fetch(target,{credentials:'same-origin',cache:'no-store',...options});
+  const data=await response.json();
+  if(!response.ok||data.error){const error=new Error('The local request could not complete ('+(data.error||response.status)+'). Your source is unchanged.');error.code=data.error;throw error;}
+  if(path==='/api/state')return viewState(data);
+  if(path==='/api/result')return viewJob(data);
+  if(path==='/api/start')return {job_id:data.task_id,project_id:body.project_id,status:'running'};
+  if(path==='/api/models')return {models:data.models.map(m=>({model:m.name,digest:m.digest,quantization:'installed artifact'}))};
+  return data;
 }
-function renderState(value){
- const previous=$('project').value;state=value;$('version').textContent='v'+value.version;
- const select=$('project');select.replaceChildren();for(const p of value.projects){const option=el('option',null,p.label+(p.demo?' · demo':''));option.value=p.id;select.append(option);}if(value.projects.some(p=>p.id===previous))select.value=previous;projectNote();
- $('local-ai').checked=value.local_ai_enabled;
- const valid=value.policy.profiles.filter(p=>p.status==='review_record_valid').length;
- $('profile-count').textContent=valid?valid+' profile records match this build':'No qualified local profile yet';
- $('profile-caption').textContent=valid?'Live model identity will be checked before preparation.':'Candidates stay candidates until reviewed accuracy trials pass.';
- showConnection(value.inventory);renderModels();
- const recent=$('recent-list');recent.replaceChildren();
- for(const item of value.recent){const button=el('button','recent-button');button.type='button';button.append(el('strong',null,item.task),el('small',null,(item.entry_point==='assistant'?'Assistant':'Workspace')+' · '+item.task_kind+' · '+item.state.toLowerCase()));button.addEventListener('click',async()=>{if(item.state==='RUNNING'){activeTask=item.task_id;setBusy(true);pollJob();return;}try{showResult(await api('/api/tasks/'+item.task_id));$('brief-section').scrollIntoView({behavior:'smooth',block:'start'});}catch(error){toast(friendly(error.message));}});recent.append(button);}
- if(!value.recent.length)recent.append(el('p','muted','Your first brief starts here.'));
+function renderCatalog() {
+  const box=$('catalog');box.replaceChildren();
+  for(const model of nativeState.catalog.models){
+    const title=document.createElement('h3');title.textContent=model.title+' · '+model.publisher;box.append(title);
+    const text=document.createElement('p');text.className='small muted';text.textContent='Published statistics: '+(model.stats.map(s=>s.name+': '+s.value).join('; ')||'not recorded')+'. Publisher setup differs from this installed artifact. No reviewed local trial is inferred.';box.append(text);
+    const limits=document.createElement('p');limits.className='small muted';limits.textContent=model.limits;box.append(limits);
+    if(model.source){const link=document.createElement('a');link.textContent='Primary publisher source';link.href=model.source;link.target='_blank';link.rel='noopener noreferrer';box.append(link);}
+  }
+  for(const profile of nativeState.policy.profiles){if(!profile.evaluation)continue;const p=document.createElement('p');p.className='small muted';const e=profile.evaluation;p.textContent=`Owner record: ${profile.id} · ${profile.task_kind} · ${profile.status} · ${Math.round(e.accuracy*100)}% across ${e.case_count} cases (${e.dataset_id}). ${profile.reason||'Live identity is checked on use.'} This is an owner declaration, not an authenticated certificate.`;box.append(p);}
 }
-async function refreshState(){renderState(await api('/api/state'));}
-function resultContext(message=''){const label=$('result-request');label.textContent=currentResult?'Brief for: '+(currentResult.original_request.length>240?currentResult.original_request.slice(0,240)+'…':currentResult.original_request)+' · Job '+currentResult.task_id.slice(0,8)+(message?' · '+message:''):message||'A completed brief will show its original request and job identity here.';}
-function setBusy(busy){$('prepare').disabled=busy;$('job-progress').hidden=!busy;$('task').disabled=busy;$('project').disabled=busy;for(const card of document.querySelectorAll('[data-kind]'))card.disabled=busy||Boolean(preview);$('step-source').classList.toggle('preparing',busy);if(busy){resultContext(currentResult?'Showing the previous completed brief while a new job runs.':'Preparing a new brief.');$('result-state').textContent=currentResult?'Previous brief retained':'Preparing';$('result-state').className='status-pill attention';}}
-async function startTask(event){event.preventDefault();$('form-error').hidden=true;if(preview){showResult(preview.result);toast('Showing the recorded demo. New tasks run in the local app.');return;}if(!$('task').value.trim())return;saveDraft();setBusy(true);try{const started=await api('/api/tasks',{project_id:$('project').value,task:$('task').value,task_kind:taskKind});activeTask=started.task_id;pollJob();}catch(error){setBusy(false);resultContext(currentResult?'A new job was not confirmed; this is the previous brief.':'The new job was not confirmed. Check Activity.');$('form-error').textContent=friendly(error.message);$('form-error').hidden=false;}}
-async function pollJob(){
- clearTimeout(pollTimer);if(!activeTask)return;const identifier=activeTask;
- try{const result=await api('/api/tasks/'+identifier);if(activeTask!==identifier)return;if(result.state==='RUNNING'){pollTimer=setTimeout(pollJob,750);return;}activeTask=null;setBusy(false);showResult(result);await refreshState();}
- catch(error){activeTask=null;setBusy(false);resultContext(currentResult?'The latest status could not be confirmed; this is the previous brief.':'Check Activity to recover the latest job status.');$('form-error').textContent=friendly(error.message);$('form-error').hidden=false;}
+
+function taskKind() { return document.querySelector('input[name="task-kind"]:checked').value; }
+function selectedModel() { const option = $('model').selectedOptions[0]; return {model:option?.value || null,digest:option?.dataset.digest || null}; }
+function mode() { return $('local-ai').checked ? $('ai-mode').value : 'off'; }
+function modelView() {
+  $('candidate-controls').hidden = $('ai-mode').value !== 'trial';
+  const selected = selectedModel();
+  $('model-identity').textContent = selected.model ? `Saved candidate · digest ${selected.digest} · availability checked only on refresh/run.` : 'No installed model selected.';
+  $('mode-summary').textContent = !$('local-ai').checked ? 'Best accuracy · Local AI off' : $('ai-mode').value === 'trial' ? 'Explicit candidate trial · unqualified' : 'Best accuracy · qualified profiles only';
+  $('model-help').textContent = state?.allow_candidate_trials ? 'Your selected candidate persists in this browser, including when Ollama is offline. Notes still require review.' : 'Candidate trials require the owner launch flag --allow-candidate-trials. Best tested uses reviewed profiles only.';
 }
-function drawMap(records){
- const svg=$('evidence-map');svg.replaceChildren();const ns=svg.namespaceURI;
- const add=(tag,attrs,text,parent=svg)=>{const node=document.createElementNS(ns,tag);for(const [key,value]of Object.entries(attrs||{}))node.setAttribute(key,String(value));if(text!==undefined)node.textContent=text;parent.append(node);return node;};
- const positions=records.length>2?[[16,22],[16,144],[405,22],[405,144]]:[[28,83],[398,83]];
- records.forEach((record,index)=>{const [x,y]=positions[index];const start=x<280?x+135:x;add('path',{d:`M${start} ${y+22} C${x<280?215:350} ${y+22},${x<280?210:350} 105,280 105`,class:'map-link'});});
- add('circle',{cx:280,cy:105,r:46,class:'map-center'});add('text',{x:280,y:103,'text-anchor':'middle',class:'map-label'},'Your brief');add('text',{x:280,y:120,'text-anchor':'middle',class:'map-small'},records.length+' excerpts');
- records.forEach((record,index)=>{const [x,y]=positions[index];const g=add('g',{class:'map-source',role:'button',tabindex:0,'aria-label':'Inspect '+record.path+' '+record.evidence_id});add('rect',{x,y,width:135,height:44,rx:9},undefined,g);add('text',{x:x+10,y:y+16},record.evidence_id+' · captured source',g);const path=record.path.length>22?'…'+record.path.slice(-21):record.path;add('text',{x:x+10,y:y+32},path,g);const select=()=>{for(const card of document.querySelectorAll('.evidence-card'))card.classList.remove('highlight');const card=$('source-'+record.evidence_id);card.classList.add('highlight');card.scrollIntoView({behavior:'smooth',block:'center'});};g.addEventListener('click',select);g.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});});
+function saveDraft(){if(preview)return;try{localStorage.setItem('sb-workbench-draft',JSON.stringify({task:$('request').value,kind:taskKind(),project:$('project').value}));}catch{/* browser storage is optional */}}
+function preferences() { return {project_id:$('project').value, task_kind:taskKind(), ai_mode:mode(), ...selectedModel()}; }
+async function savePreferences() { saveDraft();try { await api('/api/preferences', preferences()); } catch(error) { message(error.message, true); } }
+function controls() {
+  $('prepare').disabled = !!active || !state;
+  $('stop').disabled = !active;
+  $('progress').textContent = active ? 'Preparing evidence and bounded local notes…' : '';
+  $('copy').disabled = !pinned?.packet;
+  $('download').disabled = !pinned?.packet;
 }
-function showResult(result){
- if(result.state!=='DONE'){const cancelled=result.state==='CANCELLED';toast(cancelled?'Job cancelled. Source files are unchanged.':'The job ended without a completed brief. Source files are unchanged.');resultContext(currentResult?'The latest job did not complete; this is the previous brief.':'The latest job did not complete.');$('result-state').textContent=currentResult?'Previous brief retained':cancelled?'Cancelled':result.state;return;}
- if(result.outcome==='DENY'||result.outcome==='ERROR'){toast(friendly(result.code||result.worker_error||'workbench_unavailable'));resultContext(currentResult?'The latest job failed; this is the previous brief.':'The latest job could not prepare a brief.');$('result-state').textContent=currentResult?'Previous brief retained':'Could not prepare';$('result-state').className='status-pill attention';return;}
- currentResult=result;$('full-request').textContent=result.original_request;resultContext();$('empty-result').hidden=true;$('result-content').hidden=false;
- const records=result.evidence||[];const route=result.routing||{};
- $('metric-evidence').textContent=records.length;$('metric-files').textContent=result.files_examined??'—';$('metric-bytes').textContent=formatBytes(result.selected_excerpt_bytes||0);
- $('result-state').textContent=result.worker?'Evidence + unverified notes':'Evidence-only brief';$('result-state').className='status-pill complete';
- $('choice-title').textContent=route.model||'Evidence-only handoff';$('choice-subtitle').textContent=route.model?'Chosen from reviewed profile records.':'No qualified model was selected.';
- $('why-label').textContent=route.model?'Why this model?':'Why evidence only?';$('why-text').textContent=route.why||'Exact evidence is preserved for the host to assess.';
- $('why-facts').replaceChildren(el('span',null,'Local model'),el('strong',null,route.model?'Reviewed record selected':'No qualified profile selected'));
- if(route.model){const details=el('button','text-button','Inspect selected model ↗');details.addEventListener('click',()=>showModel(route.model));$('why-facts').append(details);}
- const note=$('result-note');note.replaceChildren();
- if(result.worker){note.append(el('strong',null,'Worker interpretation · unverified'),el('span',null,result.worker.summary));}
- else note.append(el('strong',null,records.length?'Evidence collected. The host makes the judgment.':'No usable source matched this request.'),el('span',null,route.why||'Inspect the scan scope and request more evidence if needed.'));
- drawMap(records);const list=$('evidence-list');list.replaceChildren();
- for(const record of records){const card=el('article','evidence-card');card.id='source-'+record.evidence_id;const header=el('div','evidence-header');header.append(el('span','evidence-id',record.evidence_id),el('strong','evidence-path',record.path),el('span','evidence-range','Lines '+record.start_line+'–'+record.end_line));const code=el('div','source-code');const lineCount=record.end_line-record.start_line+1;code.append(el('pre','source-gutter',Array.from({length:lineCount},(_,i)=>String(record.start_line+i)).join('\n')),el('pre','source-text',record.text));const hash=el('details','hash-detail');hash.append(el('summary',null,'Inspect source identity'),el('code',null,'File SHA-256: '+record.file_sha256),el('code',null,'Excerpt SHA-256: '+record.excerpt_sha256),el('p',null,'Captured snapshot; the current file is not being revalidated.'));card.append(header,code,hash);list.append(card);}
- const scope=$('scope-content');scope.replaceChildren(el('p',null,'Coverage: selected excerpts only. This is not a complete repository review.'),el('p',null,'Scan cutoffs: '+((result.cutoffs||[]).join(', ')||'none reached')+'.'),el('p',null,'Exclusions: '+JSON.stringify(result.exclusions||{})),el('p',null,'Source bytes read: '+(result.source_bytes_read??'not recorded')+'.'),el('p',null,'Cloud usage and token savings are not measured. No direct cloud-provider client is active.'),el('code',null,'Snapshot: '+(result.snapshot_id||'No captured source snapshot')));
- if(result.worker?.questions?.length)scope.append(el('p',null,'Worker questions: '+result.worker.questions.join(' ')));
- for(const id of ['step-source','step-model','step-evidence','step-host'])$(id).classList.remove('done','attention','preparing');
- $('step-source').classList.add(records.length?'done':'attention');$('step-model').classList.add(result.worker?'done':'attention');$('step-evidence').classList.add(records.length?'done':'attention');$('step-host').classList.add('attention');
+function renderHistory(recent) {
+  const signature=JSON.stringify(recent)+pinned?.job_id;if(signature===historySignature)return;historySignature=signature;
+  const parent = $('recent-list'); parent.replaceChildren();
+  if (!recent.length) { const p=document.createElement('p'); p.className='small muted'; p.textContent='Your completed briefs will appear here.'; parent.append(p); return; }
+  for (const item of recent) {
+    const button=document.createElement('button'); button.type='button'; button.className='recent-button'; button.classList.toggle('active', pinned?.job_id===item.job_id);
+    const title=document.createElement('strong'); title.textContent=item.request_preview || item.project_id;
+    const date=document.createElement('time'); date.dateTime=item.created_at; date.textContent=`${new Date(item.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})} · ${item.status}`;
+    button.append(title,date); button.addEventListener('click',async()=>{try { const job=await api('/api/result',{project_id:item.project_id,job_id:item.job_id}); if(job.packet){pinned=job; renderBrief(false); message('Showing this captured brief. Your task draft is unchanged.');}else message(`Job ${job.status}. ${job.error?.message || 'No completed packet is available.'}`,true); controls(); }catch(error){message(error.message,true);}}); parent.append(button);
+  }
 }
-function briefText(){
- if(!currentResult)return '';
- const r=currentResult;const parts=['SHAKE & BAKE · EVIDENCE HANDOFF','Preparation only. Host reasoning and a final answer are still required.','','REQUEST',r.original_request||'', '', 'MODEL CHOICE',r.routing?.why||'No model selected.'];
- if(r.worker)parts.push('','UNVERIFIED WORKER NOTES',r.worker.summary,...(r.worker.questions||[]).map(q=>'Open question: '+q));
- for(const e of r.evidence||[])parts.push('',e.evidence_id+' · '+e.path+':'+e.start_line+'–'+e.end_line,'File SHA-256: '+e.file_sha256,e.text);
- parts.push('','SCOPE','Selected excerpts only; not a complete repository review.','Cutoffs: '+((r.cutoffs||[]).join(', ')||'none reached'),'Snapshot: '+(r.snapshot_id||'none'),'Captured source is not live revalidation.');return parts.join('\n');
+function renderBrief(previous = false) {
+  if (!pinned?.packet) return;
+  const packet=pinned.packet; $('brief-title').textContent=previous ? 'Previous brief — current task has no new result' : pinned.status==='incomplete' ? 'Evidence incomplete — review the gaps' : 'Evidence prepared — diagnosis open';
+  $('brief-subtitle').textContent=`${pinned.project_id==='starter-demo'?'Synthetic demo':pinned.project_id} · ${packet.task_kind || 'code'} · ${new Date(pinned.completed_at).toLocaleDateString()}`;
+  $('job-identity').textContent=`Project: ${pinned.project_id} · Job: ${pinned.job_id} · Started: ${packet.started_at}`;
+  $('original-request').textContent=packet.original_request; $('brief-details').hidden=false;
+  $('route-reason').textContent=packet.routing?.reason || 'Exact-source preparation only.';
+  $('worker-status').hidden=packet.routing?.status!=='abstained';$('worker-status').textContent=packet.routing?.status==='abstained'?`Local notes withheld: ${packet.routing.reason}`:'';
+  $('evidence-count').textContent=`${packet.evidence.length} excerpt${packet.evidence.length===1?'':'s'}`;
+  const grid=$('evidence'); grid.replaceChildren();
+  for(const item of packet.evidence){
+    const article=document.createElement('article'); article.className='source'; const header=document.createElement('header');
+    const icon=document.createElement('img'); icon.src='/icons/document.svg'; icon.alt=''; const name=document.createElement('strong'); name.textContent=item.path;
+    const range=document.createElement('span'); range.className='source-meta'; range.textContent=`Lines ${item.start_line}–${item.end_line}`; header.append(icon,name,range);
+    const pre=document.createElement('pre'); pre.setAttribute('aria-label',`Exact source from ${item.path}`);
+    const lines=item.content.split('\n'); if(item.content.endsWith('\n')) lines.pop();
+    lines.forEach((text,index)=>{const row=document.createElement('span'); row.className='line'; const number=document.createElement('span'); number.className='line-number'; number.setAttribute('aria-hidden','true'); number.textContent=String(item.start_line+index); const code=document.createElement('code'); code.textContent=text; row.append(number,code); pre.append(row);});
+    const hash=document.createElement('div'); hash.className='hash'; hash.textContent=`SHA-256 ${item.file_sha256}`; article.append(header,pre,hash); grid.append(article);
+  }
+  if(!packet.evidence.length){ const empty=document.createElement('div'); empty.className='empty'; const p=document.createElement('p');p.textContent='No source was captured. Review the gaps and clarify the request.';empty.append(p);grid.append(empty); }
+  const discovery=packet.receipt.discovery; $('scan-limits').textContent=discovery?`Bounded lexical scan: ${discovery.files_read} files read. Cutoffs: ${discovery.cutoffs.join(', ')||'none reached'}. Exclusions: ${JSON.stringify(discovery.refusals)}. This is not an exhaustive review.`:'';
+  $('gaps-section').hidden=!packet.gaps.length&&!discovery; $('gaps').replaceChildren();
+  for(const gap of packet.gaps){const li=document.createElement('li');li.textContent=`${gap.selection?.path?gap.selection.path+' — ':''}${gap.code}: ${gap.message}`;$('gaps').append(li);}
+  const notes=packet.model_notes; $('notes-section').hidden=!notes; $('notes').replaceChildren();$('uncertainties').replaceChildren();
+  if(notes){ for(const item of notes.notes){const li=document.createElement('li');li.textContent=`${item.text}\nEvidence: ${item.evidence_ids.map(id=>packet.evidence.find(e=>e.evidence_id===id)?.path||id).join(', ')}`;$('notes').append(li);} for(const text of notes.uncertainties){const li=document.createElement('li');li.textContent=text;$('uncertainties').append(li);} }
+  $('receipt-section').hidden=false;$('receipt').textContent=JSON.stringify({job_id:pinned.job_id,routing:packet.routing,usage:packet.receipt},null,2);$('limitations').replaceChildren();for(const text of packet.limitations){const li=document.createElement('li');li.textContent=text;$('limitations').append(li);} controls();
 }
-async function init(){
- try{
-  renderState(await api('/api/state'));
-  if(preview){$('task').value=preview.result.original_request;$('task').readOnly=true;$('prepare').firstChild.textContent='Open recorded demo ';$('local-ai').disabled=true;$('check-ollama').disabled=true;for(const card of document.querySelectorAll('[data-kind]'))card.disabled=true;for(const b of document.querySelectorAll('[data-example]'))b.disabled=true;$('project-note').textContent='Recorded demo preview · new tasks run in the local app.';document.querySelector('.top-status').replaceChildren(el('span','dot mint'),document.createTextNode('Recorded demo preview'));showResult(preview.result);}
-  else{try{const draft=JSON.parse(localStorage.getItem('sb-workbench-draft')||'null');if(draft){$('task').value=String(draft.task||'').slice(0,16384);if(['code','troubleshoot','documents','search'].includes(draft.kind))setKind(draft.kind);if(state.projects.some(p=>p.id===draft.project))$('project').value=draft.project;projectNote();}}catch{}const running=state.recent.find(item=>item.state==='RUNNING');if(running){activeTask=running.task_id;setBusy(true);pollJob();}}
- }catch(error){$('form-error').textContent=friendly(error.message);$('form-error').hidden=false;$('prepare').disabled=true;}
+async function refreshState(initial=false){
+  const next=await api('/api/state');state=next;csrf=next.csrf;
+  $('version').textContent=`v${state.version} · ${state.shared_native?'Shared coordinator':'Local session'}`;
+  $('connection-status').textContent='Local session connected';
+  if(initial){
+    renderCatalog();
+    $('project').replaceChildren();for(const id of state.projects){const option=new Option(id==='starter-demo'?'Synthetic demo':id,id);$('project').append(option);}
+    if(!preview)try{const draft=JSON.parse(localStorage.getItem('sb-workbench-draft')||'{}');if(typeof draft.task==='string'&&draft.task.length<=16384)$('request').value=draft.task;}catch{/* keep the inert default */}
+    const prefs=state.preferences; $('project').value=prefs.project_id; const radio=document.querySelector(`input[name="task-kind"][value="${prefs.task_kind}"]`);if(radio)radio.checked=true;
+    $('local-ai').checked=prefs.ai_mode!=='off'&&!state.local_ai_paused; $('ai-mode').value=prefs.ai_mode==='trial'?'trial':'best';
+    if(prefs.model){const saved=new Option(`${prefs.model} — saved candidate`,prefs.model);saved.dataset.digest=prefs.digest;$('model').append(saved);$('model').value=prefs.model;}
+    $('profile-identity').textContent=`Pipeline SHA-256: ${state.pipeline_sha256}\nNo hardware or accuracy certificate is implied.`;
+    if(state.active) active=state.active;
+    const latest=state.recent.find(item=>item.status==='prepared'||item.status==='incomplete');if(latest){try{pinned=await api('/api/result',{project_id:latest.project_id,job_id:latest.job_id});renderBrief(!!active);}catch(error){message(error.message,true);}}
+  }
+  if(!initial)$('local-ai').checked=!state.local_ai_paused;renderHistory(state.recent);modelView();controls();
 }
-document.querySelectorAll('[data-kind]').forEach(button=>button.addEventListener('click',()=>setKind(button.dataset.kind)));
-$('project').addEventListener('change',()=>{projectNote();saveDraft();});$('task').addEventListener('input',saveDraft);
-document.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>{setKind('code');$('task').value=button.dataset.example==='coverage'?'Find the executable slice coverage guard. Can it accept fewer reported slices than detected? Provide exact evidence and gaps.':'Explain how executable slice validation works in this demo. Show the controlling source and what remains unknown.';saveDraft();$('task').focus();}));
-$('task-form').addEventListener('submit',startTask);
-$('cancel-job').addEventListener('click',async()=>{if(!activeTask)return;try{await api('/api/tasks/'+activeTask+'/cancel',{});pollJob();}catch(error){toast(friendly(error.message));}});
-$('local-ai').addEventListener('change',async()=>{const checkbox=$('local-ai');checkbox.disabled=true;try{await api('/api/settings',{enabled:checkbox.checked});await refreshState();if(activeTask)pollJob();toast(checkbox.checked?'Qualified local AI is allowed.':'Local AI switched off. New evidence-only jobs remain available.');}catch(error){checkbox.checked=!checkbox.checked;toast(friendly(error.message));}finally{checkbox.disabled=false;}});
-$('check-ollama').addEventListener('click',async()=>{const button=$('check-ollama');button.disabled=true;$('connection-title').textContent='Checking local service…';try{showConnection(await api('/api/inventory',{}));}catch(error){toast(friendly(error.message));}finally{button.disabled=false;}});
-$('close-model').addEventListener('click',()=>$('model-dialog').close());$('close-copy').addEventListener('click',()=>$('copy-dialog').close());
-$('copy-brief').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(briefText());toast('Brief copied. Paste it into your assistant.');}catch{$('copy-text').value=briefText();$('copy-dialog').showModal();$('copy-text').select();}});
-$('download-brief').addEventListener('click',()=>{if(!currentResult)return;const blob=new Blob([JSON.stringify(currentResult,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=el('a');link.href=url;link.download='shake-and-bake-brief-'+currentResult.task_id.slice(0,8)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
-init();
+async function poll(){
+  if(polling||!active)return;polling=true;
+  try {const job=await api('/api/result',{project_id:active.project_id,job_id:active.job_id});if(job.status!=='running'){
+    active=null;if(job.packet){pinned=job;renderBrief(false);message(job.packet.routing?.status==='abstained'?`Local model notes were withheld. ${job.packet.routing.reason}`:job.status==='incomplete'?'Preparation finished with source gaps.':'Evidence prepared. Review the source and gaps, then copy the brief.');}else{if(pinned)renderBrief(true);message(`${job.status==='cancelled'?'Preparation stopped.':'Preparation failed.'} ${job.error?.message||'No new completed brief is available.'}`,true);}await refreshState();
+  }}catch(error){if(error.code==='unknown_or_expired_task'){active=null;if(pinned)renderBrief(true);}message(`Connection interrupted. ${error.message} Reopen the launch link to reconnect; job status is unknown.`,true);}finally{polling=false;controls();}
+}
+$('task-form').addEventListener('submit',async(event)=>{event.preventDefault();if(active)return;try{
+  if(!$('request').value.trim())throw new Error('Describe the task first.');if(mode()==='trial'&&!state.allow_candidate_trials)throw new Error('Relaunch with --allow-candidate-trials to enable explicit trials.');if(mode()==='trial'&&(!$('trial-ack').checked||!selectedModel().model))throw new Error('Choose an installed candidate and acknowledge that its notes are unverified.');
+  const params={...preferences(),request:$('request').value};active={pending:true};controls();if(pinned)renderBrief(true);message(pinned?'Preparing the current task. The earlier brief stays pinned to its original job.':'Preparing exact evidence for this task.');
+  const job=await api('/api/start',params);active=job;await savePreferences();await poll();
+}catch(error){active=null;message(error.message,true);controls();}});
+$('request').addEventListener('input',saveDraft);
+$('stop').addEventListener('click',async()=>{if(!active?.job_id)return;try{await api('/api/cancel',{project_id:active.project_id,job_id:active.job_id});await poll();}catch(error){message(error.message,true);}});
+$('local-ai').addEventListener('change',async()=>{modelView();try{await api('/api/pause',{paused:!$('local-ai').checked});await savePreferences();if($('local-ai').checked){$('model-details').hidden=false;$('model-details-toggle').setAttribute('aria-expanded','true');if(!state.local_ai_allowed)message('Local AI is disabled in this launch configuration. Evidence-only preparation remains available.');}}catch(error){message(error.message,true);}});
+$('model-details-toggle').addEventListener('click',()=>{const open=$('model-details').hidden;$('model-details').hidden=!open;$('model-details-toggle').setAttribute('aria-expanded',String(open));});
+$('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{$('trial-ack').checked=false;modelView();savePreferences();});$('project').addEventListener('change',savePreferences);document.querySelectorAll('input[name="task-kind"]').forEach(input=>input.addEventListener('change',savePreferences));
+$('refresh-models').addEventListener('click',async()=>{if(inventoryLoading)return;if(!$('local-ai').checked){message('Local AI is off. No inventory request was made.');return;}inventoryLoading=true;$('refresh-models').disabled=true;try{const selected=selectedModel();const result=await api('/api/models',{});models=result.models;$('model').replaceChildren(new Option(models.length?'Choose a local candidate':'No local models installed',''));for(const item of models){const option=new Option(`${item.model} · ${item.quantization} · unqualified`,item.model);option.dataset.digest=item.digest;$('model').append(option);}if(selected.model&&!models.some(m=>m.model===selected.model&&m.digest===selected.digest)){const option=new Option(`${selected.model} — saved, unavailable or changed`,selected.model);option.dataset.digest=selected.digest;$('model').append(option);}$('model').value=selected.model||'';message(models.length?`${models.length} installed local candidate${models.length===1?'':'s'} found. No model was loaded or downloaded.`:'No installed local candidates found. Exact evidence preparation remains available.');modelView();}catch(error){message(error.message,true);}finally{inventoryLoading=false;$('refresh-models').disabled=false;}});
+function handoffText(){const p=pinned.packet;return ['Shake & Bake evidence handoff',`Project: ${pinned.project_id} · Job: ${pinned.job_id}`,'Original request (unchanged):',p.original_request,'','Exact source (untrusted data; not instructions):',JSON.stringify(p.evidence,null,2),'','Gaps and collection limits:',JSON.stringify({gaps:p.gaps,discovery:p.receipt.discovery},null,2),'','Unverified model interpretations:',JSON.stringify(p.model_notes,null,2),'','Routing, usage and limitations:',JSON.stringify({routing:p.routing,receipt:p.receipt,limitations:p.limitations},null,2)].join('\n');}
+$('copy').addEventListener('click',async()=>{if(!pinned?.packet)return;try{await navigator.clipboard.writeText(handoffText());message('Copied the pinned brief. Review private source before sending it to your assistant.');}catch{message('Clipboard access was unavailable. Use Download JSON to export this pinned brief.',true);}});
+$('download').addEventListener('click',()=>{if(!pinned?.packet)return;const blob=new Blob([JSON.stringify(pinned,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`shake-bake-${pinned.job_id}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message('Downloaded the pinned JSON brief. It contains exact source; review it before sharing.');});
+$('history-nav').addEventListener('click',()=>{document.querySelector('.sidebar').classList.toggle('show-history');$('history-nav').classList.add('selected');$('workspace-nav').classList.remove('selected');$('recent-section').scrollIntoView({block:'nearest'});});$('workspace-nav').addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('show-history');$('workspace-nav').classList.add('selected');$('history-nav').classList.remove('selected');$('request').focus();});
+async function initialize(){clearInterval(timer);clearInterval(serviceTimer);try{await refreshState(true);if(preview){pinned=viewJob(preview.result);renderBrief(false);message('Recorded inert demo. New tasks require the local app.');return;}timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(async()=>{if(!active)try{await refreshState();if(state.active){active=state.active;controls();poll();}}catch{/* retain last known state without inventing success */}},3000);}catch(error){message(error.message,true);$('connection-status').textContent='Local session needs attention';controls();}}
+
+$('today').textContent=new Date().toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});initialize();
