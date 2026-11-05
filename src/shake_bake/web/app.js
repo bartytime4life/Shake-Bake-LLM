@@ -5,6 +5,7 @@ let inventoryLoading = false, noticeTimer = null, historySignature = '', service
 function message(text, error = false) { clearTimeout(noticeTimer);$('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text;if(text&&!error)noticeTimer=setTimeout(()=>{$('notice').hidden=true;},5000); }
 const preview = window.__SB_RECORDED_PREVIEW__ || null;
 let nativeState = null, readinessRunning = false;
+let modelCheckRevision = 0, modelCheckContext = null;
 function savedPreferences() {
   try { const p=JSON.parse(localStorage.getItem('shake-bake-preferences')||'{}');return p&&typeof p==='object'?p:{}; } catch { return {}; }
 }
@@ -53,7 +54,10 @@ async function api(path, body) {
   if(path==='/api/state')return viewState(data);
   if(path==='/api/result')return viewJob(data);
   if(path==='/api/start')return {job_id:data.task_id,project_id:body.project_id,status:'running'};
-  if(path==='/api/models')return {models:data.models.map(m=>({model:m.name,digest:m.digest,quantization:'installed artifact'}))};
+  if(path==='/api/models'){
+    if(data.state!=='connected')throw new Error('Local model inventory is unavailable. No model was loaded or downloaded.');
+    return {models:data.models.map(m=>({model:m.name,digest:m.digest,quantization:'installed artifact'}))};
+  }
   return data;
 }
 function renderCatalog() {
@@ -73,7 +77,10 @@ function mode() { return $('local-ai').checked ? $('ai-mode').value : 'off'; }
 function modelView() {
   $('candidate-controls').hidden = $('ai-mode').value !== 'trial';
   const selected = selectedModel();
-  $('model-identity').textContent = selected.model ? `Saved candidate · digest ${selected.digest} · availability checked only on refresh/run.` : 'No installed model selected.';
+  // Include the enable state so off/on and A/B/A transitions revoke in-flight checks.
+  const context = JSON.stringify([selected.model, selected.digest, $('local-ai').checked]);
+  if(context!==modelCheckContext){modelCheckContext=context;$('trial-ack').checked=false;resetModelCheck();}
+  $('model-identity').textContent = selected.model ? `Saved candidate · digest ${selected.digest} · ${$('model').selectedOptions[0]?.dataset.availability==='unavailable'?'unavailable or changed; explicitly choose an installed artifact.':$('model').selectedOptions[0]?.dataset.availability==='unknown'?'inventory unavailable; refresh or check again.':'availability checked only on refresh/run.'}` : 'No installed model selected.';
   $('mode-summary').textContent = !$('local-ai').checked ? 'Best accuracy · Local AI off' : $('ai-mode').value === 'trial' ? 'Explicit candidate trial · unqualified' : 'Best accuracy · qualified profiles only';
   readinessControls();
   $('model-help').textContent = state?.allow_candidate_trials ? 'Your selected candidate persists in this browser, including when Ollama is offline. Notes still require review.' : 'Candidate trials require the owner launch flag --allow-candidate-trials. Best tested uses reviewed profiles only.';
@@ -160,8 +167,38 @@ $('request').addEventListener('input',saveDraft);
 $('stop').addEventListener('click',async()=>{if(!active?.job_id)return;try{await api('/api/cancel',{project_id:active.project_id,job_id:active.job_id});await poll();}catch(error){message(error.message,true);}});
 $('local-ai').addEventListener('change',async()=>{modelView();try{await api('/api/pause',{paused:!$('local-ai').checked});await savePreferences();if($('local-ai').checked){$('model-details').hidden=false;$('model-details-toggle').setAttribute('aria-expanded','true');if(!state.local_ai_allowed)message('Local AI is disabled in this launch configuration. Evidence-only preparation remains available.');}}catch(error){message(error.message,true);}});
 $('model-details-toggle').addEventListener('click',()=>{const open=$('model-details').hidden;$('model-details').hidden=!open;$('model-details-toggle').setAttribute('aria-expanded',String(open));});
-$('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{$('trial-ack').checked=false;resetModelCheck();modelView();savePreferences();});$('project').addEventListener('change',savePreferences);document.querySelectorAll('input[name="task-kind"]').forEach(input=>input.addEventListener('change',savePreferences));
-$('refresh-models').addEventListener('click',async()=>{if(inventoryLoading)return;if(!$('local-ai').checked){message('Local AI is off. No inventory request was made.');return;}inventoryLoading=true;$('refresh-models').disabled=true;try{const selected=selectedModel();const result=await api('/api/models',{});models=result.models;$('model').replaceChildren(new Option(models.length?'Choose a local candidate':'No local models installed',''));for(const item of models){const option=new Option(`${item.model} · ${item.quantization} · unqualified`,item.model);option.dataset.digest=item.digest;$('model').append(option);}if(selected.model&&!models.some(m=>m.model===selected.model&&m.digest===selected.digest)){const option=new Option(`${selected.model} — saved, unavailable or changed`,selected.model);option.dataset.digest=selected.digest;$('model').append(option);}$('model').value=selected.model||'';message(models.length?`${models.length} installed local candidate${models.length===1?'':'s'} found. No model was loaded or downloaded.`:'No installed local candidates found. Exact evidence preparation remains available.');modelView();}catch(error){message(error.message,true);}finally{inventoryLoading=false;$('refresh-models').disabled=false;}});
+$('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{modelView();savePreferences();});$('project').addEventListener('change',savePreferences);document.querySelectorAll('input[name="task-kind"]').forEach(input=>input.addEventListener('change',savePreferences));
+$('refresh-models').addEventListener('click',async()=>{
+  if(inventoryLoading)return;
+  if(!$('local-ai').checked){message('Local AI is off. No inventory request was made.');return;}
+  // Revoke before awaiting inventory: it may reveal replacement/removal or fail entirely.
+  inventoryLoading=true;resetModelCheck();$('trial-ack').checked=false;
+  $('readiness-status').textContent='Refreshing inventory. Previous model metadata cleared; check the selected model again afterward.';
+  $('refresh-models').disabled=true;readinessControls();
+  try{
+    const result=await api('/api/models',{});
+    // Respect a choice made while the inventory request was pending.
+    const selected=selectedModel();models=result.models;
+    $('model').replaceChildren(new Option(models.length?'Choose a local candidate':'No local models installed',''));
+    let pinnedOption=null;
+    for(const item of models){
+      const option=new Option(`${item.model} · ${item.quantization} · unqualified`,item.model);
+      option.dataset.digest=item.digest;option.dataset.availability='installed';$('model').append(option);
+      if(item.model===selected.model&&item.digest===selected.digest)pinnedOption=option;
+    }
+    if(selected.model&&!pinnedOption){
+      pinnedOption=new Option(`${selected.model} — saved, unavailable or changed`,selected.model);
+      pinnedOption.dataset.digest=selected.digest;pinnedOption.dataset.availability='unavailable';$('model').append(pinnedOption);
+    }
+    // Names are not unique across saved/installed artifacts. Never silently switch digests.
+    if(pinnedOption)pinnedOption.selected=true;
+    message(models.length?`${models.length} installed local candidate${models.length===1?'':'s'} found. No model was loaded or downloaded.`:'No installed local candidates found. Exact evidence preparation remains available.');
+  }catch(error){
+    for(const option of $('model').options)option.dataset.availability='unknown';
+    $('readiness-status').textContent='Inventory unavailable. Previous model metadata cleared; refresh or check the selected model again.';
+    message(error.message,true);
+  }finally{inventoryLoading=false;$('refresh-models').disabled=false;modelView();}
+});
 function handoffText(){const p=pinned.packet;return ['Shake & Bake evidence handoff',`Project: ${pinned.project_id} · Job: ${pinned.job_id}`,'Original request (unchanged):',p.original_request,'','Exact source (untrusted data; not instructions):',JSON.stringify(p.evidence,null,2),'','Gaps and collection limits:',JSON.stringify({gaps:p.gaps,discovery:p.receipt.discovery},null,2),'','Unverified model interpretations:',JSON.stringify(p.model_notes,null,2),'','Routing, usage and limitations:',JSON.stringify({routing:p.routing,receipt:p.receipt,limitations:p.limitations},null,2)].join('\n');}
 $('copy').addEventListener('click',async()=>{if(!pinned?.packet)return;try{await navigator.clipboard.writeText(handoffText());message('Copied the pinned brief. Review private source before sending it to your assistant.');}catch{message('Clipboard access was unavailable. Use Download JSON to export this pinned brief.',true);}});
 $('download').addEventListener('click',()=>{if(!pinned?.packet)return;const blob=new Blob([JSON.stringify(pinned,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`shake-bake-${pinned.job_id}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message('Downloaded the pinned JSON brief. It contains exact source; review it before sharing.');});
@@ -174,9 +211,9 @@ function memoryText(value){return typeof value==='number'?`${(value/1073741824).
 function facts(id,entries){const list=$(id);list.replaceChildren();for(const [name,value]of entries){const term=document.createElement('dt'),detail=document.createElement('dd');term.textContent=name;detail.textContent=value;list.append(term,detail);}}
 function readinessControls(){
   $('check-computer').disabled=readinessRunning||!!active||!state||!!preview;
-  $('check-model').disabled=readinessRunning||!!active||!state||!!preview||!$('local-ai').checked||!selectedModel().model;
+  $('check-model').disabled=inventoryLoading||readinessRunning||!!active||!state||!!preview||!$('local-ai').checked||!selectedModel().model;
 }
-function resetModelCheck(){facts('model-facts',[['Model','No check for this selection']]);$('readiness-status').textContent='Selection changed. Check this model again before relying on its metadata.';}
+function resetModelCheck(){modelCheckRevision++;facts('model-facts',[['Model','No check for this selection']]);$('readiness-status').textContent='Selection changed. Check this model again before relying on its metadata.';}
 $('check-computer').addEventListener('click',async()=>{
   if(readinessRunning)return;readinessRunning=true;readinessControls();$('readiness-status').textContent='Reading local capability metadata…';
   try{const r=await api('/api/computer',{});facts('computer-facts',[
@@ -187,14 +224,15 @@ $('check-computer').addEventListener('click',async()=>{
   }catch(error){facts('computer-facts',[['Current check','Unavailable']]);$('readiness-status').textContent=error.message;}finally{readinessRunning=false;readinessControls();}
 });
 $('check-model').addEventListener('click',async()=>{
-  if(readinessRunning)return;const selection=selectedModel(),key=JSON.stringify(selection);if(!selection.model||!$('local-ai').checked)return;
+  if(readinessRunning||inventoryLoading)return;modelView();const selection=selectedModel(),key=JSON.stringify(selection),revision=modelCheckRevision;if(!selection.model||!$('local-ai').checked)return;
   readinessRunning=true;readinessControls();facts('model-facts',[['Current check','Checking selected model…']]);$('readiness-status').textContent='Checking the pinned digest, runtime and model metadata. No source or generation is sent.';
-  try{const r=await api('/api/model-check',selection);if(key!==JSON.stringify(selectedModel()))return;
+  const current=()=>revision===modelCheckRevision&&key===JSON.stringify(selectedModel())&&$('local-ai').checked&&!inventoryLoading;
+  try{const r=await api('/api/model-check',selection);if(!current())return;
     facts('model-facts',[['Model',r.model],['Reported digest',r.reported_digest],['Ollama runtime',r.runtime_version],['Reported quantization',r.reported_details.quantization_level||'Not reported'],
       ['Reported parameters',r.reported_details.parameter_size||'Not reported'],['Reported context capacity',r.reported_context_length===null?'Not reported':r.reported_context_length.toLocaleString()+' tokens'],
       ['Capabilities',r.reported_capabilities?.join(', ')||'Not reported'],['Thinking can be disabled',r.reported_thinking_can_disable===null?'Not reported':r.reported_thinking_can_disable?'Reported yes':'Reported no'],
       ['Requested preparation',`${r.requested_configuration.options.num_ctx.toLocaleString()} context / ${r.requested_configuration.options.num_predict} output tokens · thinking off · ${r.requested_configuration.deadline_seconds}s deadline`],
       ['Local task accuracy','Unqualified; readiness is not an accuracy trial'],['Checked',new Date(r.observed_at).toLocaleString()]]);
     $('readiness-status').textContent='Reported model identity and runtime stayed stable during this check. Actual memory fit and task accuracy remain unmeasured.';
-  }catch(error){if(key===JSON.stringify(selectedModel())){facts('model-facts',[['Current check','Unavailable or identity changed']]);$('readiness-status').textContent=error.message;}}finally{readinessRunning=false;readinessControls();}
+  }catch(error){if(current()){facts('model-facts',[['Current check','Unavailable or identity changed']]);$('readiness-status').textContent=error.message;}}finally{readinessRunning=false;readinessControls();}
 });
