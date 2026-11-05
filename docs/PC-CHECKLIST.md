@@ -6,6 +6,12 @@ Nothing below is marked complete until it has been checked on your actual PC. Th
 
 Use the [prioritized to-do list](../TODO.md) to choose the next item. Start with actual-PC/model readiness and a reviewed real Ollama trial; host integration, unseen accuracy and whole-task savings have separate qualification checks.
 
+The [November 5 local walkthrough](pc-readiness-2026-11-05.md) records the completed
+owner-PC subset, the corrected refresh-completion message and remaining gaps.
+This reusable checklist stays unchecked; the linked report identifies the
+particular package, browser and machine evidence instead of implying every
+installation has passed.
+
 ## First: identify the code you are actually running
 
 The readiness correction merged in [PR #8](https://github.com/bartytime4life/Shake-Bake-LLM/pull/8)

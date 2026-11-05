@@ -1,12 +1,12 @@
 # Shake and Bake: prioritized to-do list
 
-Updated November 5, 2026 for `0.4.0.dev8`. The current build has 171 passing offline program tests. New owner-PC screening includes a retained Qwen 3.5 4B timeout and an unblinded assistant review of Qwen 3 1.7B: 4 of 10 exposed handoffs met the disclosed rubric. A follow-up prompt experiment remained at 4/10 with more unsupported claims, so its prompt was reverted; only the pre-source thinking-mode compatibility guard ships. See docs/screening-2026-11-05.md and docs/validation-0.4.0.dev8.md. Original `.dev6` reviews, independent/unseen accuracy, broader host qualification and savings remain open. Accuracy takes priority over speed or smaller prompts.
+Updated November 5, 2026 for `0.4.0.dev8`. The current build has 176 passing offline program tests on the local PC. New owner-PC screening includes a retained Qwen 3.5 4B timeout and an unblinded assistant review of Qwen 3 1.7B: 4 of 10 exposed handoffs met the disclosed rubric. A follow-up prompt experiment remained at 4/10 with more unsupported claims, so its prompt was reverted; only the pre-source thinking-mode compatibility guard ships. See docs/screening-2026-11-05.md and docs/validation-0.4.0.dev8.md. The subsequent metadata-only PC walkthrough and refresh-status correction are recorded in docs/pc-readiness-2026-11-05.md. Original `.dev6` reviews, independent/unseen accuracy, broader host qualification and savings remain open. Accuracy takes priority over speed or smaller prompts.
 
 Cross-cutting product priority: connect setup, local preparation, evidence review, host handoff and recovery into one understandable experience. `docs/UX-WORKFLOW.md` specifies the target journey, shared-state gap and implementation slices. This work proceeds alongside accuracy qualification.
 
 ## Next qualification steps
 
-- [ ] **1. Complete actual-PC/model qualification (partial).** Run the startup/GUI checks, inspect trusted cloud-disabled Ollama, and record actual CPU/GPU/RAM, OS/runtime versions, exact model digest and quantization. Mark unknown hardware values explicitly. Complete when the real-machine readiness report and selected installed-model identity are recorded. Use `docs/PC-CHECKLIST.md`.
+- [ ] **1. Complete actual-PC/model qualification (partial).** Startup, installed-package identity, hardware observations and pinned Qwen 3 8B metadata are now recorded privately; the local in-app-browser demo/readiness walkthrough passed the stated cases in `docs/pc-readiness-2026-11-05.md`. The shared daemon still reports cloud features enabled, so it received metadata-only requests. Cloud-disabled inference readiness, clipboard copy in this browser, broader browser checks and natural model-change/failure scenarios remain open. Use `docs/PC-CHECKLIST.md`.
 
 - [ ] **2. Improve and review real Ollama screening (partial).** The missing `.dev6` folders remain unscored; new runs do not reconstruct them. Fresh owner-PC trials are captured and reviewed in docs/screening-2026-11-05.md: Qwen 3.5 4B stopped after a timeout; Qwen 3 1.7B completed ten cases but met the assistant-review rubric on only four. Source coverage passed, but decisive misses and unsupported claims keep profiles unqualified. The follow-up prompt experiment did not improve the 4/10 result and was rejected; the new compatibility guard prevents knowingly incompatible thinking requests. Preserve these records and failures; find a stronger eligible candidate or a preparation task design that meets exposed checks before unseen qualification. Independent review and original receipt recovery remain open. See `docs/pc-readiness-and-trials.md` and ACC-01.
 
@@ -38,7 +38,8 @@ Steps 1–2 require the actual local model/PC. Host-dependent steps need the sup
 - New owner-PC exposed screening with a retained timeout, ten reviewed smaller-model notes and a checksummed portable review packet; no model promotion.
 - Tested pre-source thinking-mode refusal with exact evidence retained; rejected prompt experiment and portable comparison records.
 - Shared local GUI/adapter jobs, routed policy, scoped project access and session pause/cancel verified through native clients.
-- Selected local connection/queued-expiry regressions; 171 offline program tests passed in the development environment.
+- Selected local connection/queued-expiry regressions; 176 offline program tests passed on the local PC, including the owned-runner process gate without a skip.
+- Installed-package PC readiness and actual local metadata/UI checks; successful synthetic JSON export, with clipboard behavior and remaining qualification gaps retained explicitly.
 - Actual Codex evidence-only synthetic handoff and injected cancellation/recovery, with opt-in replay and sanitized receipts; full host qualification remains open.
 - PC checklist, Known Issues/release rules, licensing inventory and per-PC GUI/calibration specifications.
 
