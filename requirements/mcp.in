@@ -1,0 +1,2 @@
+# Optional adapter only. The core has no runtime package dependencies.
+mcp==2.3.0

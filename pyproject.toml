@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shake-and-bake"
+version = "0.1.0.dev0"
+description = "Bounded local evidence preparation for assistant handoffs"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+authors = [{name = "Andy Barta"}]
+dependencies = []
+classifiers = ["Development Status :: 2 - Pre-Alpha", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3"]
+
+[project.optional-dependencies]
+mcp = ["mcp==2.3.0"]
+
+[project.scripts]
+shake-bake = "shake_bake.cli:main"
+shake-bake-mcp = "shake_bake.mcp_adapter:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+shake_bake = ["fixtures/*.txt"]
