@@ -1,0 +1,68 @@
+{
+  "created_utc": "2026-11-05T18:52:08.237508+00:00",
+  "helper_version": "0.4.0.dev7",
+  "pipeline_id": "8fe2b5296b6f0eb2e1f946724ce1ef77e27bef6a0706c71f7ea6e6046282812d",
+  "host_version": "codex-cli 0.162.0-alpha.17.2",
+  "scenario": "active-cancel",
+  "status": "PASSED",
+  "qualification": "single exposed synthetic host smoke only",
+  "fixture_sha256": {
+    "readme.md": "26b0ce7060da052b10884ee58557596bd9f0592299e55c685709c32be8ec3262",
+    "validator.py": "0661539c11dbd15405b5a2a0a186ed8408db75cc685256b004dc3cbe79d8097c"
+  },
+  "tool_calls": 14,
+  "source_bytes": 455,
+  "elapsed_seconds": 48.222,
+  "local_model_calls": 0,
+  "host_exit_code": 0,
+  "service_exit_code": 0,
+  "trace_sha256": "8fb84964a8b18ae72c3cb31d4237ee6dbf5823cdf31ee545e56d0b96a22f8eb5",
+  "cloud_savings": null,
+  "unseen_model_accuracy": null,
+  "private_source_handoff_qualified": false,
+  "actual_claude_qualification": false,
+  "schema_version": 1,
+  "kind": "synthetic_actual_codex_active_cancel_smoke",
+  "runtime_source_revision": "b3c0edacde39b3f5e4d1dd6ed592cb12589923d4",
+  "sdk_version": "2.3.0",
+  "host_model": null,
+  "task": "Does validate_structure require the reported slice count to equal slices_detected? Give one concrete accepted mismatch and cite exact captured source lines.",
+  "checks": {
+    "original_task_preserved": true,
+    "project_refusal_observed": true,
+    "terminal_cancellation_observed": true,
+    "active_cancellation_observed": true,
+    "busy_refusal_observed": true,
+    "cancelled_evidence_refused": true,
+    "fresh_task_after_cancel_completed": true,
+    "runner_stop_injected": true,
+    "cancelled_runner_exited_and_reaped": true,
+    "service_survived_host_exit": true,
+    "local_ai_stayed_off": true,
+    "private_connection_cleaned": true,
+    "demo_unchanged": true
+  },
+  "fault_injection": {
+    "kind": "SIGSTOP",
+    "target": "first bounded preparation child of the harness-owned temporary service",
+    "identity_checks": [
+      "owned parent-child relationship",
+      "exact shake_bake.job_runner command and parent argument",
+      "pidfd signalling prevents PID reuse"
+    ],
+    "source_policy_or_package_patched": false
+  },
+  "trace_revalidated_with": {
+    "path": "integration/codex_host_smoke.py",
+    "sha256": "a65904d01770df9ef177680bba9c41c1bd6a54f3d39c1a3f9c52dcfe2a5cf286",
+    "mode": "saved actual trace; cleanup and preflight hardened after the live run"
+  },
+  "limits": [
+    "One exposed synthetic question; no independent unseen review or native baseline.",
+    "Active cancellation used an explicitly stopped preparation process, not real model inference or GPU work.",
+    "No actual host disconnect/deadline/restart or private-source trial.",
+    "No local model calls/downloads or permanent host configuration changes.",
+    "Exact hosted model identity and savings remain unknown.",
+    "Raw logs and cumulative host-reported usage stay private."
+  ]
+}
