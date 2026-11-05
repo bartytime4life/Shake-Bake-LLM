@@ -66,6 +66,8 @@ In Model details, expand **This computer & selected model** for explicit readine
 
 ## Prepare a real model trial
 
+Fresh [owner-PC screening](docs/screening-2026-11-05.md) now has retained records: Qwen 3.5 4B timed out on the first case; Qwen 3 1.7B completed ten exposed cases but only four handoffs met the disclosed assistant-review rubric. Exact source survived, while the notes still missed or misread decisive facts. All profiles remain unqualified. These new runs do not reconstruct the missing historical screening or establish unseen accuracy or savings.
+
 The trial tools now accept separate owner-selected datasets with pinned input identities and isolated grading keys. See [external evaluation datasets](docs/held-out-evaluation.md). This is evaluation infrastructure, not a completed unseen-task comparison or model qualification.
 
 Start with the [Run on your PC checklist](docs/PC-CHECKLIST.md). Every owner-PC item stays unchecked until actually verified there.
