@@ -75,7 +75,7 @@ class Store:
             self.db.row_factory = sqlite3.Row
             self.db.execute("PRAGMA foreign_keys=ON")
             version = self.db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in {0, 1}:
+            if version not in {0, 1, 2}:
                 raise Refusal("store_version", "This state directory uses an unsupported schema version.")
             self.db.executescript("""
                 CREATE TABLE IF NOT EXISTS jobs (
@@ -83,12 +83,14 @@ class Store:
                     request TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL,
                     completed_at TEXT, packet TEXT, error TEXT
                 );
-                PRAGMA user_version=1;
+                CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                PRAGMA user_version=2;
             """)
             # The exclusive owner lock proves no cooperating previous worker is alive.
             with self.db:
                 self.db.execute("UPDATE jobs SET status='failed', completed_at=?, error=? WHERE status='running'",
                                 (now(), json.dumps({"code": "interrupted", "message": "The previous coordinator stopped before completion. Start a new job."})))
+                self.db.execute("INSERT OR IGNORE INTO settings VALUES ('device_id', ?)", (json.dumps(uuid.uuid4().hex),))
         except Exception:
             if hasattr(self, "db"):
                 self.db.close()
@@ -130,3 +132,19 @@ class Store:
                                      (status, now(), json.dumps(packet, ensure_ascii=False) if packet is not None else None,
                                       json.dumps(error) if error is not None else None, job_id))
         return result.rowcount == 1
+
+    def setting(self, key, default=None):
+        with self._mutex:
+            row = self.db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+        return default if row is None else json.loads(row[0])
+
+    def set_setting(self, key, value):
+        with self._mutex, self.db:
+            self.db.execute("INSERT INTO settings VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                            (key, json.dumps(value, ensure_ascii=False)))
+
+    def recent(self, project_id, root_identity):
+        with self._mutex:
+            rows = self.db.execute("SELECT job_id, project_id, status, created_at, completed_at, substr(request, 1, 200) AS request_preview FROM jobs WHERE project_id=? AND root_identity=? ORDER BY created_at DESC LIMIT 20",
+                                   (project_id, root_identity)).fetchall()
+        return [dict(row) for row in rows]

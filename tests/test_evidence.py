@@ -293,6 +293,15 @@ class EngineTests(unittest.TestCase):
         for name in ("coordinator.lock", "jobs.sqlite3"):
             self.assertEqual((self.config.state_dir / name).stat().st_mode & 0o777, 0o600)
 
+    def test_legacy_v1_store_upgrade_keeps_exact_existing_receipt(self):
+        result=self.prepare()
+        with self.engine.store.db:
+            self.engine.store.db.execute('DROP TABLE settings')
+            self.engine.store.db.execute('PRAGMA user_version=1')
+        self.engine.close();self.engine=Engine(self.config)
+        self.assertEqual(self.engine.get_result('alpha',result['job_id']),result)
+        self.assertTrue(self.engine.device_id)
+
 
 if __name__ == "__main__":
     unittest.main()

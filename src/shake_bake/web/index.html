@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shake &amp; Bake — Local workbench</title>
+  <link rel="icon" href="/icons/folder.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#workspace">Skip to workspace</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Workspace navigation">
+      <header class="brand"><span>Shake &amp; Bake</span><small>Local workbench</small></header>
+      <nav>
+        <button class="nav-button selected" id="workspace-nav"><img src="/icons/folder.svg" alt="">Workspace</button>
+        <button class="nav-button" id="history-nav"><img src="/icons/clock.svg" alt="">Recent briefs</button>
+      </nav>
+      <section id="recent-section" aria-label="Recent briefs">
+        <h2 class="eyebrow">Recent briefs</h2>
+        <div id="recent-list" class="recent-list"><p class="muted small">Your completed briefs will appear here.</p></div>
+      </section>
+      <footer class="sidebar-footer"><span class="eyebrow">On your computer</span><p>Exact source. Visible gaps.<br>A clear next step.</p><span id="version" class="small muted"></span></footer>
+    </aside>
+    <main id="workspace" tabindex="-1">
+      <div class="topline"><span id="today" class="eyebrow"></span><span class="small muted" id="connection-status">Connecting to local session…</span></div>
+      <h1>Turn local source into a clear brief.</h1>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <form id="task-form">
+        <div class="task-options">
+          <label class="project-label" for="project">Project</label>
+          <select id="project" name="project" aria-describedby="project-help"></select>
+          <fieldset class="task-types"><legend>Task type</legend>
+            <label><input type="radio" name="task-kind" value="code" checked><span>Code</span></label>
+            <label><input type="radio" name="task-kind" value="troubleshoot"><span>Troubleshoot</span></label>
+            <label><input type="radio" name="task-kind" value="documents"><span>Documents</span></label>
+            <label><input type="radio" name="task-kind" value="search"><span>Search</span></label>
+          </fieldset>
+        </div>
+        <p id="project-help" class="sr-only">Only projects approved in the owner's launch configuration are available.</p>
+        <label for="request" class="sr-only">Describe your task</label>
+        <textarea id="request" name="request" rows="4" required maxlength="16384" spellcheck="false" placeholder="Describe what you want your assistant to investigate…">Investigate why the app fails to start. Use the provided source and log, identify what is known and missing, and prepare a focused brief for my assistant.</textarea>
+        <div class="model-strip">
+          <label class="switch-label"><input type="checkbox" id="local-ai"><span>Local AI</span></label>
+          <span id="mode-summary" class="muted">Best accuracy · evidence only</span>
+          <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="/icons/chevron-down.svg" alt=""></button>
+        </div>
+        <section id="model-details" class="details-surface" hidden aria-label="Model details">
+          <div class="details-heading"><div><h2>Choose how local AI helps</h2><p id="model-help" class="muted small">Exact evidence remains available with Local AI off.</p></div><button type="button" id="refresh-models" class="secondary compact">Refresh installed models</button></div>
+          <label for="ai-mode">Preparation mode</label>
+          <select id="ai-mode"><option value="best">Best tested for this task</option><option value="trial">Try a candidate — unqualified</option></select>
+          <div id="candidate-controls" hidden>
+            <label for="model">Installed local model</label><select id="model"><option value="">Refresh models, then choose a candidate</option></select>
+            <p class="small muted" id="model-identity">No installed model selected.</p>
+            <label class="check-label"><input id="trial-ack" type="checkbox">I understand candidate notes are unverified. My trusted local Ollama must have cloud features disabled.</label>
+          </div>
+          <p class="small muted">Best tested uses only reviewed, comparable profiles for this installation and pipeline. No qualifying profile keeps the brief evidence-only. No automatic downloads or provider fallback.</p>
+          <details class="technical"><summary>Installation &amp; profile identity</summary><p class="small muted">Device, pipeline and saved model identity are local qualification inputs, not hardware or accuracy certificates.</p><pre id="profile-identity"></pre></details>
+          <details class="ranges"><summary>Source ranges <span class="muted small">optional</span></summary><p class="small muted">Leave empty for bounded lexical discovery. To choose exact source, enter up to four relative paths and inclusive line ranges, one per line.</p><label class="sr-only" for="ranges">Exact source ranges</label><textarea id="ranges" rows="3" spellcheck="false" placeholder="src/app.py:10:35&#10;tests/test_app.py:1:40"></textarea></details>
+        </section>
+        <div class="action-row"><button type="submit" class="primary" id="prepare">Prepare for my assistant</button><button type="button" class="secondary stop" id="stop" disabled>Stop</button><span id="progress" class="small muted" aria-live="polite"></span></div>
+      </form>
+      <section class="brief-bar" id="brief-bar" aria-label="Pinned brief">
+        <img src="/icons/map-pin.svg" alt="" class="pin">
+        <div class="brief-identity"><h2 id="brief-title">Your next brief starts here</h2><p class="small muted" id="brief-subtitle">Choose a project and prepare exact local evidence.</p></div>
+        <div class="export-actions"><button class="secondary compact" id="copy" disabled><img src="/icons/copy.svg" alt="">Copy brief</button><button class="secondary compact" id="download" disabled><img src="/icons/download.svg" alt="">Download JSON</button></div>
+      </section>
+      <p id="worker-status" class="small" hidden></p>
+      <div id="brief-details" hidden><details class="original"><summary>Original request &amp; job identity</summary><p id="job-identity" class="small muted"></p><pre id="original-request"></pre><p class="small muted" id="route-reason"></p></details></div>
+      <section class="evidence-section" aria-labelledby="evidence-heading">
+        <div class="section-heading"><div><h2 id="evidence-heading">Exact evidence <span>(local source)</span></h2><p class="muted">Unmodified excerpts from the selected source files.</p></div><span id="evidence-count" class="small muted"></span></div>
+        <div id="evidence" class="evidence-grid"><div class="empty"><h3>A place for the source, not a guess.</h3><p class="muted">Prepare the synthetic demo to see exact lines, source identities and a copyable handoff. Your investigation stays open.</p></div></div>
+      </section>
+      <section id="gaps-section" class="supplement" hidden><h2>Gaps &amp; collection limits</h2><ul id="gaps"></ul><p id="scan-limits" class="small muted"></p></section>
+      <section id="notes-section" class="supplement" hidden><h2>Unverified model interpretations</h2><p class="muted small">These notes are separate from exact source. Citations are checked; correctness still needs review.</p><ul id="notes"></ul><h3>Uncertainties</h3><ul id="uncertainties"></ul></section>
+      <details id="receipt-section" class="technical" hidden><summary>Usage receipt &amp; limitations</summary><pre id="receipt"></pre><ul id="limitations"></ul></details>
+      <footer class="workspace-footer">Standalone local preparation · Your assistant makes the final judgment.</footer>
+    </main>
+  </div>
+</body>
+</html>

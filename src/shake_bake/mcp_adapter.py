@@ -12,6 +12,7 @@ from . import __version__
 from .config import load_config
 from .contracts import Refusal
 from .engine import Engine
+from .ipc import RemoteEngine
 
 SDK_VERSION = "2.3.0"
 
@@ -46,9 +47,9 @@ def create_server(engine: Engine):
             return {"status": "failed", "error": {"code": "local_io", "message": "A local state operation failed."}}
 
     @server.tool(structured_output=True)
-    def start_job(project_id: str, request: str, selections: list[dict]) -> dict[str, Any]:
-        """Prepare 1–4 exact ranges in a configured project. Each selection has path, start_line, end_line. Returns a job ID; poll get_result. No commands, models or cloud calls run."""
-        return guarded(lambda: engine.start_job(project_id, request, selections))
+    def start_job(project_id: str, request: str, selections: list[dict] | None = None, task_kind: str = "code", ai_mode: str = "off", model: str | None = None, digest: str | None = None) -> dict[str, Any]:
+        """Prepare bounded source evidence in a configured project. Omit selections for lexical discovery or select 1–4 exact path/start_line/end_line ranges. ai_mode off makes no model calls; best requires reviewed profiles; trial needs an explicitly pinned local model/digest and returns unverified notes. No repository commands or cloud provider calls run."""
+        return guarded(lambda: engine.start_job(project_id, request, selections, task_kind=task_kind, ai_mode=ai_mode, model=model, digest=digest))
 
     @server.tool(structured_output=True)
     def get_result(project_id: str, job_id: str) -> dict[str, Any]:
@@ -70,10 +71,15 @@ def create_server(engine: Engine):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Serve the four bounded evidence tools over local MCP stdio.")
-    parser.add_argument("--config", required=True, type=Path)
+    target = parser.add_mutually_exclusive_group(required=True)
+    target.add_argument("--config", type=Path, help="Own a separate diagnostic coordinator.")
+    target.add_argument("--connect", type=Path, help="Use the GUI's private connection.json and actual shared coordinator.")
     args = parser.parse_args(argv)
     try:
         require_sdk()
+        if args.connect:
+            create_server(RemoteEngine(args.connect)).run(transport="stdio")
+            return 0
         with Engine(load_config(args.config)) as engine:
             create_server(engine).run(transport="stdio")
         return 0

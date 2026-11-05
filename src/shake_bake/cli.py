@@ -50,13 +50,21 @@ def parser():
     commands = root.add_subparsers(dest="command", required=True)
     commands.add_parser("demo", help="Run an offline synthetic task in a temporary workspace.")
     commands.add_parser("doctor", help="Check this runtime without inspecting a real project or contacting a service.")
+    commands.add_parser("gui", help="Open the local workbench; gui --help lists launch options.")
     prepare = commands.add_parser("prepare", help="Capture explicitly selected source ranges.")
     prepare.add_argument("--config", required=True, type=Path)
     prepare.add_argument("--project", required=True)
     request = prepare.add_mutually_exclusive_group(required=True)
     request.add_argument("--request")
     request.add_argument("--request-file", type=Path)
-    prepare.add_argument("--select", required=True, action="append", type=selection_argument)
+    prepare.add_argument("--select", action="append", type=selection_argument, help="Omit for bounded lexical discovery.")
+    prepare.add_argument("--task-kind", choices=("code", "troubleshoot", "documents", "search"), default="code")
+    prepare.add_argument("--local-ai", choices=("off", "best", "trial"), default="off")
+    prepare.add_argument("--model")
+    prepare.add_argument("--digest")
+    for command in ("models", "profile-info"):
+        item = commands.add_parser(command)
+        item.add_argument("--config", required=True, type=Path)
     for command in ("result", "evidence"):
         item = commands.add_parser(command, help="Read a captured receipt from an idle state store.")
         item.add_argument("--config", required=True, type=Path)
@@ -68,18 +76,28 @@ def parser():
 
 
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "gui":
+        from .gui import main as gui_main
+        return gui_main(argv[1:])
     args = parser().parse_args(argv)
     try:
         require_posix()
         if args.command == "doctor":
             emit({"version": __version__, "python": sys.version.split()[0], "sqlite": sqlite3.sqlite_version,
                   "posix_collector": True, "runtime_dependencies": [], "network_contacted": False,
-                  "model_readiness": "not_checked", "native_host_integration": "not_implemented"})
+                  "model_readiness": "not_checked", "native_host_integration": "unqualified"})
             return 0
         if args.command == "demo":
             return demo()
         config = load_config(args.config)
         with Engine(config) as engine:
+            if args.command == "models":
+                emit(engine.inventory())
+                return 0
+            if args.command == "profile-info":
+                emit({"device_id": engine.device_id, "pipeline_sha256": engine.pipeline, "profiles": engine.profiles})
+                return 0
             if args.command == "prepare":
                 request = args.request
                 if args.request_file is not None:
@@ -92,7 +110,8 @@ def main(argv=None):
                     if len(raw) > MAX_REQUEST_BYTES:
                         raise Refusal("invalid_request", "The request file exceeds the request byte limit.")
                     request = raw.decode("utf-8")
-                job = engine.start_job(args.project, request, args.select)
+                job = engine.start_job(args.project, request, args.select, task_kind=args.task_kind,
+                                       ai_mode=args.local_ai, model=args.model, digest=args.digest)
                 try:
                     result = engine.wait(args.project, job["job_id"])
                 except KeyboardInterrupt:

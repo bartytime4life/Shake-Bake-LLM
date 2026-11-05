@@ -100,9 +100,9 @@ class ProjectRoot:
                 os.close(file_fd)
             os.close(parent)
 
-    def collect(self, selection: Selection, cancel, deadline: float) -> Evidence:
+    def read_source(self, path: str, cancel, deadline: float) -> bytes:
         check_cancel(cancel, deadline)
-        parts = path_parts(selection.path)
+        parts = path_parts(path)
         # Refuse a moved/replaced root; an open descriptor alone could retain stale access.
         self._check_root()
         with self._open_file(parts) as fd:
@@ -143,6 +143,10 @@ class ProjectRoot:
         # Screen the whole bounded file, including secrets outside the selected excerpt.
         if any(pattern.search(raw) for pattern in _SECRET_PATTERNS):
             raise Refusal("possible_secret", "The file matched a credential screen. Use a sanitized source copy.")
+        return raw
+
+    def collect(self, selection: Selection, cancel, deadline: float) -> Evidence:
+        raw = self.read_source(selection.path, cancel, deadline)
         # Lines are delimited by LF, with CRLF preserved byte-for-byte.
         lines = raw.split(b"\n")
         if raw.endswith(b"\n"):

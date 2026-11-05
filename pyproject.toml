@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shake-and-bake"
-version = "0.1.0.dev0"
+version = "0.2.0.dev0"
 description = "Bounded local evidence preparation for assistant handoffs"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,9 +20,10 @@ mcp = ["mcp==2.3.0"]
 [project.scripts]
 shake-bake = "shake_bake.cli:main"
 shake-bake-mcp = "shake_bake.mcp_adapter:main"
+shake-bake-gui = "shake_bake.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-shake_bake = ["fixtures/*.txt"]
+shake_bake = ["fixtures/*.txt", "fixtures/*.py", "fixtures/*.log", "web/*.html", "web/*.css", "web/*.js", "web/icons/*.svg", "web/icons/LICENSE"]

@@ -1,14 +1,18 @@
 # Architecture and current contracts
 
-The first repository slice implements the plan's evidence/baseline stage. It deliberately has no provider account, model choice or application-specific integration.
+The evidence core remains offline by default. Version 0.2 adds an optional bounded Ollama worker, conservative owner-profile routing and a packaged local GUI. No provider account or application-specific integration is required.
 
 ```mermaid
 flowchart LR
     CLI[CLI] --> Engine[One local coordinator]
-    MCP[Optional official SDK stdio] --> Engine
+    MCP[Optional official SDK stdio] --> IPC[Private native socket]
+    GUI[Authenticated loopback GUI] --> Engine
+    IPC --> Engine
     Engine --> Policy[Explicit project registry and bounded collector]
     Policy --> Source[Approved read-only UTF-8 sources]
     Engine --> Store[Private SQLite receipts]
+    Engine --> Router[Optional local Ollama + checks]
+    Router --> Packet
     Store --> Packet[Original request + exact evidence + gaps]
     Packet --> Reviewer[User-selected assistant or human]
 ```
@@ -29,7 +33,11 @@ Evidence is embedded in the captured packet, rather than duplicated in a second 
 
 ## Entry points
 
-The CLI and optional MCP adapter call the same Engine methods. The adapter exposes only the four planned evidence tools. It has no root/configuration mutation tool, browser listener, shell executor or provider client. Each process uses one coordinator. A shared GUI service is not implemented; two hosts cannot open the same store simultaneously.
+The CLI, GUI and optional MCP adapter call the same Engine methods. The GUI owns a coordinator and a private native connection publication; MCP `--connect` reaches that exact Engine. Diagnostic MCP `--config` owns a separate Engine and cannot concurrently own the same store. The four native tools cannot change root/configuration grants or invoke a shell/provider. Only an explicit GUI launch starts its loopback browser listener.
+
+Optional lexical discovery reads at most 200 supported files/4,000 directory entries/eight levels within a cooperative five-second scan budget. Selected source is recaptured and hash-checked before publication. Up to two distant windows per file may fill four source slots; different files are prioritized. Cutoffs/exclusions are disclosed, and a no-match job abstains. Discovery is a relevance aid, not an exhaustive review.
+
+After source capture, `off` makes no Ollama requests. `best` applies owner-controlled qualification gates. `trial` uses an explicit installed tag/digest. Model schema, source IDs, runtime/model identities and budgets are checked; failed notes are discarded without losing the exact packet. No note or confidence statement marks the task solved. See [routing](ollama-routing.md) for limits and [the workbench](workbench.md) for sessions and sharing.
 
 ## Result semantics
 
@@ -41,4 +49,4 @@ The CLI and optional MCP adapter call the same Engine methods. The adapter expos
 | `cancelled` | Work was stopped; no completed packet is available. |
 | `failed` | Deadline, interruption or unexpected failure; no completed packet. |
 
-The receipt reports actual excerpt bytes, local elapsed time and zero model/cloud calls. Unknown usage and savings are `null`. It makes no token approximation, diagnosis, quality score or review-completion claim.
+The receipt reports actual excerpt bytes, local elapsed time, model-attempt count, Ollama-request count and available local runtime token counts. Cloud calls remain zero. Unknown usage and savings are `null`. It makes no token approximation, quality score or review-completion claim.

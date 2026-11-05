@@ -14,11 +14,19 @@ The [Drive plan](https://docs.google.com/document/d/1llXN3-oNzIWi7DL1yU3KwXK_tE-
 
 ## Next implementation slices
 
+Version 0.2 implements bounded lexical discovery, optional pinned Ollama trials, conservative qualification gates, the chosen local workbench and a shared GUI/native coordinator. These are current code paths, not imported historical prototype claims. Real model accuracy and host qualification stay separate from the program/transport checks.
+
+- [x] Bounded lexical windows, no-match abstention and source recapture/hash checks.
+- [x] Numeric-loopback Ollama, pinned model/runtime metadata, bounded structured notes and explicit abstention.
+- [x] Off / best-qualified / explicit-candidate modes, installation/pipeline identity and conservative reviewed-profile gates.
+- [x] Packaged standalone GUI, pinned requests/results, evidence/notes separation, copy/JSON, recent history and persisted model preferences.
+- [x] Shared actual GUI/native coordinator with private connection publication and cross-entry pause/admission.
+
 1. Recover/reconcile the separate `0.4.0.dev4` archive if available. Preserve its useful work and tests without importing another application's code or project assumptions. Verify every imported claim in this checkout.
-2. Add bounded lexical/symbol discovery and repository snapshot/Git-state receipts. Compare source coverage against explicit selection. Keep exact evidence and omissions inspectable.
-3. Add an optional private-loopback Ollama worker with pinned model/profile identity, schema/source validation, bounded retries, deadlines and cancellation. Deterministic preparation must remain usable when it is off or unavailable. Never download a model automatically.
-4. Implement conservative task routing, protected evidence and explicit escalation. Architecture/security judgments remain cloud/human decisions. A local model's confidence cannot mark a task complete.
-5. Implement the connected GUI/coordinator from the plan: choose project, readiness, prepare, pinned result, explicit handoff, stop and recovery. Ground UI work in a selected visual reference and test keyboard/mobile/desktop behavior. Persist preferences separately from session pause/history.
+2. Extend lexical discovery with measured symbol retrieval and repository/Git-state receipts. Compare source coverage against explicit selection. Keep exact evidence and omissions inspectable.
+3. Extend local-worker qualification with actual hardware/runtime calibration and unseen model trials. Keep the deterministic path usable and model downloads explicit.
+4. Qualify conservative routing against real final-task outcomes. Architecture/security judgments remain cloud/human decisions. A local model's confidence cannot mark a task complete.
+5. Extend the connected GUI with guided owner project setup, calibration and license disclosures. Keep preferences distinct from session pause/history. Continue accessibility and longer task walkthroughs.
 6. Qualify each actual Claude/ChatGPT host with permitted inert tasks before real-source handoffs. A transport test is not host qualification. Keep copy/export available.
 7. Build exposed synthetic Task Lab cases and a separate owner-permitted, unseen paired comparison. Record task quality, omissions, failures, retries, latency and actual full-workflow provider usage. Do not infer savings from excerpt length.
 8. Add actual-machine setup/calibration, immutable profile identity, license/model provenance, dependency checks and recovery/update/uninstall guidance. Keep Windows support separate until equivalent boundaries pass.

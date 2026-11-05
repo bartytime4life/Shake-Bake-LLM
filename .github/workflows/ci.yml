@@ -25,6 +25,7 @@ jobs:
         run: |
           python -m compileall -q src
           PYTHONPATH=src python -m shake_bake demo > /tmp/shake-bake-demo.json
+          node --check src/shake_bake/web/app.js
   installed-wheel:
     runs-on: ubuntu-latest
     steps:
@@ -48,3 +49,4 @@ jobs:
           /tmp/shake-bake-installed/bin/shake-bake doctor
           /tmp/shake-bake-installed/bin/shake-bake demo
           /tmp/shake-bake-installed/bin/python "$GITHUB_WORKSPACE/integration/mcp_stdio_smoke.py" --python /tmp/shake-bake-installed/bin/python
+          /tmp/shake-bake-installed/bin/python "$GITHUB_WORKSPACE/integration/mcp_shared_smoke.py" --python /tmp/shake-bake-installed/bin/python

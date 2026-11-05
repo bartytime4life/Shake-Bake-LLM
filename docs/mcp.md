@@ -36,9 +36,11 @@ This repository does not write host settings or claim this entry works in every 
 3. `fetch_evidence(project_id, job_id, evidence_id)` returns the exact captured record. Its `snapshot_only` flag is true.
 4. `cancel_job(project_id, job_id)` cancels an active scoped job and prevents late publication.
 
-No tool registers roots, changes permissions, runs commands, selects models, applies patches or calls a cloud provider. Tool refusals are structured `status: refused` responses with a safe code/message. Unexpected I/O failures omit underlying file contents and host paths.
+No tool registers roots, changes permissions, runs commands, applies patches or calls a cloud provider. Explicit trial arguments may select a pinned installed local candidate; the host cannot create qualification authority. Tool refusals are structured `status: refused` responses with a safe code/message. Unexpected I/O failures omit underlying file contents and host paths.
 
-Only one process may own a state store. Close the MCP server before using separate CLI commands on that store, or give independent diagnostic sessions separate stores. A shared GUI/host coordinator remains a future slice.
+Only one process may own a state store. `--config` owns an independent diagnostic coordinator. To use the GUI's actual coordinator, launch it first, then run `shake-bake-mcp --connect /absolute/private/state/connection.json`. This private Unix-socket connection shares admission, routing, exact evidence and the session local-AI pause. See [the workbench guide](workbench.md). The public tool surface stays at four methods.
+
+`start_job` now supports optional `task_kind`, `ai_mode`, `model` and `digest`. Omitted selections use bounded lexical discovery. The default `ai_mode: off` makes no Ollama calls. `best` requires owner-reviewed profiles; `trial` is an explicitly pinned unqualified candidate. No tool can register roots, download a model, invent a qualification record or call a cloud provider. The GUI's browser listener exists only when the owner explicitly launches the GUI.
 
 ## Reproduce the SDK transport check
 
@@ -50,3 +52,5 @@ After building and installing the wheel in a clean virtual environment with the 
 ```
 
 The client starts a real stdio server from a temporary working directory without checkout `PYTHONPATH`, lists exactly four tools, starts an inert job, polls its result, compares exact CRLF evidence, retrieves the same scoped evidence, verifies a refused project and tests traversal refusal. This proves the tested SDK pair exchanges these calls. It does not prove native host UX, provider delivery, unseen task quality or a security audit.
+
+`integration/mcp_shared_smoke.py` separately starts an installed GUI service and an official SDK stdio client using `--connect`. It verifies the same job/evidence through both entry points, GUI pause affecting a native request, no model/provider calls, continued service access after the client closes, and normal private-publication cleanup.
