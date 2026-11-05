@@ -14,7 +14,7 @@ from shake_bake.worker import organize, parse_json
 
 
 @contextmanager
-def stub_server(*, remote=False, content=None, status=200, delay=0, override=None, chunked=False, inventory=None, after_digest=None, runtime_version="0.0.0-test", after_runtime=None):
+def stub_server(*, remote=False, content=None, status=200, delay=0, override=None, chunked=False, inventory=None, after_digest=None, runtime_version="0.0.0-test", after_runtime=None, metadata=None):
     requests = []
     chat_seen = False
     class Handler(BaseHTTPRequestHandler):
@@ -30,6 +30,7 @@ def stub_server(*, remote=False, content=None, status=200, delay=0, override=Non
                 result = {"model_info": {"general.architecture": "fixture"}}
                 if remote:
                     result["remote_host"] = "https://example.invalid"
+                result.update(metadata or {})
             else:
                 chat_seen = True
                 result = {"model": payload["model"], "done": True, "done_reason": "stop", "eval_count": 12,
@@ -102,6 +103,39 @@ class WorkerAcceptance(unittest.TestCase):
             with self.assertRaisesRegex(Refusal, "local_model_metadata_required"):
                 organize(self.packet, "fixture:local", port=port)
         self.assertEqual([p for p, _ in requests], ["/api/show"])
+
+    def test_thinking_only_and_malformed_controls_refuse_before_source_submission(self):
+        for thinking, code in (({"values": [True]}, "worker_thinking_mode_unsupported"),
+                               ({"values": ["low", "medium", "high"]}, "worker_thinking_mode_unsupported"),
+                               ({"values": ["false"]}, "worker_thinking_mode_unsupported"),
+                               ({"values": [0]}, "worker_invalid_thinking_metadata"),
+                               ({"values": []}, "worker_invalid_thinking_metadata"),
+                               ({"values": "false"}, "worker_invalid_thinking_metadata"),
+                               (True, "worker_invalid_thinking_metadata")):
+            with self.subTest(thinking=thinking), stub_server(metadata={"thinking": thinking}) as (port, requests):
+                with self.assertRaisesRegex(Refusal, code):
+                    organize(self.packet, "fixture:local", port=port)
+                self.assertEqual(requests, [("/api/show", {"model": "fixture:local"})])
+
+    def test_false_controls_and_legacy_metadata_keep_the_no_thinking_wire_contract(self):
+        for metadata in (None, {"thinking": {"values": [False]}}, {"thinking": {"values": [False, True]}}):
+            with self.subTest(metadata=metadata), stub_server(metadata=metadata) as (port, requests):
+                note = organize(self.packet, "fixture:local", port=port)
+                chat = next(body for path, body in requests if path == "/api/chat")
+                self.assertIs(chat["think"], False)
+                self.assertEqual(json.loads(chat["messages"][1]["content"])["original_request"], self.packet.original_request)
+                self.assertEqual(note.label, "unverified_worker_interpretation")
+
+    def test_incompatible_thinking_mode_abstains_without_dropping_exact_source(self):
+        from shake_bake.briefing import build_brief
+        with stub_server(metadata={"thinking": {"values": [True]}}) as (port, requests):
+            brief = build_brief(self.root, "Inspect slice coverage.", model="fixture:local", port=port)
+        self.assertEqual(brief.outcome, "ABSTAIN")
+        self.assertEqual(brief.worker_error, "worker_thinking_mode_unsupported")
+        self.assertIsNone(brief.worker)
+        self.assertEqual(brief.search.original_request, "Inspect slice coverage.")
+        self.assertEqual(brief.search.packet.evidence[0].text, (self.root / "sample.py").read_text())
+        self.assertEqual([path for path, _ in requests], ["/api/show"])
 
     def test_cloud_or_url_model_names_refuse_before_connecting(self):
         with patch("socket.create_connection") as connect:
