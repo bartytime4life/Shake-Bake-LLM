@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import time
 
-from .briefing import Brief, build_brief
+from .briefing import Brief, build_brief, collection_scope
 from .collector import _read
 from .contracts import Refusal
 from .search import prepare
@@ -20,7 +20,7 @@ def pipeline_id() -> str:
     digest = hashlib.sha256()
     root = Path(__file__).resolve().parent
     for name in ("__init__.py", "contracts.py", "collector.py", "search.py", "worker.py", "briefing.py", "routing.py",
-                 "helper.py", "job_runner.py", "gui.py", "shared.py", "mcp_server.py"):
+                 "helper.py", "job_runner.py", "gui.py", "shared.py", "mcp_server.py", "doctor.py", "capabilities.py"):
         digest.update(name.encode() + b"\0" + (root / name).read_bytes())
     return digest.hexdigest()
 
@@ -197,7 +197,8 @@ def assist(root: Path, task: str, task_kind: str, *, policy_path: Path | None, p
     worker, error = None, None
     if decision.mode == "local_model" and search.packet:
         try:
-            worker = organize(search.packet, decision.model, port=port, expected_digest=decision.expected_digest)
+            worker = organize(search.packet, decision.model, port=port, expected_digest=decision.expected_digest,
+                              collection_context=collection_scope(search))
         except Refusal as refusal:
             error = refusal.code
             failed = fallback(task_kind, refusal.code, decision.rejected)

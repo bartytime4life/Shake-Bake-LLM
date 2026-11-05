@@ -20,6 +20,8 @@ import webbrowser
 from . import __version__
 from .collector import _read
 from .contracts import Refusal
+from .capabilities import computer_snapshot
+from .doctor import inspect_model
 from .helper import HelperSession
 from .routing import eligible_profiles, pipeline_id, validate_policy
 from .shared import ConnectionPublication
@@ -193,6 +195,18 @@ class Controller:
             except Refusal:
                 self.inventory_status = {"state": "unavailable", "models": []}
             return self.inventory_status
+        if operation == "computer":
+            if payload != {}:
+                raise Refusal("invalid_readiness_request")
+            return computer_snapshot()
+        if operation == "inspect_model":
+            if self.disabled or not self._policy()["enabled"]:
+                raise Refusal("local_ai_disabled")
+            if not isinstance(payload, dict) or set(payload) != {"model", "digest"}:
+                raise Refusal("invalid_readiness_request")
+            if not isinstance(payload["digest"], str) or not re.fullmatch(r"[a-f0-9]{64}", payload["digest"]):
+                raise Refusal("invalid_expected_digest")
+            return inspect_model(payload["model"], self.ollama_port, expected_digest=payload["digest"])
         raise Refusal("unknown_operation")
 
     def close(self):
@@ -395,6 +409,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, self.server.controller.call("settings", payload))
             elif path == "/api/inventory" and payload == {}:
                 self._send(200, self.server.controller.call("inventory"))
+            elif path == "/api/computer":
+                self._send(200, self.server.controller.call("computer", payload))
+            elif path == "/api/model-check":
+                self._send(200, self.server.controller.call("inspect_model", payload))
             elif re.fullmatch(r"/api/tasks/[a-f0-9]{32}/cancel", path) and payload == {}:
                 self._send(200, self.server.controller.call("cancel", path.split("/")[-2]))
             else:

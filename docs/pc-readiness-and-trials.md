@@ -80,3 +80,9 @@ Usage sums cover only validated worker responses that supplied usage. Missing or
 Ctrl+C normally saves an INTERRUPTED receipt plus completed checkpoints. A hard kill or power loss can leave only `plan.json` and complete lines of `attempts.jsonl`; the last line can be incomplete. There is no automatic resume or reconstructed pass. Preserve that directory and start a new uniquely named run. These checkpoints are separate from the workbench's session-only job history.
 
 The ten exposed cases remain development material and cannot promote a model automatically. Routing qualification still needs unseen cases, reviewed outcomes, a paired native-host baseline, matching identities, no critical regression, and measured performance on the owner's hardware. Browser visual review, real inference, host integration and savings remain distinct gates.
+
+## Version 0.4.0.dev6 observations and limits
+
+Doctor and Model details now expose bounded CPU/RAM/container/GPU observations of the environment running the process. Missing GPU memory is not proof of CPU-only hardware. Metadata-only model checks verify reported digest/runtime stability and expose quantization/context/capabilities. Trial receipts retain that runtime and exact shared request settings (`think: false`, `keep_alive: 0`, non-streaming); a runtime change stops further attempts. No context, memory-fit or accuracy claim follows from metadata.
+
+Two complete ten-case Qwen development runs found reasoning errors despite valid structured output. See validation-0.4.0.dev6.md before interpreting a successful run as a useful model handoff. The semantic review sheets remain pending; exposed repetitions do not promote routing profiles.

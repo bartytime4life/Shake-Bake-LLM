@@ -20,14 +20,23 @@ class Brief:
         return asdict(self)
 
 
-def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 11434, limits: SearchLimits | None = None, expected_digest: str | None = None) -> Brief:
+def collection_scope(search):
+    """Software-produced scan facts; no root, policy, key or action authority."""
+    return {"scope": "bounded_lexical_selected_files", "exhaustive": False,
+            "files_examined": search.files_examined, "matching_files": search.matching_files,
+            "source_bytes_read": search.source_bytes_read, "selected_excerpt_bytes": search.selected_excerpt_bytes,
+            "cutoffs": list(search.cutoffs), "exclusions": dict(search.exclusions)}
+
+
+def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 11434, limits: SearchLimits | None = None, expected_digest: str | None = None, expected_runtime: str | None = None) -> Brief:
     search = prepare(root, task, limits)
     if search.packet is None:
         return Brief("ABSTAIN", search, None, None)
     worker, error = None, None
     if model is not None:
         try:
-            worker = organize(search.packet, model, port=port, expected_digest=expected_digest)
+            worker = organize(search.packet, model, port=port, expected_digest=expected_digest,
+                              expected_runtime=expected_runtime, collection_context=collection_scope(search))
         except Refusal as refusal:
             error = refusal.code
     return Brief("ABSTAIN" if error else "ANSWER", search, worker, error)

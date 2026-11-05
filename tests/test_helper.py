@@ -74,7 +74,7 @@ class HelperAcceptance(unittest.TestCase):
         self.assertEqual(result["state"], "DONE")
         self.assertEqual(result["mode"], "ollama_helper")
         self.assertEqual(result["worker"]["label"], "unverified_worker_interpretation")
-        self.assertEqual([p for p, _ in requests], ["/api/show", "/api/chat"])
+        self.assertEqual([p for p, _ in requests], ["/api/show", "/api/version", "/api/chat", "/api/version"])
         self.assertFalse(result["final_answer_ready"])
 
     def test_confident_wrong_note_cannot_become_final_answer_or_hide_source(self):

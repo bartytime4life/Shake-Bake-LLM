@@ -1,4 +1,4 @@
-Current development update (November 5): `0.4.0.dev5` preserves the imported 121-test application and passes 127 tests. The selected GUI, acknowledged pinned candidate trials, browser model preferences and installed official-SDK subprocess path are implemented. One actual inert-model trial and limited desktop/phone interactions ran; accuracy, actual host UX, durable recovery, full calibration and broader qualification below remain open. See docs/validation-0.4.0.dev5.md.
+Current development update (November 5): `0.4.0.dev6` adds explicit computer/model readiness, exact shared wire/receipt settings, per-call runtime guards and worker-visible collection limits. The suite passes 140 tests. Two ten-case exposed real-model screenings completed structurally, but confirmed reasoning errors keep the model unqualified. Full calibration/profile binding, durable recovery, unseen native-host comparison and broader gates below remain open. See docs/validation-0.4.0.dev6.md.
 
 # Shake and Bake: prioritized to-do list
 

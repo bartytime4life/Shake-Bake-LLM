@@ -52,7 +52,7 @@ class StartupReadiness(unittest.TestCase):
         with stub_server() as (port, requests):
             result = inspect_model("fixture:local", port)
         self.assertEqual(result["reported_digest"], "a" * 64)
-        self.assertEqual([path for path, _ in requests], ["/api/tags", "/api/show", "/api/tags"])
+        self.assertEqual([path for path, _ in requests], ["/api/tags", "/api/version", "/api/show", "/api/tags", "/api/version"])
         self.assertFalse(result["generation_requested"])
         with stub_server(remote=True) as (port, requests):
             with self.assertRaisesRegex(Refusal, "local_model_metadata_required"):
@@ -99,6 +99,10 @@ class ModelTrialAcceptance(unittest.TestCase):
         worker = receipt["attempts"][0]["brief"]["worker"]
         self.assertEqual(worker["observed_model_digest"], "a" * 64)
         self.assertEqual(receipt["requested_worker_settings"]["options"], generation_settings())
+        self.assertEqual(receipt["requested_worker_settings"]["keep_alive"],0)
+        self.assertIs(receipt["requested_worker_settings"]["think"],False)
+        self.assertEqual(worker["observed_runtime_version"],receipt["model_preflight"]["runtime_version"])
+        self.assertEqual(worker["requested_configuration"],receipt["requested_worker_settings"])
         self.assertEqual(worker["usage"]["eval_count"], 12)
         for path, payload in requests:
             if path == "/api/chat":
@@ -147,6 +151,15 @@ class ModelTrialAcceptance(unittest.TestCase):
         self.assertEqual(receipt["status"], "STOPPED")
         self.assertEqual(receipt["stop_reason"], "worker_timeout")
         self.assertEqual(receipt["failed_attempt_count"], 1)
+
+    def test_runtime_change_stops_trial_without_dropping_failed_attempt(self):
+        with stub_server(after_runtime="9.0.0") as (port, requests):
+            receipt=trial.run_trial(self.folder,model="fixture:local",port=port,repeats=2,case_ids=["boundary"])
+        self.assertEqual(receipt["status"],"STOPPED")
+        self.assertEqual(receipt["stop_reason"],"worker_runtime_changed")
+        self.assertEqual(receipt["failed_attempt_count"],1)
+        self.assertEqual(len(receipt["attempts"]),1)
+        self.assertEqual(sum(path=="/api/chat" for path,_ in requests),1)
 
     def test_partial_or_invalid_reviews_cannot_become_a_pass(self):
         self.diagnostic(repeats=2)
