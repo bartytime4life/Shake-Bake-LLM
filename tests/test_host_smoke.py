@@ -1,5 +1,6 @@
 """Offline validation of synthetic host traces; these tests never call Codex."""
 
+import contextlib
 import hashlib
 import importlib.util
 import json
@@ -17,6 +18,17 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("codex_host_smoke", ROOT / "integration/codex_host_smoke.py")
 smoke = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(smoke)
+
+
+@contextlib.contextmanager
+def runner_environment(proc_stat="123 (synthetic) S", *, task_directory=True):
+    with patch.object(smoke.sys, "platform", "linux"), \
+         patch.object(smoke.os, "getpid", return_value=123), \
+         patch.object(smoke.os, "pidfd_open", create=True) as opened, \
+         patch.object(smoke.signal, "pidfd_send_signal", create=True) as signalled, \
+         patch.object(smoke.Path, "read_text", return_value=proc_stat) as read, \
+         patch.object(smoke.Path, "is_dir", return_value=task_directory):
+        yield opened, signalled, read
 
 
 def fixture():
@@ -66,6 +78,52 @@ def cancellation_fixture():
 
 
 class HostSmokeTraceAcceptance(unittest.TestCase):
+    def test_runner_environment_check_is_read_only_when_process_ids_match(self):
+        with runner_environment() as (opened, signalled, read):
+            smoke.require_runner_gate_environment()
+            read.assert_called_once()
+            opened.assert_not_called()
+            signalled.assert_not_called()
+
+    def test_mismatched_procfs_refuses_before_gate_handles_host_or_output_creation(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             runner_environment("456 (different namespace) S") as (opened, signalled, _), \
+             patch.object(smoke.subprocess, "Popen") as started, \
+             patch.object(smoke.shutil, "which") as host_lookup:
+            output = Path(directory) / "uncreated"
+            with self.assertRaisesRegex(ValueError, "runner_procfs_pid_namespace_mismatch"):
+                smoke.RunnerGate(123)
+            with self.assertRaisesRegex(ValueError, "runner_procfs_pid_namespace_mismatch"):
+                smoke.run(output, scenario="active-cancel")
+            self.assertFalse(output.exists())
+            opened.assert_not_called()
+            signalled.assert_not_called()
+            started.assert_not_called()
+            host_lookup.assert_not_called()
+
+    def test_unreadable_procfs_refuses_before_signalling(self):
+        with runner_environment() as (opened, signalled, read):
+            read.side_effect = PermissionError("synthetic procfs restriction")
+            with self.assertRaisesRegex(ValueError, "runner_procfs_unavailable"):
+                smoke.RunnerGate(123)
+            opened.assert_not_called()
+            signalled.assert_not_called()
+
+    def test_missing_procfs_task_directory_refuses_before_signalling(self):
+        with runner_environment(task_directory=False) as (opened, signalled, _):
+            with self.assertRaisesRegex(ValueError, "runner_procfs_unavailable"):
+                smoke.RunnerGate(123)
+            opened.assert_not_called()
+            signalled.assert_not_called()
+
+    def test_unsupported_platform_refuses_before_reading_procfs(self):
+        with runner_environment() as (opened, signalled, read), patch.object(smoke.sys, "platform", "win32"):
+            with self.assertRaisesRegex(ValueError, "linux_pidfd_required"):
+                smoke.require_runner_gate_environment()
+            read.assert_not_called()
+            opened.assert_not_called()
+            signalled.assert_not_called()
+
     def test_complete_synthetic_trace_is_accepted_without_calling_host(self):
         events, answer = fixture()
         with patch("subprocess.Popen", side_effect=AssertionError("host started")):
@@ -196,6 +254,10 @@ class HostSmokeTraceAcceptance(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "linux" and hasattr(os, "pidfd_open"), "Linux pidfd fault injection")
     def test_runner_gate_only_stops_owned_preparation_and_a_fresh_job_can_finish(self):
+        try:
+            smoke.require_runner_gate_environment()
+        except ValueError as error:
+            self.skipTest(str(error))
         from shake_bake.helper import HelperSession
         helper = HelperSession({"starter-demo": smoke.DEMO}, evidence_only=True)
         unrelated = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(10)"])
