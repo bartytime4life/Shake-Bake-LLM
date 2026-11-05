@@ -1,0 +1,3 @@
+Synthetic test receipt
+run_state = NOT_RUN
+passed_count = UNKNOWN

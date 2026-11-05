@@ -1,16 +1,31 @@
-"""Check that legal notices and the inert demo ship unchanged in the wheel."""
+"""Verify recovered code/assets, legal notices and dependency metadata in a wheel."""
 
+from email.parser import BytesParser
 from pathlib import Path
 from zipfile import ZipFile
 
 root = Path(__file__).resolve().parent.parent
 wheels = list((root / "dist").glob("*.whl"))
-assert len(wheels) == 1, "Use a clean dist directory with exactly one candidate wheel."
+assert len(wheels) == 1, "Use an empty dist directory and build exactly one wheel."
 with ZipFile(wheels[0]) as archive:
     names = archive.namelist()
-    for name in ("LICENSE", "THIRD_PARTY_NOTICES.md"):
-        match = [item for item in names if item.endswith("/licenses/" + name)]
-        assert len(match) == 1, (name, match)
-        assert archive.read(match[0]) == (root / name).read_bytes(), name
-    assert archive.read("shake_bake/fixtures/example.txt") == (root / "src/shake_bake/fixtures/example.txt").read_bytes()
-print("Wheel notices and inert fixture match source bytes.")
+    source = root / "src"
+    expected = {p.relative_to(source).as_posix(): p.read_bytes()
+                for p in (source / "shake_bake").rglob("*")
+                if p.is_file() and "__pycache__" not in p.parts}
+    packaged = {p for p in names if p.startswith("shake_bake/") and not p.endswith("/")}
+    assert packaged == set(expected), (packaged - set(expected), set(expected) - packaged)
+    for path, data in expected.items():
+        assert archive.read(path) == data, path
+    for name in ("LICENSE", "THIRD_PARTY_NOTICES.md", "MODEL_LICENSES.json"):
+        matches = [p for p in names if p.endswith("/licenses/" + name)]
+        assert len(matches) == 1, (name, matches)
+        assert archive.read(matches[0]) == (root / name).read_bytes(), name
+    metadata_name, = [p for p in names if p.endswith(".dist-info/METADATA")]
+    metadata = BytesParser().parsebytes(archive.read(metadata_name))
+    assert metadata["Name"] == "shake-and-bake-assistant"
+    assert metadata["Version"] == "0.4.0.dev4"
+    assert metadata["License-Expression"] == "MIT"
+    requirements = metadata.get_all("Requires-Dist", [])
+    assert len(requirements) == 1 and requirements[0].startswith("mcp") and 'extra == "mcp"' in requirements[0], requirements
+print("Wheel code, demo/web assets and all three legal files match source bytes; no core runtime dependencies.")

@@ -1,0 +1,10 @@
+{
+  "schema_version": "1",
+  "enabled": true,
+  "baselines": {},
+  "profiles": [
+    {"id": "qwen-code-candidate", "task_kind": "code", "model": "qwen3.5:9b-q4_K_M", "status": "candidate", "digest": null, "pipeline_id": null, "evaluation": null},
+    {"id": "gemma-code-candidate", "task_kind": "code", "model": "gemma4:12b", "status": "candidate", "digest": null, "pipeline_id": null, "evaluation": null},
+    {"id": "qwen-triage-candidate", "task_kind": "troubleshoot", "model": "qwen3.5:4b-q4_K_M", "status": "candidate", "digest": null, "pipeline_id": null, "evaluation": null}
+  ]
+}

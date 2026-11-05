@@ -1,0 +1,37 @@
+{
+  "version": "0.4.0.dev3",
+  "date": "2026-11-04",
+  "scope": "development_environment_not_owner_PC",
+  "program_tests": {
+    "passed": 102,
+    "skipped": 0
+  },
+  "new_real_socket_and_queue_checks": 6,
+  "connection_defaults": {
+    "active_handlers": 8,
+    "initial_idle_seconds": 3,
+    "absolute_connection_seconds": 12,
+    "deadline_kind": "cooperative_server_loop",
+    "normal_poll_seconds": 0.2,
+    "overload": "best_effort_503_then_close"
+  },
+  "controller_timeout_seconds": 8,
+  "queued_expired_requests": "cancelled_before_execution",
+  "running_operations": "not_cancelled_by_future_timeout",
+  "task_lab_mechanical_coverage": "10_of_10_exposed_development_cases",
+  "wheel": "no_index_build_installed_doctor_and_actual_GUI_HTTP_200_clean_shutdown_passed",
+  "javascript_syntax": "passed",
+  "offline_preview": "recorded_inert_demo_no_model_inference",
+  "remaining": [
+    "broader_SEC_04_load_and_malformed_input",
+    "owner_PC_operation",
+    "independent_security_review",
+    "secret_handling",
+    "dependency_update_provenance",
+    "browser_desktop_phone_review",
+    "real_model_accuracy",
+    "actual_host_connections",
+    "automatic_per_PC_tuning",
+    "cloud_savings"
+  ]
+}

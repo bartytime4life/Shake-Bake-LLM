@@ -1,0 +1,31 @@
+{
+  "version": "0.3.0.dev1",
+  "date": "2026-11-04",
+  "platform": "linux",
+  "python_version": "3.12.14",
+  "base_suite": {
+    "command": "PYTHONPATH=src python3 -B -m unittest discover -s tests",
+    "tests": 49,
+    "passed": 49,
+    "skipped": 0
+  },
+  "synthetic_selection_smoke": {
+    "cases": 2,
+    "all_expected_sources_found": true
+  },
+  "known_guard_task_session": {
+    "cases": 2,
+    "exact_evidence_returned": true,
+    "source_changed": false
+  },
+  "not_qualified": [
+    "actual_ollama_inference",
+    "official_mcp_sdk_interoperability",
+    "claude_code_connection",
+    "chatgpt_connection",
+    "blind_review_accuracy",
+    "cloud_token_savings",
+    "owner_hardware_performance"
+  ],
+  "mcp_smoke_script": "prepared_not_run_sdk_absent"
+}

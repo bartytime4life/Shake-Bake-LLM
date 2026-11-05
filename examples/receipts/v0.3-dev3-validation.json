@@ -1,0 +1,31 @@
+{
+  "version": "0.3.0.dev3",
+  "date": "2026-11-04",
+  "python_version": "3.12.14",
+  "program_suite": {
+    "passed": 72,
+    "skipped": 0
+  },
+  "task_lab": {
+    "cases": 10,
+    "required_span_checks_passed": 10,
+    "semantic_model_accuracy": null
+  },
+  "routing_demo": {
+    "candidate_policy": "no_qualified_profile",
+    "off_switch": "local_ai_disabled",
+    "model_inference": false,
+    "network_calls": 0
+  },
+  "routing_http_tests": "simulated_service_and_fabricated_review_records_only",
+  "real_profiles_qualified": 0,
+  "not_verified": [
+    "real_ollama_inference",
+    "actual_weight_bytes",
+    "hosted_baselines",
+    "semantic_accuracy",
+    "MCP SDK or host transport",
+    "GUI",
+    "measured_savings"
+  ]
+}

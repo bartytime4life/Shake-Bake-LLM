@@ -1,0 +1,153 @@
+[
+  {
+    "routing": {
+      "task_kind": "code",
+      "mode": "evidence_only",
+      "reason": "no_qualified_profile",
+      "why": "No local profile meets this task's recorded accuracy requirements. The host must assess the evidence.",
+      "profile_id": null,
+      "model": null,
+      "expected_digest": null,
+      "rejected": [
+        [
+          "qwen-code-candidate",
+          "not_qualified"
+        ],
+        [
+          "gemma-code-candidate",
+          "not_qualified"
+        ]
+      ],
+      "attempted_profile_id": null,
+      "attempted_model": null
+    },
+    "brief": {
+      "outcome": "ABSTAIN",
+      "search": {
+        "original_request": "Find executable slice coverage.",
+        "packet": {
+          "schema_version": "0.1",
+          "outcome": "ANSWER",
+          "kind": "source_excerpt_packet",
+          "original_request": "Find executable slice coverage.",
+          "snapshot_scope": "selected-files-only",
+          "snapshot_id": "ed5e1a61f58e12d3cfc487502f8419d83090074f939cce2e8d40525c2ef07aa6",
+          "evidence": [
+            {
+              "path": "validator.py",
+              "start_line": 2,
+              "end_line": 6,
+              "text": "\n\ndef validate_structure(reported_slices, slices_detected):\n    # Executable slice coverage admission rule: inspect the relation carefully.\n    return len(reported_slices) <= slices_detected\n",
+              "file_sha256": "562b2222c3f00aa22063891f7bef54cde56a6df5008247903db587bccee09216",
+              "excerpt_sha256": "f5da4f4de4ed7dd53096ce9cc4f868655d6dac6b56026a9a11309bb818058053",
+              "size_bytes": 270
+            },
+            {
+              "path": "readme.md",
+              "start_line": 1,
+              "end_line": 5,
+              "text": "# Synthetic source-review fixture\n\nThe validator demonstrates executable slice coverage. This is a deliberately\nsmall evidence-selection fixture, not a real analyzer or an installed product.\nDo not execute this source as part of review. The collector only reads it.\n",
+              "file_sha256": "7a90a96c7e40c9d841c551eda4ee2b6589447d2dde942581a8c5afa2d145f85a",
+              "excerpt_sha256": "7a90a96c7e40c9d841c551eda4ee2b6589447d2dde942581a8c5afa2d145f85a",
+              "size_bytes": 266
+            }
+          ],
+          "limitations": [
+            "Evidence collection only; no code-review or safety conclusion was produced.",
+            "Only explicitly selected files are covered; this is not a repository-wide snapshot.",
+            "No cloud-token saving or model performance has been measured."
+          ]
+        },
+        "terms": [
+          "executable",
+          "slice",
+          "coverage"
+        ],
+        "files_examined": 2,
+        "entries_seen": 2,
+        "source_bytes_read": 536,
+        "matching_files": 2,
+        "selected_excerpt_bytes": 457,
+        "exclusions": {},
+        "cutoffs": []
+      },
+      "worker": null,
+      "worker_error": "no_qualified_profile"
+    },
+    "actual_model_inference": false,
+    "network_calls": 0,
+    "result_kind": "preparation_result",
+    "final_answer_ready": false
+  },
+  {
+    "routing": {
+      "task_kind": "code",
+      "mode": "evidence_only",
+      "reason": "local_ai_disabled",
+      "why": "Local AI is switched off. Exact evidence remains available; no model was contacted.",
+      "profile_id": null,
+      "model": null,
+      "expected_digest": null,
+      "rejected": [],
+      "attempted_profile_id": null,
+      "attempted_model": null
+    },
+    "brief": {
+      "outcome": "ABSTAIN",
+      "search": {
+        "original_request": "Find executable slice coverage.",
+        "packet": {
+          "schema_version": "0.1",
+          "outcome": "ANSWER",
+          "kind": "source_excerpt_packet",
+          "original_request": "Find executable slice coverage.",
+          "snapshot_scope": "selected-files-only",
+          "snapshot_id": "ed5e1a61f58e12d3cfc487502f8419d83090074f939cce2e8d40525c2ef07aa6",
+          "evidence": [
+            {
+              "path": "validator.py",
+              "start_line": 2,
+              "end_line": 6,
+              "text": "\n\ndef validate_structure(reported_slices, slices_detected):\n    # Executable slice coverage admission rule: inspect the relation carefully.\n    return len(reported_slices) <= slices_detected\n",
+              "file_sha256": "562b2222c3f00aa22063891f7bef54cde56a6df5008247903db587bccee09216",
+              "excerpt_sha256": "f5da4f4de4ed7dd53096ce9cc4f868655d6dac6b56026a9a11309bb818058053",
+              "size_bytes": 270
+            },
+            {
+              "path": "readme.md",
+              "start_line": 1,
+              "end_line": 5,
+              "text": "# Synthetic source-review fixture\n\nThe validator demonstrates executable slice coverage. This is a deliberately\nsmall evidence-selection fixture, not a real analyzer or an installed product.\nDo not execute this source as part of review. The collector only reads it.\n",
+              "file_sha256": "7a90a96c7e40c9d841c551eda4ee2b6589447d2dde942581a8c5afa2d145f85a",
+              "excerpt_sha256": "7a90a96c7e40c9d841c551eda4ee2b6589447d2dde942581a8c5afa2d145f85a",
+              "size_bytes": 266
+            }
+          ],
+          "limitations": [
+            "Evidence collection only; no code-review or safety conclusion was produced.",
+            "Only explicitly selected files are covered; this is not a repository-wide snapshot.",
+            "No cloud-token saving or model performance has been measured."
+          ]
+        },
+        "terms": [
+          "executable",
+          "slice",
+          "coverage"
+        ],
+        "files_examined": 2,
+        "entries_seen": 2,
+        "source_bytes_read": 536,
+        "matching_files": 2,
+        "selected_excerpt_bytes": 457,
+        "exclusions": {},
+        "cutoffs": []
+      },
+      "worker": null,
+      "worker_error": "local_ai_disabled"
+    },
+    "actual_model_inference": false,
+    "network_calls": 0,
+    "result_kind": "preparation_result",
+    "final_answer_ready": false
+  }
+]

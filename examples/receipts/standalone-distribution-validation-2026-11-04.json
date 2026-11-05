@@ -1,0 +1,24 @@
+{
+  "kind": "standalone_distribution_validation",
+  "date": "2026-11-04",
+  "app_version": "0.4.0.dev3",
+  "external_case_receipts_excluded": 4,
+  "self_contained_fixture_suite": {
+    "passed": 102,
+    "skipped": 0
+  },
+  "external_project_runtime_dependency": false,
+  "external_case_source_names_and_ids_in_current_package": false,
+  "current_tests_require_external_case_material": false,
+  "wheel": "no_index_build_and_current_legal_file_bytes_verified",
+  "MIT_license_changed": false,
+  "still_pending": [
+    "actual_model_accuracy",
+    "actual_host_connections",
+    "owner_PC_operation",
+    "browser_visual_review",
+    "independent_security_qualification",
+    "exact_dependency_model_artifact_distribution_review",
+    "cloud_savings"
+  ]
+}

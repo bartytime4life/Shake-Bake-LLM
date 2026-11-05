@@ -1,0 +1,3 @@
+Captured synthetic failure log: test_retry_limit
+assert False is True
+at retries_exhausted(3, 3)

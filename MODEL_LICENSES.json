@@ -1,0 +1,43 @@
+{
+  "schema_version": "1",
+  "checked_date": "2026-11-04",
+  "scope": "upstream_license_observations_only",
+  "model_weights_bundled": false,
+  "automatic_download_or_acceptance_implemented": false,
+  "warning": "Upstream license observations do not clear every Ollama artifact, conversion, template, adapter or redistribution bundle. Sources at main are mutable; pin and retain exact artifact terms before redistribution.",
+  "models": [
+    {
+      "candidate_tag": "qwen3.5:9b-q4_K_M",
+      "upstream_model": "Qwen/Qwen3.5-9B",
+      "upstream_spdx_license": "Apache-2.0",
+      "license_source": "https://huggingface.co/Qwen/Qwen3.5-9B/blob/main/LICENSE",
+      "upstream_check": "verified_from_publisher_license_page",
+      "exact_ollama_artifact_review": "PENDING",
+      "reviewed_artifact_digest": null,
+      "retained_license_sha256": null,
+      "redistribution_cleared": false
+    },
+    {
+      "candidate_tag": "qwen3.5:4b-q4_K_M",
+      "upstream_model": "Qwen/Qwen3.5-4B",
+      "upstream_spdx_license": "Apache-2.0",
+      "license_source": "https://huggingface.co/Qwen/Qwen3.5-4B/blob/main/LICENSE",
+      "upstream_check": "verified_from_publisher_license_page",
+      "exact_ollama_artifact_review": "PENDING",
+      "reviewed_artifact_digest": null,
+      "retained_license_sha256": null,
+      "redistribution_cleared": false
+    },
+    {
+      "candidate_tag": "gemma4:12b",
+      "upstream_model": "Google DeepMind Gemma 4 12B",
+      "upstream_spdx_license": "Apache-2.0",
+      "license_source": "https://ai.google.dev/gemma/docs/core/model_card_4",
+      "upstream_check": "verified_from_publisher_model_card",
+      "exact_ollama_artifact_review": "PENDING",
+      "reviewed_artifact_digest": null,
+      "retained_license_sha256": null,
+      "redistribution_cleared": false
+    }
+  ]
+}

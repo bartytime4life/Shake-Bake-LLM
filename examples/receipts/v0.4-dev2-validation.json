@@ -1,0 +1,32 @@
+{
+  "version": "0.4.0.dev2",
+  "date": "2026-11-04",
+  "scope": "development_environment_not_owner_PC",
+  "program_tests": {
+    "passed": 96,
+    "skipped": 0
+  },
+  "javascript_syntax": "passed",
+  "actual_gui_cli_startup": "loopback_HTTP_200_and_clean_SIGINT_shutdown",
+  "wheel": "no_index_build_seven_required_assets_and_installed_doctor_passed",
+  "evidence_trial": {
+    "unique_cases": 10,
+    "attempts": 20,
+    "mechanical_passes": 20,
+    "semantic_accuracy": null,
+    "model_inference": false
+  },
+  "ollama_availability": "not_reachable_on_development_environment_loopback_11434",
+  "model_service_tests": "simulated_only",
+  "browser_visual_qa": "pending_after_earlier_auto_review_block",
+  "automatic_calibration": "planned_not_implemented",
+  "unverified": [
+    "owner_PC_operation",
+    "real_Ollama_inference_and_accuracy",
+    "hardware_profile_and_automatic_tuning",
+    "desktop_and_phone_rendering",
+    "actual_host_connections",
+    "cloud_savings"
+  ],
+  "timeout_behavior": "retains_failed_attempt_and_stops_further_submissions"
+}

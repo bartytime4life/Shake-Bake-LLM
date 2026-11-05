@@ -1,0 +1,21 @@
+{
+  "kind": "licensing_packaging_validation",
+  "date": "2026-11-04",
+  "app_version": "0.4.0.dev3",
+  "existing_MIT_license_unchanged": true,
+  "runtime_code_unchanged": true,
+  "wheel_build": "passed_no_index",
+  "license_expression": "MIT",
+  "wheel_legal_files_verified": [
+    "shake_and_bake_assistant-0.4.0.dev3.dist-info/licenses/LICENSE",
+    "shake_and_bake_assistant-0.4.0.dev3.dist-info/licenses/THIRD_PARTY_NOTICES.md",
+    "shake_and_bake_assistant-0.4.0.dev3.dist-info/licenses/MODEL_LICENSES.json"
+  ],
+  "registry_matches_all_active_catalog_candidates": true,
+  "exact_model_artifact_redistribution": "PENDING",
+  "documentary_excerpt_redistribution": "NOT_APPLICABLE_NO_BORROWED_CASE_MATERIAL_BUNDLED",
+  "build_requires": "setuptools>=77",
+  "prior_runtime_program_tests": 102,
+  "program_tests_rerun_for_docs_and_metadata_change": false,
+  "current_legal_files_reverified_after_case_cleanup": true
+}

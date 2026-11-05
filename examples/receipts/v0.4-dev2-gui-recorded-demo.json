@@ -1,0 +1,208 @@
+{
+  "preview_type": "recorded_demo",
+  "actual_model_inference": false,
+  "state": {
+    "version": "0.4.0.dev2",
+    "projects": [
+      {
+        "id": "starter-demo",
+        "label": "Starter Demo",
+        "path": "Bundled inert demo source",
+        "demo": true
+      }
+    ],
+    "local_ai_enabled": true,
+    "policy": {
+      "enabled": true,
+      "profiles": [
+        {
+          "id": "qwen-code-candidate",
+          "model": "qwen3.5:9b-q4_K_M",
+          "task_kind": "code",
+          "status": "candidate",
+          "reason": "not_qualified",
+          "evaluation": null
+        },
+        {
+          "id": "gemma-code-candidate",
+          "model": "gemma4:12b",
+          "task_kind": "code",
+          "status": "candidate",
+          "reason": "not_qualified",
+          "evaluation": null
+        },
+        {
+          "id": "qwen-triage-candidate",
+          "model": "qwen3.5:4b-q4_K_M",
+          "task_kind": "troubleshoot",
+          "status": "candidate",
+          "reason": "not_qualified",
+          "evaluation": null
+        }
+      ],
+      "error": null
+    },
+    "recent": [
+      {
+        "project_id": "starter-demo",
+        "task_kind": "code",
+        "task": "Find the executable slice coverage guard. Can it accept fewer reported slices than detected? Provide exact evidence and gaps.",
+        "created": 1793833321.4782119,
+        "task_id": "2d938862919d442d8173b3e1d14d0fb3",
+        "state": "DONE"
+      }
+    ],
+    "inventory": {
+      "state": "not_checked",
+      "models": []
+    },
+    "catalog": {
+      "models": [
+        {
+          "tag": "qwen3.5:9b-q4_K_M",
+          "title": "Qwen3.5 9B",
+          "publisher": "Qwen",
+          "initial": "Q",
+          "role": "Code-aware evidence preparation and structured handoffs.",
+          "reason": "Its published coding and instruction-following results make it a useful reference candidate. The local trial must still establish whether it preserves the facts our host needs.",
+          "download": "About 6.6 GB download",
+          "checked": "2026-11-04",
+          "stats": [
+            {
+              "name": "LiveCodeBench v6",
+              "value": "65.6"
+            },
+            {
+              "name": "IFEval",
+              "value": "91.5"
+            },
+            {
+              "name": "BFCL-V4",
+              "value": "66.1"
+            }
+          ],
+          "source": "https://huggingface.co/Qwen/Qwen3.5-9B",
+          "limits": "Q4_K_M is a quantized tag. Author results do not certify this quantization, its memory headroom or its thinking settings. Recorded task qualification is pending."
+        },
+        {
+          "tag": "gemma4:12b",
+          "title": "Gemma 4 12B",
+          "publisher": "Google DeepMind",
+          "initial": "G",
+          "role": "An alternative for code, documents and careful evidence preparation.",
+          "reason": "A different model family gives us a useful comparison. Google's published code results justify a trial; they do not establish that it beats another candidate under our settings.",
+          "download": "Runtime package must be checked",
+          "checked": "2026-11-04",
+          "stats": [
+            {
+              "name": "LiveCodeBench v6",
+              "value": "72.0%"
+            },
+            {
+              "name": "Tau2 \u00b7 three-domain average",
+              "value": "69.0%"
+            }
+          ],
+          "source": "https://ai.google.dev/gemma/docs/core/model_card_4",
+          "limits": "Different publishers use different evaluation setups. Actual local memory and latency have not been measured. Image ingestion is not implemented in this workbench."
+        },
+        {
+          "tag": "qwen3.5:4b-q4_K_M",
+          "title": "Qwen3.5 4B",
+          "publisher": "Qwen",
+          "initial": "Q",
+          "role": "A smaller candidate for focused triage and compact local preparation.",
+          "reason": "A smaller model may reduce loading and preparation work. It must meet the same task accuracy requirements before speed is considered.",
+          "download": "About 3.3 GB download",
+          "checked": "2026-11-04",
+          "stats": [
+            {
+              "name": "LiveCodeBench v6",
+              "value": "55.8"
+            },
+            {
+              "name": "IFEval",
+              "value": "89.8"
+            },
+            {
+              "name": "BFCL-V4",
+              "value": "50.3"
+            }
+          ],
+          "source": "https://huggingface.co/Qwen/Qwen3.5-9B",
+          "limits": "Smaller does not mean equally accurate. No local task score, speed result or measured memory use is recorded. The automatic selector cannot promote it from a published score."
+        }
+      ]
+    }
+  },
+  "result": {
+    "task_id": "2d938862919d442d8173b3e1d14d0fb3",
+    "state": "DONE",
+    "mode": "routed_helper",
+    "original_request": "Find the executable slice coverage guard. Can it accept fewer reported slices than detected? Provide exact evidence and gaps.",
+    "outcome": "ABSTAIN",
+    "worker": null,
+    "worker_error": "no_qualified_profile",
+    "result_kind": "preparation_result",
+    "final_answer_ready": false,
+    "requires_host_reasoning": true,
+    "verification": {
+      "evidence": "captured_bytes_and_hashes",
+      "worker_notes": "unverified_interpretation"
+    },
+    "routing": {
+      "task_kind": "code",
+      "mode": "evidence_only",
+      "reason": "no_qualified_profile",
+      "why": "No local profile meets this task's recorded accuracy requirements. The host must assess the evidence.",
+      "profile_id": null,
+      "model": null,
+      "expected_digest": null,
+      "rejected": [
+        [
+          "qwen-code-candidate",
+          "not_qualified"
+        ],
+        [
+          "gemma-code-candidate",
+          "not_qualified"
+        ]
+      ],
+      "attempted_profile_id": null,
+      "attempted_model": null
+    },
+    "cutoffs": [],
+    "exclusions": {},
+    "files_examined": 2,
+    "matching_files": 2,
+    "source_bytes_read": 455,
+    "selected_excerpt_bytes": 455,
+    "snapshot_id": "ecfb75d33e461eddc38b178dd7e0e4ab9a18d217318e0d6a19f02cd21e506721",
+    "evidence": [
+      {
+        "evidence_id": "E1",
+        "freshness": "captured_snapshot_not_live_revalidation",
+        "path": "validator.py",
+        "start_line": 1,
+        "end_line": 6,
+        "text": "\"\"\"Inert demo source; do not import it as part of preparation.\"\"\"\n\n\ndef validate_structure(reported_slices, slices_detected):\n    # Executable slice coverage admission rule.\n    return len(reported_slices) <= slices_detected\n",
+        "file_sha256": "0661539c11dbd15405b5a2a0a186ed8408db75cc685256b004dc3cbe79d8097c",
+        "excerpt_sha256": "0661539c11dbd15405b5a2a0a186ed8408db75cc685256b004dc3cbe79d8097c",
+        "size_bytes": 225
+      },
+      {
+        "evidence_id": "E2",
+        "freshness": "captured_snapshot_not_live_revalidation",
+        "path": "readme.md",
+        "start_line": 1,
+        "end_line": 5,
+        "text": "# Starter source demo\n\nThe executable slice coverage validator is an inert review example.\nIts source is read as text and never executed by the workbench.\nNo completed test run, model inference or full review is established here.\n",
+        "file_sha256": "26b0ce7060da052b10884ee58557596bd9f0592299e55c685709c32be8ec3262",
+        "excerpt_sha256": "26b0ce7060da052b10884ee58557596bd9f0592299e55c685709c32be8ec3262",
+        "size_bytes": 230
+      }
+    ],
+    "instruction": "Fetch exact evidence before grounded code/security claims. Worker notes are unverified.",
+    "task_kind": "code"
+  }
+}
