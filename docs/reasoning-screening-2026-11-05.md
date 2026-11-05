@@ -147,3 +147,8 @@ independent human review, broader device/browser behavior, sustained operation,
 peak memory and whole-task usage remain open. The next candidate must first pass
 development checks without losing existing correct handoffs, then use a newly
 reserved cohort and a paired final-host study. Preserve these negative results.
+
+The [next paired thinking-mode diagnostic](thinking-probe-2026-11-05.md) retained
+the current prompt and limits. Seven of ten thinking-on responses were truncated
+at 512 tokens; only three had complete final JSON. This configuration was also
+rejected, with the application unchanged.
