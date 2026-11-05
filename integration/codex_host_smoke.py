@@ -18,6 +18,7 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 
 from shake_bake import __version__
@@ -47,8 +48,8 @@ def require(condition, code):
         raise ValueError(code)
 
 
-def validate_trace(events, answer):
-    """Check actual tool results, identity and source bytes, not host claims."""
+def trace_calls(events):
+    """Reject unrecognized, unfinished or failed host actions before grading."""
     require(all(event.get("type") in ("thread.started", "turn.started", "turn.completed", "item.started", "item.completed")
                 for event in events), "unexpected_host_event")
     observed = [event["item"] for event in events if event.get("type") in ("item.started", "item.completed")]
@@ -66,10 +67,24 @@ def validate_trace(events, answer):
             require(any(started.get("id") is not None and all(started.get(key) == call.get(key)
                         for key in ("id", "server", "tool", "arguments")) for call in calls), "unfinished_host_tool")
 
-    def result(call):
-        value = (call.get("result") or {}).get("structured_content")
-        require(isinstance(value, dict), "missing_structured_tool_result")
-        return value
+    usage = [event.get("usage") for event in events if event.get("type") == "turn.completed"]
+    require(len(usage) == 1, "host_turn_not_completed")
+    return calls, usage[0]
+
+
+def result(call):
+    value = (call.get("result") or {}).get("structured_content")
+    require(isinstance(value, dict), "missing_structured_tool_result")
+    return value
+
+
+def validate_trace(events, answer):
+    """Check actual tool results, identity and source bytes, not host claims."""
+    calls, usage = trace_calls(events)
+    return validate_preparation(calls, answer, usage)
+
+
+def validate_preparation(calls, answer, usage):
 
     require(calls[0]["tool"] == "list_projects", "project_discovery_missing")
     project_list = result(calls[0])
@@ -130,11 +145,119 @@ def validate_trace(events, answer):
         citations.setdefault(path, []).append((first, last))
     require(set(citations) == {"validator.py", "readme.md"} and
             any(first <= 6 <= last for first, last in citations["validator.py"]), "decisive_source_not_cited")
-    usage = [event.get("usage") for event in events if event.get("type") == "turn.completed"]
-    require(len(usage) == 1, "host_turn_not_completed")
     return {"task_id": identifier, "tool_calls": len(calls), "source_bytes": sum(len(record["text"].encode()) for record in fetched.values()),
             "original_task_preserved": True, "project_refusal_observed": True,
-            "terminal_cancellation_observed": True, "host_reported_usage": usage[0]}
+            "terminal_cancellation_observed": True, "host_reported_usage": usage}
+
+
+def validate_active_cancel_trace(events, answer):
+    calls, usage = trace_calls(events)
+    require(len(calls) >= 14 and [call["tool"] for call in calls[:8]] ==
+            ["list_projects", "start_task", "get_result", "start_task", "fetch_evidence", "cancel_task", "get_result", "fetch_evidence"],
+            "active_cancel_sequence_missing")
+    expected_start = {"project_id": "starter-demo", "task": TASK, "task_kind": "code"}
+    require(calls[1]["arguments"] == expected_start and calls[3]["arguments"] == expected_start, "original_task_or_scope_changed")
+    cancelled = result(calls[1]).get("task_id")
+    require(isinstance(cancelled, str) and re.fullmatch(r"[a-f0-9]{32}", cancelled) and result(calls[1]).get("state") == "RUNNING", "invalid_task_identity")
+    require(result(calls[3]) == {"outcome": "DENY", "code": "helper_busy"}, "busy_refusal_not_observed")
+    for index, expected_state in ((2, "RUNNING"), (5, "CANCELLED"), (6, "CANCELLED")):
+        value = result(calls[index])
+        require(calls[index]["arguments"] == {"task_id": cancelled} and value.get("task_id") == cancelled and value.get("state") == expected_state,
+                "active_cancellation_not_confirmed")
+        require(not value.get("evidence") and value.get("worker") is None and value.get("final_answer_ready") is not True,
+                "cancelled_result_exposed")
+    for index in (4, 7):
+        require(calls[index]["arguments"] == {"task_id": cancelled, "evidence_id": "E1"} and
+                result(calls[index]) == {"outcome": "DENY", "code": "task_not_ready"}, "cancelled_evidence_not_refused")
+    checked = validate_preparation([calls[0]] + calls[8:], answer, usage)
+    require(checked["task_id"] != cancelled, "recovery_reused_cancelled_task")
+    checked.update(tool_calls=len(calls), cancelled_task_id=cancelled, active_cancellation_observed=True,
+                   busy_refusal_observed=True, cancelled_evidence_refused=True, fresh_task_after_cancel_completed=True)
+    return checked
+
+
+class RunnerGate:
+    """Fault injection: stop only the first bounded child of our own service.
+
+    A pidfd prevents signalling a reused PID. No package code, policy or source
+    is patched. This makes an otherwise very short evidence job cancellable.
+    """
+
+    def __init__(self, service_pid):
+        require(sys.platform == "linux" and hasattr(os, "pidfd_open") and hasattr(signal, "pidfd_send_signal"), "linux_pidfd_required")
+        self.parent = service_pid
+        self.parent_fd = os.pidfd_open(service_pid)
+        self.pid = self.fd = None
+        self.failure = None
+        self.ready = threading.Event()
+        self.stop = threading.Event()
+        self.thread = threading.Thread(target=self._watch, daemon=True, name="synthetic-runner-gate")
+
+    def start(self):
+        self.thread.start()
+
+    def _watch(self):
+        try:
+            parent = select.poll()
+            parent.register(self.parent_fd, select.POLLIN)
+            while not self.stop.is_set():
+                if parent.poll(0):
+                    self.failure = "service_exited_before_gate"
+                    return
+                # Preparation starts on the controller thread, not the main one.
+                for children in Path(f"/proc/{self.parent}/task").glob("*/children"):
+                    try:
+                        identifiers = children.read_text().split()
+                    except FileNotFoundError:
+                        continue
+                    for identifier in identifiers:
+                        pid = int(identifier)
+                        try:
+                            fd = os.pidfd_open(pid)
+                        except ProcessLookupError:
+                            continue
+                        try:
+                            command = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+                            if command[-1:] == [b""]:
+                                command.pop()
+                            if command[-3:] != [b"-m", b"shake_bake.job_runner", str(self.parent).encode()]:
+                                continue
+                            signal.pidfd_send_signal(fd, signal.SIGSTOP)
+                            self.pid, self.fd = pid, fd
+                            fd = None
+                            self.ready.set()
+                            return
+                        except (FileNotFoundError, ProcessLookupError):
+                            continue
+                        finally:
+                            if fd is not None:
+                                os.close(fd)
+                self.stop.wait(.002)
+        except (OSError, ValueError) as error:
+            self.failure = type(error).__name__
+
+    def exited(self):
+        require(self.ready.is_set(), "active_runner_not_gated")
+        poller = select.poll()
+        poller.register(self.fd, select.POLLIN)
+        return bool(poller.poll(0)) and not Path(f"/proc/{self.pid}").exists()
+
+    def close(self):
+        self.stop.set()
+        if self.thread.ident is not None:
+            self.thread.join(timeout=2)
+            require(not self.thread.is_alive(), "runner_gate_not_stopped")
+        if self.fd is not None:
+            try:
+                signal.pidfd_send_signal(self.fd, signal.SIGCONT)
+            except ProcessLookupError:
+                pass
+            finally:
+                os.close(self.fd)
+                self.fd = None
+        if self.parent_fd is not None:
+            os.close(self.parent_fd)
+            self.parent_fd = None
 
 
 def clean_environment():
@@ -182,8 +305,17 @@ def state(port, cookie=None):
         client.close()
 
 
-def run(output, host_timeout=120):
+def run(output, host_timeout=120, scenario="handoff"):
     require(type(host_timeout) is int and 10 <= host_timeout <= 180, "invalid_host_timeout")
+    require(scenario in ("handoff", "active-cancel"), "invalid_host_scenario")
+    if scenario == "active-cancel":
+        require(sys.platform == "linux" and Path("/proc/self/task").is_dir() and
+                hasattr(os, "pidfd_open") and hasattr(signal, "pidfd_send_signal"), "linux_pidfd_required")
+        probe = os.pidfd_open(os.getpid())
+        try:
+            signal.pidfd_send_signal(probe, 0)
+        finally:
+            os.close(probe)
     output = Path(output).resolve()
     require(output != DEMO.resolve() and DEMO.resolve() not in output.parents, "output_inside_demo")
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
@@ -194,10 +326,10 @@ def run(output, host_timeout=120):
     source_hashes = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in DEMO.iterdir() if path.is_file()}
     summary = {"kind": "actual_codex_host_smoke", "created_utc": datetime.now(timezone.utc).isoformat(),
                "helper_version": __version__, "pipeline_id": pipeline_id(), "fixture_sha256": source_hashes,
-               "status": "BLOCKED", "local_model_calls": 0, "cloud_savings": None,
+               "scenario": scenario, "status": "BLOCKED", "local_model_calls": 0, "cloud_savings": None,
                "qualification": "single exposed synthetic host smoke only", "actual_claude_qualification": False,
                "unseen_model_accuracy": None, "private_source_handoff_qualified": False}
-    service = None
+    service = gate = None
     try:
         codex = shutil.which("codex")
         require(codex is not None, "codex_not_installed")
@@ -217,9 +349,20 @@ def run(output, host_timeout=120):
         require(state(port, cookie)["local_ai_enabled"] is False, "service_must_start_paused")
         (output / "answer-schema.json").write_text(json.dumps(ANSWER_SCHEMA))
         (output / "plan.json").write_text(json.dumps({"task": TASK, "source": "bundled inert starter-demo", "tools": TOOLS,
+                                                     "scenario": scenario, "fault_injection": "SIGSTOP on first owned preparation child" if scenario == "active-cancel" else None,
                                                      "expected_rule": "len(reported_slices) <= slices_detected"}, indent=2))
+        prelude = "First list projects. "
+        if scenario == "active-cancel":
+            gate = RunnerGate(service.pid)
+            gate.start()
+            prelude += ("The harness will hold the FIRST preparation child in progress for a cancellation test. "
+                        "Start one starter-demo task of kind code, copying TASK_JSON verbatim. Call get_result once and require RUNNING. "
+                        "Try start_task again with the same arguments; require helper_busy. Try fetch_evidence E1 for the first task; require task_not_ready. "
+                        "Call cancel_task on that first task and require CANCELLED. Call get_result once more and require CANCELLED. "
+                        "Try fetch_evidence E1 again for that cancelled task; require task_not_ready. "
+                        "That task has no evidence or answer. Now test recovery using a new task, following this remaining sequence. ")
         prompt = ("This is a live integration check using only the Shake & Bake bundled inert demo. Use only shake_bake MCP tools. "
-                  "First list projects. Then call start_task for project_id not-approved, task_kind code and the exact TASK_JSON string; "
+                  + prelude + "Then call start_task for project_id not-approved, task_kind code and the exact TASK_JSON string; "
                   "observe its expected permission refusal. Then start exactly one starter-demo task of kind code. "
                   "For both start calls, copy TASK_JSON verbatim into the task field, including every character; do not paraphrase it. "
                   "Poll get_result until terminal, fetch EVERY referenced exact source excerpt, and reason from that captured source. "
@@ -250,10 +393,16 @@ def run(output, host_timeout=120):
         require(len(raw_events) <= 4 * 1024 * 1024, "host_trace_too_large")
         events = [json.loads(line) for line in raw_events.splitlines() if line.strip()]
         answer = json.loads((output / "answer.json").read_text())
-        summary.update(validate_trace(events, answer))
+        summary.update((validate_active_cancel_trace if gate is not None else validate_trace)(events, answer))
+        if gate is not None:
+            require(gate.ready.is_set() and gate.failure is None and gate.exited(), "gated_runner_not_exited_and_reaped")
+            summary.update(runner_stop_injected=True, cancelled_runner_exited_and_reaped=True)
         observed = state(port, cookie)
         require(observed["local_ai_enabled"] is False and any(item["task_id"] == summary["task_id"] and item["state"] == "DONE"
                 for item in observed["recent"]), "shared_service_or_pause_lost")
+        if gate is not None:
+            require(any(item["task_id"] == summary["cancelled_task_id"] and item["state"] == "CANCELLED"
+                        for item in observed["recent"]), "cancelled_job_not_retained")
         summary.update(status="PASSED", service_survived_host_exit=True, local_ai_stayed_off=True,
                        trace_sha256=hashlib.sha256(raw_events).hexdigest(), answer=answer)
     except KeyboardInterrupt:
@@ -271,6 +420,8 @@ def run(output, host_timeout=120):
                 service.wait(timeout=5)
             service.stdout.close()
             summary["service_exit_code"] = service.returncode
+        if gate is not None:
+            gate.close()
         summary["private_connection_cleaned"] = not connection.exists()
         summary["demo_unchanged"] = source_hashes == {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in DEMO.iterdir() if path.is_file()}
         if not summary["private_connection_cleaned"] or not summary["demo_unchanged"] or summary.get("service_exit_code", 0) != 0:
@@ -283,9 +434,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True, help="New private output directory; never an existing run")
     parser.add_argument("--host-timeout", type=int, default=120)
+    parser.add_argument("--scenario", choices=("handoff", "active-cancel"), default="handoff")
     args = parser.parse_args(argv)
     try:
-        result = run(args.output, args.host_timeout)
+        result = run(args.output, args.host_timeout, args.scenario)
     except (ValueError, OSError) as error:
         print(json.dumps({"status": "BLOCKED", "failure": str(error)[:256]}))
         return 2

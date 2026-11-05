@@ -6,7 +6,9 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
+import time
 import tomllib
 import unittest
 from unittest.mock import patch
@@ -43,6 +45,24 @@ def fixture():
               "tests_executed": False, "helper_final_answer_ready": False, "denied_project_code": "project_not_permitted",
               "limitations": ["TEST ONLY: captured synthetic source."]}
     return events, answer
+
+
+def cancellation_fixture():
+    events, answer = fixture()
+    cancelled = "b" * 32
+    prefix = [events[0]]
+    def call(tool, arguments, value):
+        prefix.append({"type": "item.completed", "item": {"type": "mcp_tool_call", "server": "shake_bake", "tool": tool,
+            "arguments": arguments, "status": "completed", "result": {"structured_content": value}}})
+    task = {"project_id": "starter-demo", "task": smoke.TASK, "task_kind": "code"}
+    call("start_task", task, {"task_id": cancelled, "state": "RUNNING"})
+    call("get_result", {"task_id": cancelled}, {"task_id": cancelled, "state": "RUNNING"})
+    call("start_task", task, {"outcome": "DENY", "code": "helper_busy"})
+    call("fetch_evidence", {"task_id": cancelled, "evidence_id": "E1"}, {"outcome": "DENY", "code": "task_not_ready"})
+    call("cancel_task", {"task_id": cancelled}, {"task_id": cancelled, "state": "CANCELLED"})
+    call("get_result", {"task_id": cancelled}, {"task_id": cancelled, "state": "CANCELLED"})
+    call("fetch_evidence", {"task_id": cancelled, "evidence_id": "E1"}, {"outcome": "DENY", "code": "task_not_ready"})
+    return prefix + events[1:], answer
 
 
 class HostSmokeTraceAcceptance(unittest.TestCase):
@@ -150,6 +170,57 @@ class HostSmokeTraceAcceptance(unittest.TestCase):
             self.assertEqual(result["local_model_calls"], 0)
             with self.assertRaises(FileExistsError):
                 smoke.run(output)
+
+    def test_active_cancellation_requires_real_states_refusals_and_a_fresh_completed_task(self):
+        events, answer = cancellation_fixture()
+        checked = smoke.validate_active_cancel_trace(events, answer)
+        self.assertEqual(checked["tool_calls"], 14)
+        self.assertTrue(checked["fresh_task_after_cancel_completed"])
+        for index, change in ((2, {"state": "DONE"}), (3, {"code": "other_error"}),
+                              (5, {"state": "DONE"}), (6, {"task_id": "different"}),
+                              (7, {"code": "other_error"})):
+            events, answer = cancellation_fixture()
+            events[index]["item"]["result"]["structured_content"].update(change)
+            with self.subTest(index=index, change=change), self.assertRaises(ValueError):
+                smoke.validate_active_cancel_trace(events, answer)
+
+    def test_active_cancellation_refuses_exposed_source_or_an_unsupported_answer_claim(self):
+        events, answer = cancellation_fixture()
+        events[6]["item"]["result"]["structured_content"]["evidence"] = [{"text": "unexpected cancelled source"}]
+        with self.assertRaisesRegex(ValueError, "cancelled_result_exposed"):
+            smoke.validate_active_cancel_trace(events, answer)
+        events, answer = cancellation_fixture()
+        answer["tests_executed"] = True
+        with self.assertRaisesRegex(ValueError, "unsupported_completion_claim"):
+            smoke.validate_active_cancel_trace(events, answer)
+
+    @unittest.skipUnless(sys.platform == "linux" and hasattr(os, "pidfd_open"), "Linux pidfd fault injection")
+    def test_runner_gate_only_stops_owned_preparation_and_a_fresh_job_can_finish(self):
+        from shake_bake.helper import HelperSession
+        helper = HelperSession({"starter-demo": smoke.DEMO}, evidence_only=True)
+        unrelated = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(10)"])
+        gate = smoke.RunnerGate(os.getpid())
+        try:
+            gate.start()
+            identifier = helper.start_task("starter-demo", smoke.TASK)["task_id"]
+            self.assertTrue(gate.ready.wait(2), gate.failure)
+            self.assertEqual(helper.get_result(identifier)["state"], "RUNNING")
+            self.assertEqual(helper.cancel_task(identifier)["state"], "CANCELLED")
+            self.assertTrue(gate.exited())
+            self.assertIsNone(unrelated.poll(), "an unrelated process was affected")
+            identifier = helper.start_task("starter-demo", smoke.TASK)["task_id"]
+            deadline = time.monotonic() + 2
+            while time.monotonic() < deadline:
+                value = helper.get_result(identifier)
+                if value["state"] != "RUNNING":
+                    break
+                time.sleep(.005)
+            self.assertEqual(value["state"], "DONE")
+        finally:
+            helper.close()
+            gate.close()
+            unrelated.terminate()
+            unrelated.wait(timeout=2)
 
 
 if __name__ == "__main__":

@@ -35,10 +35,29 @@ The host deadline defaults to 120 seconds and may be set between 10 and 180 seco
 
 Earlier attempts remain in private records: task paraphrasing failed the exact-request check, and an experimental CLI flag produced an error event and failed validation. The flag was removed, rather than suppressing its warning. Those attempts are not counted as successful runs or comparable timing measurements.
 
+## Active cancellation and recovery follow-up
+
+Later on November 5, the same installed helper/SDK and Codex version completed an explicit `active-cancel` scenario. Its [separate sanitized receipt](../examples/receipts/codex-active-cancel-2026-11-05.json) records 14 tool calls, 455 captured source bytes and 48.222 seconds. This is a distinct synthetic run, with no timing baseline or savings claim.
+
+The harness temporarily stops only the first bounded preparation child of its own temporary service. It checks the parent/child relationship and exact runner command and uses Linux pidfds to avoid signalling a reused PID. Package code, policy, source and model services are not patched. The gate makes a short evidence-only job remain active long enough to test cancellation; it is deliberate fault injection, not a naturally stalled model or a GPU-work cancellation test. An offline check also verifies an unrelated child is unaffected and a later preparation succeeds.
+
+The actual host observed `RUNNING`, received `helper_busy` for a second start, and was refused evidence with `task_not_ready`. It cancelled the first task, observed `CANCELLED`, and was refused evidence from that cancelled task. It then completed the original permission-refusal and exact-source handoff sequence using a fresh task. The local check confirmed the cancelled runner exited and was reaped. The shared service remained paused, retained the cancelled and completed states, survived host exit and cleaned up normally.
+
+Repeat explicitly with a new private output directory, under the same cloud/account and installation conditions above:
+
+```bash
+env -u PYTHONPATH /absolute/sdk-env/bin/python -B \
+  /absolute/checkout/integration/codex_host_smoke.py \
+  --scenario active-cancel \
+  --output /absolute/private-trials/codex-cancel-01
+```
+
+The default scenario remains the original handoff. The cancellation scenario additionally requires Linux pidfd signalling and procfs; unsupported systems fail before invoking the host. The gate targets one owned runner and is cleaned up on exit. Twelve offline checks now cover synthetic trace acceptance, run configuration and the real local process gate; none invokes Codex or a model.
+
 ## What comes next
 
-INT-01 remains open. This run did not exercise cancellation while work is active, host disconnect/restart, deadlines under real model work, private-source handling, local Ollama plus host orchestration, or a guided user handoff. Claude Code was installed but signed out when inspected, so no actual Claude run occurred. Consumer ChatGPT needs its own supported connection and qualification; Codex login through ChatGPT does not prove that integration.
+INT-01 remains open. These runs did not exercise host disconnect/restart, deadlines under real model work, private-source handling, local Ollama plus host orchestration, or a guided user handoff. Active cancellation has evidence only for the explicitly stopped synthetic preparation runner. Claude Code was installed but signed out when inspected, so no actual Claude run occurred. Consumer ChatGPT needs its own supported connection and qualification; Codex login through ChatGPT does not prove that integration.
 
-Finish the existing exposed model-output reviews, extend actual-host failure/recovery coverage, then freeze genuinely unseen source/tasks and independent review keys for the [paired comparison](next-trial.md). Keep native-host, deterministic-evidence and model-assisted arms separate. Do not promote a model or claim whole-task savings from this smoke check.
+Recover and review the original exposed model-output receipts, extend actual-host disconnect/deadline/restart coverage, then freeze genuinely unseen source/tasks and independent review keys for the [paired comparison](next-trial.md). The two historical Qwen screening folders were not located in the checked owner workspace, parent folders or connected Drive during this follow-up; their scores remain unset. The committed `.dev2` receipts are evidence-only and cannot substitute for them. Keep native-host, deterministic-evidence and model-assisted arms separate. Do not promote a model or claim whole-task savings from these smoke checks.
 
 Host configuration references: [official Codex MCP guide](https://developers.openai.com/codex/mcp/) and [configuration reference](https://developers.openai.com/codex/config-reference/), checked November 5, 2026 alongside installed CLI help. These document host options, not certification of this application.

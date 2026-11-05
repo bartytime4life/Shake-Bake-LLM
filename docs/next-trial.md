@@ -1,6 +1,6 @@
 # Next trial: does the whole helper improve the work?
 
-One [actual Codex evidence-only synthetic handoff](codex-host-handoff.md) now passes. The next host milestone is failure/recovery coverage and one real question delegated through an authenticated host to local Ollama and returned with evidence. Claude Code was signed out when inspected. Unit tests, simulated HTTP and the evidence-only smoke do not complete that milestone. Consumer ChatGPT needs its own supported connection and independent test; Codex authentication through ChatGPT does not establish it.
+Actual Codex [synthetic handoff and injected cancellation/recovery](codex-host-handoff.md) checks now pass. The next host milestone is disconnect/deadline/restart coverage and one real question delegated through an authenticated host to local Ollama and returned with evidence. Claude Code was signed out when inspected. Unit tests, simulated HTTP and these evidence-only checks do not complete that milestone. Consumer ChatGPT needs its own supported connection and independent test; Codex authentication through ChatGPT does not establish it.
 
 ## Planning priorities
 

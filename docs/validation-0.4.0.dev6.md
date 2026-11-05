@@ -35,6 +35,8 @@ Focused Codex inspection found unsupported claims despite all structural checks 
 
 These are qualitative observations from known development cases, not a reviewed accuracy score or isolated causal experiment. Prompt and context changed together. Full semantic review remains PENDING/null in the official sheets; no profile was promoted. No unseen paired native-host baseline or whole-task cloud usage study ran. Both full receipts, checkpoint files and blank review sheets remain private local artifacts; this document contains only the scoped summary.
 
+Follow-up on November 5: the original private screening folders were not located in the checked owner workspace, its parent folders, other checked local artifact locations or connected Drive. The statement above describes the historical run environment; retention in the current workspace has not been verified. Semantic scoring remains pending until the original receipts, outputs and matching review inputs can be recovered. The committed `.dev2` receipts are model-free demonstrations and cannot substitute for these two Qwen runs. A new run would need a new identity and must not be relabeled as either historical attempt.
+
 ## Remaining gates
 
 Held-out correctness, complete hardware/runtime/settings binding of qualified profiles, persistent profile storage, automatic tuning, durable job recovery, actual Claude/ChatGPT host UX, secret/export policy, independent security/dependency/license review, sustained load, broad accessibility/device support, Windows equivalence and savings remain open. Passing readiness, JSON checks, exposed cases or SDK transport does not close them. Hosted CI must be observed on the pushed commit separately.
