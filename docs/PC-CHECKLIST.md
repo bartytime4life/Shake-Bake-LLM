@@ -89,6 +89,22 @@ unmeasured. Current exposed Qwen screening has reasoning failures; no model is
 promoted by completing this checklist. [PR #8 evidence](readiness-invalidation-2026-11-05.md)
 and hosted CI are development evidence, separate from these unchecked PC gates.
 
+## Copy and export recovery
+
+- [ ] Prepare a synthetic brief. Copy must immediately show which job is waiting,
+  then retain the browser-reported result or failure. Do not equate a resolved
+  Promise with verified paste/readback in every browser.
+- [ ] Open **Review or copy brief text**, select all text and use the device Copy
+  command. Compare the pasted text with this field and the downloaded JSON.
+  Decode the original-request JSON string to check whitespace and line endings.
+- [ ] If a copy is still pending, another copy must not queue. The displayed brief
+  stays selectable/downloadable, and a late result must identify its earlier job
+  after the pinned brief changes.
+- [ ] Record actual clipboard transfer separately from synthetic Promise tests
+  and UI selection. The [November 5 follow-up](copy-and-screening-2026-11-05.md)
+  records one exact native/manual in-app transfer plus earlier empty readbacks;
+  broader timing, permission and device checks remain open.
+
 ## Then: one small trial
 
 - [ ] Run the mechanical baseline: `PYTHONPATH=src python3 -B benchmarks/model_trial.py run --evidence-only --case boundary --output trial-runs/pc-evidence-01`.

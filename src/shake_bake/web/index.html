@@ -74,6 +74,13 @@
         <div class="brief-identity"><h2 id="brief-title">Your next brief starts here</h2><p class="small muted" id="brief-subtitle">Choose a project and prepare exact local evidence.</p></div>
         <div class="export-actions"><button class="secondary compact" id="copy" disabled><img src="/icons/copy.svg" alt="">Copy brief</button><button class="secondary compact" id="download" disabled><img src="/icons/download.svg" alt="">Download JSON</button></div>
       </section>
+      <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+      <details id="handoff-copy" class="handoff-copy" hidden>
+        <summary>Review or copy brief text</summary>
+        <p id="copy-help" class="small muted">Select all text, then use your device’s Copy command. Check the pasted text before sharing; the brief contains exact source.</p>
+        <button type="button" id="select-handoff" class="secondary compact">Select all text</button>
+        <textarea id="handoff-text" aria-label="Exact handoff text" aria-describedby="copy-help" readonly spellcheck="false" rows="10"></textarea>
+      </details>
       <p id="worker-status" class="small" hidden></p>
       <div id="brief-details" hidden><details class="original"><summary>Original request &amp; job identity</summary><p id="job-identity" class="small muted"></p><pre id="original-request"></pre><p class="small muted" id="route-reason"></p></details></div>
       <section class="evidence-section" aria-labelledby="evidence-heading">
