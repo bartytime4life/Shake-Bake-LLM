@@ -97,3 +97,7 @@ Private raw records and build artifacts are excluded from Git. Only this scoped
 summary and synthetic regression changes are part of the source change. The PC
 checklist, UI-01, ACC-01, host qualification and whole-task savings stay open where
 their required evidence remains missing.
+
+The later [copy recovery and Qwen 3 8B review](copy-and-screening-2026-11-05.md)
+records subsequent inference and clipboard work. It does not retroactively extend
+this metadata-only walkthrough.

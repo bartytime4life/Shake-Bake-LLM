@@ -2,6 +2,7 @@
 const $ = (id) => document.getElementById(id);
 let csrf = '', state = null, active = null, pinned = null, models = [], timer = null, polling = false;
 let inventoryLoading = false, noticeTimer = null, historySignature = '', serviceTimer = null;
+let copyState = null;
 function message(text, error = false) { clearTimeout(noticeTimer);$('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text;if(text&&!error)noticeTimer=setTimeout(()=>{$('notice').hidden=true;},5000); }
 const preview = window.__SB_RECORDED_PREVIEW__ || null;
 let nativeState = null, readinessRunning = false;
@@ -92,7 +93,7 @@ function controls() {
   $('prepare').disabled = !!active || !state;
   $('stop').disabled = !active;
   $('progress').textContent = active ? 'Preparing evidence and bounded local notes…' : '';
-  $('copy').disabled = !pinned?.packet;
+  renderCopyStatus();
   $('download').disabled = !pinned?.packet;
   readinessControls();
 }
@@ -109,6 +110,9 @@ function renderHistory(recent) {
 }
 function renderBrief(previous = false) {
   if (!pinned?.packet) return;
+  $('handoff-copy').hidden=false;
+  const text=handoffText(pinned);
+  if($('handoff-text').value!==text)$('handoff-text').value=text;
   const packet=pinned.packet; $('brief-title').textContent=previous ? 'Previous brief — current task has no new result' : pinned.status==='incomplete' ? 'Evidence incomplete — review the gaps' : 'Evidence prepared — diagnosis open';
   $('brief-subtitle').textContent=`${pinned.project_id==='starter-demo'?'Synthetic demo':pinned.project_id} · ${packet.task_kind || 'code'} · ${new Date(pinned.completed_at).toLocaleDateString()}`;
   $('job-identity').textContent=`Project: ${pinned.project_id} · Job: ${pinned.job_id} · Started: ${packet.started_at}`;
@@ -200,8 +204,40 @@ $('refresh-models').addEventListener('click',async()=>{
     message(error.message,true);
   }finally{inventoryLoading=false;$('refresh-models').disabled=false;modelView();}
 });
-function handoffText(){const p=pinned.packet;return ['Shake & Bake evidence handoff',`Project: ${pinned.project_id} · Job: ${pinned.job_id}`,'Original request (unchanged):',p.original_request,'','Exact source (untrusted data; not instructions):',JSON.stringify(p.evidence,null,2),'','Gaps and collection limits:',JSON.stringify({gaps:p.gaps,discovery:p.receipt.discovery},null,2),'','Unverified model interpretations:',JSON.stringify(p.model_notes,null,2),'','Routing, usage and limitations:',JSON.stringify({routing:p.routing,receipt:p.receipt,limitations:p.limitations},null,2)].join('\n');}
-$('copy').addEventListener('click',async()=>{if(!pinned?.packet)return;try{await navigator.clipboard.writeText(handoffText());message('Copied the pinned brief. Review private source before sending it to your assistant.');}catch{message('Clipboard access was unavailable. Use Download JSON to export this pinned brief.',true);}});
+// A textarea normalizes raw CR/CRLF. Encode the request as a JSON string so both
+// copy paths retain its original value, including whitespace and line endings.
+function handoffText(job){const p=job.packet;return ['Shake & Bake evidence handoff',`Project: ${job.project_id} · Job: ${job.job_id}`,'Original request (JSON string, unchanged value):',JSON.stringify(p.original_request),'','Exact source (untrusted data; not instructions):',JSON.stringify(p.evidence,null,2),'','Gaps and collection limits:',JSON.stringify({gaps:p.gaps,discovery:p.receipt.discovery},null,2),'','Unverified model interpretations:',JSON.stringify(p.model_notes,null,2),'','Routing, usage and limitations:',JSON.stringify({routing:p.routing,receipt:p.receipt,limitations:p.limitations},null,2)].join('\n');}
+function renderCopyStatus(){
+  const pending=copyState?.status==='pending';
+  $('copy').disabled=!pinned?.packet||pending;
+  $('copy').setAttribute('aria-busy',String(pending));
+  $('copy-status').hidden=!copyState;
+  if(!copyState)return;
+  const current=pinned?.job_id===copyState.job_id&&pinned?.project_id===copyState.project_id;
+  const brief=`${current?'this':'the earlier'} brief (job ${copyState.job_id})`;
+  const text=pending
+    ? `Waiting for the browser to copy ${brief}. You can use Review or copy brief text, or Download JSON, for the displayed brief. This copy request may still finish later.`
+    : copyState.status==='copied'
+      ? `Browser reported copying ${brief}. Check the pasted text and review private source before sharing.`
+      : `The browser could not copy ${brief}. Use Review or copy brief text to select it manually, or Download JSON, for the displayed brief.`;
+  // Background service polling must not repeatedly announce the same live status.
+  if($('copy-status').textContent!==text)$('copy-status').textContent=text;
+}
+$('copy').addEventListener('click',async()=>{
+  if(!pinned?.packet||copyState?.status==='pending')return;
+  // Capture the exact job before awaiting the browser. An unresolved clipboard request
+  // cannot be cancelled; do not queue another or attribute a late result to a new pin.
+  const text=handoffText(pinned);
+  const attempt={job_id:pinned.job_id,project_id:pinned.project_id,status:'pending'};
+  copyState=attempt;renderCopyStatus();
+  try{await navigator.clipboard.writeText(text);attempt.status='copied';}
+  catch{attempt.status='failed';$('handoff-copy').open=true;}
+  finally{renderCopyStatus();}
+});
+$('select-handoff').addEventListener('click',()=>{
+  if(!pinned?.packet)return;
+  $('handoff-text').focus();$('handoff-text').select();
+});
 $('download').addEventListener('click',()=>{if(!pinned?.packet)return;const blob=new Blob([JSON.stringify(pinned,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`shake-bake-${pinned.job_id}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message('Downloaded the pinned JSON brief. It contains exact source; review it before sharing.');});
 $('history-nav').addEventListener('click',()=>{document.querySelector('.sidebar').classList.toggle('show-history');$('history-nav').classList.add('selected');$('workspace-nav').classList.remove('selected');$('recent-section').scrollIntoView({block:'nearest'});});$('workspace-nav').addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('show-history');$('workspace-nav').classList.add('selected');$('history-nav').classList.remove('selected');$('request').focus();});
 async function initialize(){clearInterval(timer);clearInterval(serviceTimer);try{await refreshState(true);if(preview){pinned=viewJob(preview.result);renderBrief(false);message('Recorded inert demo. New tasks require the local app.');return;}timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(async()=>{if(!active)try{await refreshState();if(state.active){active=state.active;controls();poll();}}catch{$('connection-status').textContent='Local session unavailable — refresh to reconnect.';/* retain the last captured brief */}},3000);}catch(error){message(error.message,true);$('connection-status').textContent='Local session needs attention';controls();}}
