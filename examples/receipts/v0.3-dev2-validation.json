@@ -1,0 +1,29 @@
+{
+  "version": "0.3.0.dev2",
+  "date": "2026-11-04",
+  "platform": "linux",
+  "python_version": "3.12.14",
+  "base_suite": {
+    "passed": 57,
+    "skipped": 0
+  },
+  "task_lab": {
+    "cases": 10,
+    "before_version": "0.3.0.dev1",
+    "before_mechanical_passes": 9,
+    "after_mechanical_passes": 10,
+    "same_case_and_key_hashes": true,
+    "same_fixture_hashes": true,
+    "semantic_model_accuracy": null
+  },
+  "not_qualified": [
+    "actual_model_inference",
+    "automatic_router",
+    "GUI",
+    "embeddings",
+    "vision",
+    "mcp_sdk",
+    "host_connection",
+    "cloud_token_savings"
+  ]
+}

@@ -1,0 +1,20 @@
+# Gaps to resolve before calling the helper useful
+
+These are underdeveloped parts of the design, not claims that the current prototype implements them.
+
+| Gap | Why it matters | Test or decision |
+| --- | --- | --- |
+| When to skip the helper | A small request may cost more in tool descriptions, calls and follow-up evidence than a direct host answer. | Include trivial tasks and a direct-host baseline. A future router should choose by measured benefit, with a cheap deterministic path and no hidden model swarm. |
+| Retrieval can lose evidence before summarization | One short window per file and four selected files may omit a distant branch or dependency. | Include far-apart contradictory spans and cross-file cases. Measure exact required-span coverage separately from note quality; a complete-sounding summary cannot repair absent evidence. |
+| Shared mistakes across models | A host may repeat a plausible worker error instead of independently assessing the source. | Inject an incorrect note in a controlled trial; compare host conclusions with and without it. Neither the worker nor the same task's host should supply the reference answer. |
+| Benchmark answer leakage | Tuning on exposed questions can improve the score without improving the product. | Keep grading keys outside fixture roots and packets. Treat this task lab as development material. Create an unseen, separately reviewed set before promotion; no held-out result is claimed now. |
+| Cold starts and model changes | A warmed, idle GPU is an incomplete picture of day-to-day use. | Record cold/warm load time, memory headroom, concurrent workloads, model swaps and deadline failures. A larger local model must justify its loading and inference costs. |
+| Settings are part of the model | Quantization, chat template, thinking mode and output budget can change results. | Record each model/profile as a distinct candidate. Change one dimension at a time and retain the losing runs. Existing fixed worker settings are a baseline, not a tuned recommendation. |
+| Stale context and shared files | Captured source can change while another task or user edits the checkout. | Bind results to hashes; mark captured state clearly; require a fresh task before relying on it for a later edit. Durable cross-session memory remains future work. |
+| What actually reaches the cloud | Filename filters do not find every secret embedded inside ordinary source or logs. | Before a cloud adapter is promoted, define an outbound-content policy and tests for embedded secrets. Redactions must be disclosed; redacted material cannot be labeled byte-exact. No cloud adapter is implemented now. |
+| Quota versus token estimates | A shorter brief does not establish fewer subscription-limit events or lower total cost. | Use actual usage where exposed; keep local estimates, cached input, output and unobservable quota behavior distinct. Include failed runs and retries. |
+| Cost of abstaining too often | Refusing every task can avoid false statements while leaving all work to the host. | Score useful completed jobs and recovery questions alongside unsupported claims and misses. The helper must reduce work without bluffing. |
+| Upgrade regressions | A model tag or dependency update can alter working behavior. | Pin identities before promotion, rerun the qualification set on change, retain a last-qualified profile and document rollback. Digest enforcement and a promotion controller remain pending. |
+| User effort | A helper that repeatedly asks routine setup questions can increase work. | Choose routine defaults in the coordinator; expose concise outcomes, evidence and actionable failures. Ask only when a missing fact materially changes the task. |
+
+The first product milestone remains a measured, evidence-preserving local Ollama handoff through a real host. The task lab supplies development inputs and mechanical evidence checks; it does not replace that end-to-end qualification.

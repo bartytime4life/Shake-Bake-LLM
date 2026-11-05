@@ -1,0 +1,32 @@
+{
+  "version": "0.4.0.dev4",
+  "date": "2026-11-04",
+  "scope": "development_environment_not_owner_PC",
+  "program_tests": {
+    "passed": 121,
+    "skipped": 0
+  },
+  "new_shared_service_tests": 19,
+  "installed_wheel_shared_service_smoke": {
+    "shared_job_visible_in_GUI_state": true,
+    "captured_evidence_fetch": true,
+    "GUI_pause_applies_to_adapter": true,
+    "model_inference": false
+  },
+  "private_connection_cleanup": "verified_clean_SIGINT",
+  "wheel_legal_files": "bytes_verified",
+  "javascript_syntax": "passed",
+  "official_SDK": "absent; clean exit 2 leaves shared service running",
+  "MCP_transport": "prepared_official_SDK_stdio_adapter_not_qualified",
+  "browser_interaction": "unverified; prior automatic review blocked cloud browser",
+  "unverified": [
+    "real_Ollama_accuracy",
+    "actual_official_SDK_and_Claude_ChatGPT_hosts",
+    "browser_desktop_phone_visuals_and_interactions",
+    "owner_PC_behavior",
+    "independent_security_review",
+    "full_guided_project_setup",
+    "persistent_profiles_and_pause_after_restart",
+    "cloud_token_savings"
+  ]
+}

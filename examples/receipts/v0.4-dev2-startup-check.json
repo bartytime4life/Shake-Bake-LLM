@@ -1,0 +1,44 @@
+{
+  "scope": "development_environment_not_owner_PC",
+  "report": {
+    "kind": "local_readiness_report",
+    "helper_version": "0.4.0.dev2",
+    "environment": {
+      "system": "Linux",
+      "machine": "x86_64",
+      "python": "3.12.14",
+      "physical_ram_bytes": 10451427328,
+      "gpu_vram_bytes": null,
+      "gpu_throughput": null
+    },
+    "gui_startup_checks_passed": true,
+    "checks": [
+      {
+        "name": "Python 3.11 or newer",
+        "status": "PASS"
+      },
+      {
+        "name": "Linux process boundary",
+        "status": "PASS"
+      },
+      {
+        "name": "Workbench package assets",
+        "status": "PASS",
+        "missing": []
+      },
+      {
+        "name": "Workbench port",
+        "status": "PASS",
+        "port": 8421
+      }
+    ],
+    "ollama": {
+      "status": "NOT_CHECKED",
+      "generation_requested": false,
+      "source_sent": false
+    },
+    "model_accuracy": null,
+    "cloud_savings": null,
+    "limits": "Port availability is a point-in-time probe. No model ran; browser rendering and owner-PC behavior are not qualified."
+  }
+}

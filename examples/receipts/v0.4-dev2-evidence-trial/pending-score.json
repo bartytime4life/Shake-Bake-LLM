@@ -1,0 +1,29 @@
+{
+  "kind": "development_trial_review",
+  "trial_sha256": "57ba7d761bc3b87641064f532129ccfa077e52c4503a8696efa944c9069658dc",
+  "trial_status": "FINISHED",
+  "completed_attempts": 20,
+  "planned_attempts": 20,
+  "unique_cases": 10,
+  "mechanical_passes": 20,
+  "failure_reasons": {},
+  "reviewed_attempts": 0,
+  "review_status": "PENDING",
+  "reviewer_record_is_self_asserted": true,
+  "reviewed_handoff_accuracy": null,
+  "semantic_model_accuracy": null,
+  "critical_misses": null,
+  "unsupported_claims": null,
+  "unsupported_critical_claims": null,
+  "usage": {
+    "scope": "successful_validated_worker_responses_only",
+    "reported_sums": {},
+    "attempts_with_any_usage": 0,
+    "attempts_without_usage": 20,
+    "full_task_total_known": false,
+    "warning": "Missing or rejected-response usage is unknown; sums can undercount failed work."
+  },
+  "cloud_savings": null,
+  "auto_promotion_allowed": false,
+  "warning": "Development handoff review only. No native-host comparison, independent-case confidence interval or auto-routing qualification."
+}

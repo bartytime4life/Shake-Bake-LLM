@@ -1,323 +1,470 @@
-"""Authenticated local-only workbench backed by the same routed Engine as MCP."""
+"""Local browser workbench; no external assets, cloud client or automatic downloads."""
 
 import argparse
+from concurrent.futures import Future
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from importlib.resources import files
 import json
-import mimetypes
-import os
+import math
 from pathlib import Path
+import queue
+import re
 import secrets
 import socket
-import stat
+import sys
 import threading
 import time
 from urllib.parse import urlsplit
 import webbrowser
 
 from . import __version__
-from .config import Configuration, load_config
+from .collector import _read
 from .contracts import Refusal
-from .engine import Engine
-from .ipc import SharedCoordinator
-from .jsonutil import strict_json
-from .ollama import OllamaSettings
-from .store import private_directory
+from .helper import HelperSession
+from .routing import eligible_profiles, pipeline_id, validate_policy
+from .shared import ConnectionPublication
+from .worker import local_inventory, parse_json
 
-BODY_LIMIT = 64 * 1024
+ASSETS = Path(__file__).resolve().parent / "web"
+DEFAULT_POLICY = Path(__file__).resolve().parent / "default-policy.json"
+DEMO = Path(__file__).resolve().parent / "demo"
+CONTROLLER_TIMEOUT_SECONDS = 8
 
 
-def prepare_demo(state_dir):
-    """Own copies keep package-manager cache hard links outside inspected roots."""
-    root = state_dir.parent / f"{state_dir.name}-demo-{__version__}"
-    private_directory(root)
-    for name in ("example.txt", "startup.py", "startup.log"):
-        expected = files("shake_bake").joinpath("fixtures", name).read_bytes()
-        target = root / name
+class Controller:
+    """One persistent owner thread supervises children across short HTTP requests."""
+
+    def __init__(self, projects, policy_path=DEFAULT_POLICY, port=11434, *, allow_trials=False):
+        self.projects = dict(projects)
+        self.policy_path = Path(policy_path)
+        self.ollama_port = port
+        self.disabled = False
+        self.allow_trials = allow_trials
+        self.records = {}
+        self.inventory_status = {"state": "not_checked", "models": []}
+        self._queue = queue.Queue(maxsize=32)
+        self._session = HelperSession(projects, policy_path=policy_path, port=port)
+        self._thread = threading.Thread(target=self._run, daemon=True, name="shake-bake-owner")
+        self._thread.start()
+
+    def _run(self):
         try:
-            fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-        except FileExistsError:
-            fd = os.open(target, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-            with os.fdopen(fd, "rb") as handle:
-                info = os.fstat(handle.fileno())
-                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o600 or handle.read(len(expected)+1) != expected:
-                    raise Refusal("demo_changed", "The private demo copy changed. Preserve it and choose a fresh state directory to create a new demo.")
-        else:
-            with os.fdopen(fd, "wb") as handle:
-                handle.write(expected)
-                handle.flush()
-                os.fsync(handle.fileno())
-    return root
+            while True:
+                item = self._queue.get()
+                if item is None:
+                    break
+                future, operation, payload = item
+                if not future.set_running_or_notify_cancel():
+                    continue
+                try:
+                    future.set_result(self._handle(operation, payload))
+                except Exception as error:
+                    future.set_exception(error)
+        finally:
+            self._session.close()
+
+    def call(self, operation, payload=None):
+        if not self._thread.is_alive():
+            raise Refusal("workbench_closed")
+        future = Future()
+        try:
+            self._queue.put_nowait((future, operation, payload))
+        except queue.Full:
+            raise Refusal("workbench_busy") from None
+        try:
+            return future.result(timeout=CONTROLLER_TIMEOUT_SECONDS)
+        except TimeoutError:
+            # A queued start/settings request must not execute after its caller
+            # already received a timeout. Running operations retain their bounds.
+            future.cancel()
+            raise Refusal("workbench_request_timeout") from None
+
+    def _policy(self):
+        try:
+            resolved = self.policy_path.resolve()
+            if any(root.resolve() == resolved or root.resolve() in resolved.parents for root in self.projects.values()):
+                raise Refusal("routing_policy_inside_source")
+            policy = validate_policy(parse_json(_read(self.policy_path.parent, self.policy_path.name).decode()))
+            profiles = []
+            fingerprint = pipeline_id()
+            for kind in ("code", "troubleshoot", "documents", "search"):
+                eligible, rejected = eligible_profiles(policy, kind, fingerprint)
+                eligible_ids = {p["id"] for p in eligible}
+                reasons = dict(rejected)
+                for profile in policy["profiles"]:
+                    if profile["task_kind"] == kind:
+                        profiles.append({"id": profile["id"], "model": profile["model"], "task_kind": kind,
+                                         "status": "review_record_valid" if profile["id"] in eligible_ids else profile["status"],
+                                         "reason": reasons.get(profile["id"]), "evaluation": profile["evaluation"]})
+            return {"enabled": policy["enabled"], "profiles": profiles, "error": None}
+        except (Refusal, OSError, UnicodeError):
+            return {"enabled": False, "profiles": [], "error": "policy_unavailable"}
+
+    def _result(self, identifier):
+        result = self._session.get_result(identifier)
+        result["project_id"] = self.records.get(identifier, {}).get("project_id")
+        result["created_at"] = self.records.get(identifier, {}).get("created")
+        result["task_kind"] = self.records.get(identifier, {}).get("task_kind", "code")
+        result["entry_point"] = self.records.get(identifier, {}).get("entry_point", "workspace")
+        if result["state"] == "DONE":
+            result["evidence"] = [self._session.fetch_evidence(identifier, item["evidence_id"]) for item in result.get("evidence", [])]
+        return result
+
+    def _adapter(self, payload):
+        method, arguments, projects = payload["method"], payload["arguments"], payload["projects"]
+        if not isinstance(arguments, dict):
+            raise Refusal("invalid_shared_request")
+        if method == "list_projects" and not arguments:
+            return {"mode": "shared_accuracy_routed", "projects": sorted(projects),
+                    "local_ai_paused": self.disabled or not self._policy()["enabled"], "max_active_tasks": 1}
+        if method == "start_task":
+            if set(arguments) != {"project_id", "task", "task_kind"} or arguments["project_id"] not in projects:
+                raise Refusal("project_not_permitted")
+            return self._start(arguments, entry_point="assistant")
+        expected = {"task_id", "evidence_id"} if method == "fetch_evidence" else {"task_id"}
+        if method not in ("get_result", "fetch_evidence", "cancel_task") or set(arguments) != expected:
+            raise Refusal("invalid_shared_request")
+        identifier = arguments["task_id"]
+        if not isinstance(identifier, str) or self.records.get(identifier, {}).get("project_id") not in projects:
+            raise Refusal("task_not_permitted")
+        if method == "fetch_evidence":
+            return self._session.fetch_evidence(identifier, arguments["evidence_id"])
+        if method == "cancel_task":
+            return self._session.cancel_task(identifier)
+        result = self._session.get_result(identifier)
+        result["task_kind"] = self.records[identifier]["task_kind"]
+        result["entry_point"] = self.records[identifier].get("entry_point", "workspace")
+        return result
+
+    def _start(self, payload, *, entry_point="workspace"):
+        required = {"project_id", "task", "task_kind"}
+        if not isinstance(payload, dict) or set(payload) not in (required, required | {"candidate"}):
+            raise Refusal("invalid_task_request")
+        candidate = payload.get("candidate")
+        if candidate is not None and (not self.allow_trials or self.disabled or not self._policy()["enabled"]):
+            raise Refusal("candidate_trial_not_allowed")
+        started = self._session.start_task(payload["project_id"], payload["task"], task_kind=payload["task_kind"], disabled=self.disabled, candidate=candidate)
+        self.records[started["task_id"]] = {"project_id": payload["project_id"], "task_kind": payload["task_kind"],
+                                           "task": payload["task"], "created": time.time(), "entry_point": entry_point}
+        while len(self.records) > 8:
+            del self.records[next(iter(self.records))]
+        return started
+
+    def _handle(self, operation, payload):
+        if operation == "adapter":
+            return self._adapter(payload)
+        if operation == "state":
+            recent = []
+            for identifier, metadata in list(self.records.items()):
+                try:
+                    state = self._session.get_result(identifier)["state"]
+                except Refusal:
+                    state = "EXPIRED"
+                recent.append({**metadata, "task_id": identifier, "state": state})
+            policy = self._policy()
+            return {"version": __version__, "projects": [{"id": name, "label": name.replace("-", " ").title(), "path": str(root), "demo": root == DEMO} for name, root in self.projects.items()],
+                    "local_ai_enabled": not self.disabled and policy["enabled"], "policy": policy,
+                    "recent": list(reversed(recent)), "inventory": self.inventory_status,
+                    "allow_candidate_trials": self.allow_trials, "pipeline_id": pipeline_id(),
+                    "catalog": json.loads((ASSETS / "models.json").read_text())}
+        if operation == "start":
+            return self._start(payload)
+        if operation == "result":
+            return self._result(payload)
+        if operation == "cancel":
+            return self._session.cancel_task(payload)
+        if operation == "settings":
+            if not isinstance(payload, dict) or set(payload) != {"enabled"} or type(payload["enabled"]) is not bool:
+                raise Refusal("invalid_settings")
+            self.disabled = not payload["enabled"]
+            if self.disabled:
+                for identifier in self.records:
+                    try:
+                        self._session.cancel_task(identifier)
+                    except Refusal:
+                        pass
+            return {"enabled": not self.disabled and self._policy()["enabled"]}
+        if operation == "inventory":
+            if self.disabled:
+                return {"state": "paused", "models": []}
+            try:
+                inventory = local_inventory(self.ollama_port, time.monotonic()+5)
+                self.inventory_status = {"state": "connected", "models": [{"name": name, "digest": digest} for name, digest in inventory.items()]}
+            except Refusal:
+                self.inventory_status = {"state": "unavailable", "models": []}
+            return self.inventory_status
+        raise Refusal("unknown_operation")
+
+    def close(self):
+        self._queue.put(None, timeout=2)
+        self._thread.join(timeout=4)
+        if self._thread.is_alive():
+            raise RuntimeError("workbench owner did not stop")
 
 
 class WorkbenchServer(ThreadingHTTPServer):
     daemon_threads = True
     request_queue_size = 8
 
-    def __init__(self, engine, port=8421, shared=True):
-        self.engine = engine
-        self.slots = threading.BoundedSemaphore(8)
-        self.connections = {}
-        self.connection_lock = threading.Lock()
-        self.sessions = {}
-        self.session_lock = threading.Lock()
-        self.boot_token = secrets.token_urlsafe(32)
-        self.native = None
-        super().__init__(("127.0.0.1", port), Handler)
-        self.origin = f"http://127.0.0.1:{self.server_port}"
-        try:
-            if shared:
-                self.native = SharedCoordinator(engine)
-        except Exception:
-            super().server_close()
-            raise
-
-    @property
-    def launch_url(self):
-        return self.origin + "/#" + self.boot_token
+    def __init__(self, address, controller, *, max_connections=8, idle_seconds=3, connection_seconds=12, adapter_projects=None):
+        if address[0] != "127.0.0.1":
+            raise Refusal("loopback_ui_required")
+        if (type(max_connections) is not int or not 1 <= max_connections <= 32 or
+            any(type(value) not in (int, float) or not math.isfinite(value) or not 0 < value <= 30
+                for value in (idle_seconds, connection_seconds))):
+            raise Refusal("invalid_connection_limits")
+        self.max_connections = max_connections
+        self.idle_seconds = idle_seconds
+        self.connection_seconds = connection_seconds
+        self._connections = {}
+        self._connections_lock = threading.Lock()
+        self.controller = controller
+        if adapter_projects is not None and (not isinstance(adapter_projects, (tuple, list)) or not adapter_projects or
+            any(not isinstance(name, str) or name not in controller.projects for name in adapter_projects)):
+            raise Refusal("invalid_adapter_projects")
+        self.adapter_projects = tuple(adapter_projects or ())
+        self.adapter_token = secrets.token_urlsafe(32) if adapter_projects is not None else None
+        self.session_token = secrets.token_urlsafe(32)
+        self.csrf_token = secrets.token_urlsafe(32)
+        super().__init__(address, Handler)
+        self.origins = {f"http://127.0.0.1:{self.server_port}", f"http://localhost:{self.server_port}"}
+        self.hosts = {urlsplit(origin).netloc for origin in self.origins}
 
     def process_request(self, request, client_address):
-        if not self.slots.acquire(blocking=False):
+        with self._connections_lock:
+            admitted = len(self._connections) < self.max_connections
+            if admitted:
+                self._connections[request] = time.monotonic() + self.connection_seconds
+        if not admitted:
+            # Do not allocate a handler or wait on an overloaded connection.
             try:
-                request.settimeout(0.1)
-                request.sendall(b"HTTP/1.0 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                request.setblocking(False)
+                request.send(b"HTTP/1.0 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\nRetry-After: 1\r\nCache-Control: no-store\r\n\r\n")
             except OSError:
                 pass
-            request.close()
+            self.shutdown_request(request)
             return
-        request.settimeout(3)
-        with self.connection_lock:
-            self.connections[request] = time.monotonic() + 12
         try:
+            request.settimeout(self.idle_seconds)
             super().process_request(request, client_address)
         except Exception:
-            with self.connection_lock:
-                self.connections.pop(request, None)
-            self.slots.release()
-            request.close()
+            with self._connections_lock:
+                self._connections.pop(request, None)
+            self.shutdown_request(request)
             raise
 
     def process_request_thread(self, request, client_address):
         try:
             super().process_request_thread(request, client_address)
         finally:
-            with self.connection_lock:
-                self.connections.pop(request, None)
-            self.slots.release()
+            with self._connections_lock:
+                self._connections.pop(request, None)
+
+    @staticmethod
+    def _disconnect(request):
+        try:
+            request.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
 
     def service_actions(self):
-        with self.connection_lock:
-            stale = [connection for connection, deadline in self.connections.items() if time.monotonic() >= deadline]
-        for connection in stale:
-            try:
-                connection.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                pass
-
-    def handle_error(self, *_):
-        # Never log request bodies, cookies, tokens or inspected source.
-        pass
+        super().service_actions()
+        now = time.monotonic()
+        with self._connections_lock:
+            expired = [request for request, deadline in self._connections.items() if now >= deadline]
+        # An absolute deadline catches header/body drips that reset idle timers.
+        # Main serve_forever polls at 0.2 s; deadlines are cooperative, not realtime.
+        for request in expired:
+            self._disconnect(request)
 
     def server_close(self):
-        with self.connection_lock:
-            connections = list(self.connections)
-        for connection in connections:
-            try:
-                connection.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                pass
-        if self.native is not None:
-            self.native.close()
-            self.native = None
+        with self._connections_lock:
+            active = tuple(self._connections)
+        for request in active:
+            self._disconnect(request)
         super().server_close()
+
+    def handle_error(self, request, client_address):
+        if isinstance(sys.exc_info()[1], (TimeoutError, ConnectionError, OSError)):
+            return
+        super().handle_error(request, client_address)
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "ShakeBake"
+    protocol_version = "HTTP/1.0"
 
-    def log_message(self, *_):
+    def log_message(self, *args):
         pass
 
-    def respond(self, status, data, content_type="application/json", cookie=None):
-        body = json.dumps(data, ensure_ascii=False).encode() if content_type == "application/json" else data
+    def _send(self, status, content, mime="application/json; charset=utf-8", cookie=False):
+        raw = content if isinstance(content, bytes) else json.dumps(content, ensure_ascii=False).encode()
         self.send_response(status)
-        self.send_header("Content-Type", content_type + ("; charset=utf-8" if content_type.startswith("text/") or content_type == "application/json" else ""))
-        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(raw)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
-        self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
-        self.send_header("Connection", "close")
+        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
         if cookie:
-            self.send_header("Set-Cookie", cookie)
+            self.send_header("Set-Cookie", f"sb_session={self.server.session_token}; HttpOnly; SameSite=Strict; Path=/")
         self.end_headers()
-        self.wfile.write(body)
-
-    def guard_origin(self, mutation=False, public=False):
-        if self.headers.get_all("Host", []) != [self.server.origin.removeprefix("http://")]:
-            raise Refusal("origin", "Open the exact loopback address printed by the launcher.")
-        origins = self.headers.get_all("Origin", [])
-        if len(origins) > 1 or (mutation and origins != [self.server.origin]) or (origins and origins != [self.server.origin]):
-            raise Refusal("origin", "This operation requires the local workbench's own origin.")
-        if not public and self.headers.get("Sec-Fetch-Site") not in (None, "same-origin", "none"):
-            raise Refusal("origin", "Cross-site workbench access is refused.")
-
-    def authorize(self, mutation=False):
-        self.guard_origin(mutation)
-        cookie = SimpleCookie()
         try:
-            cookie.load(self.headers.get("Cookie", ""))
+            self.wfile.write(raw)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def _allowed(self, post=False):
+        if self.headers.get("Host") not in self.server.hosts:
+            return False
+        origin = self.headers.get("Origin")
+        if origin is not None and origin not in self.server.origins:
+            return False
+        try:
+            cookie = SimpleCookie(self.headers.get("Cookie", ""))
+            token = cookie.get("sb_session")
+            authenticated = token and secrets.compare_digest(token.value, self.server.session_token)
         except Exception:
-            raise Refusal("session", "Reopen the private launch link to sign in to this local session.") from None
-        sid = cookie.get("shake_session")
-        with self.server.session_lock:
-            csrf = self.server.sessions.get(sid.value if sid else "")
-        if csrf is None:
-            raise Refusal("session", "Reopen the private launch link to sign in to this local session.")
-        if mutation and not secrets.compare_digest(self.headers.get("X-Shake-CSRF", ""), csrf):
-            raise Refusal("csrf", "Refresh the workbench to restore its session authorization.")
-        return csrf
-
-    def body(self):
-        if self.headers.get("Transfer-Encoding") or len(self.headers.get_all("Content-Length", [])) != 1:
-            raise Refusal("request_framing", "Use one bounded Content-Length request.")
-        if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
-            raise Refusal("request_type", "Use a JSON request.")
+            authenticated = False
+        if not authenticated or self.headers.get("Sec-Fetch-Site") == "cross-site":
+            return False
         try:
-            length = int(self.headers["Content-Length"])
-        except ValueError:
-            raise Refusal("request_size", "The request length is invalid.") from None
-        if not 1 <= length <= BODY_LIMIT:
-            raise Refusal("request_size", "The request exceeds the workbench's byte budget.")
-        raw = self.rfile.read(length)
-        if len(raw) != length:
-            raise Refusal("request_size", "The request body is incomplete.")
-        value = strict_json(raw)
-        if not isinstance(value, dict):
-            raise Refusal("request_shape", "The request must be a JSON object.")
-        return value
+            return not post or (origin in self.server.origins and secrets.compare_digest(self.headers.get("X-SB-CSRF", ""), self.server.csrf_token))
+        except TypeError:
+            return False
 
     def do_GET(self):
+        if self.headers.get("Host") not in self.server.hosts:
+            self._send(403, {"error": "host_not_allowed"}); return
+        path = urlsplit(self.path).path
+        static = {"/": ("index.html", "text/html; charset=utf-8"), "/styles.css": ("styles.css", "text/css; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8")}
+        for name in ("folder", "clock", "document", "copy", "download", "chevron-down", "map-pin", "x-mark"):
+            static[f"/icons/{name}.svg"] = (f"icons/{name}.svg", "image/svg+xml")
+        if path in static:
+            name, mime = static[path]
+            self._send(200, (ASSETS / name).read_bytes(), mime, cookie=path=="/"); return
+        if not self._allowed():
+            self._send(403, {"error": "session_required"}); return
         try:
-            parsed = urlsplit(self.path)
-            self.guard_origin(public=not parsed.path.startswith("/api/"))
-            if parsed.query or parsed.fragment:
-                raise Refusal("route", "Unsupported route parameters.")
-            path = parsed.path
             if path == "/api/state":
-                csrf = self.authorize()
-                engine = self.server.engine
-                with engine._admission:
-                    active = None if engine._active is None else {"job_id": engine._active[0], "project_id": engine._active[1]}
-                return self.respond(200, {"version": __version__, "csrf": csrf, "projects": list(engine.roots),
-                    "preferences": engine.preferences(), "recent": engine.recent_jobs(), "active": active,
-                    "local_ai_allowed": engine.config.ollama.enabled, "local_ai_paused": engine._ai_paused.is_set(),
-                    "device_id": engine.device_id, "pipeline_sha256": engine.pipeline,
-                    "shared_native": self.server.native is not None})
-            if path.startswith("/api/"):
-                self.authorize()
-                raise Refusal("route", "Unknown workbench route.")
-            assets = {"/": "index.html", "/app.js": "app.js", "/style.css": "style.css"}
-            icon_names = {"folder", "clock", "document", "copy", "download", "chevron-down", "map-pin", "x-mark"}
-            asset = assets.get(path)
-            if path.startswith("/icons/") and path.removeprefix("/icons/").removesuffix(".svg") in icon_names and path.endswith(".svg"):
-                asset = path.removeprefix("/")
-            if asset is None:
-                return self.respond(404, {"error": {"code": "route", "message": "Page not found."}})
-            content_type = mimetypes.guess_type(asset)[0] or "application/octet-stream"
-            if asset.endswith(".js"):
-                content_type = "text/javascript"
-            return self.respond(200, files("shake_bake").joinpath("web", asset).read_bytes(), content_type)
-        except Refusal as exc:
-            self.respond(403, {"error": exc.to_dict()})
-        except OSError:
-            return
+                state = self.server.controller.call("state")
+                state["csrf_token"] = self.server.csrf_token
+                state["shared_native"] = self.server.adapter_token is not None
+                self._send(200, state)
+            elif re.fullmatch(r"/api/tasks/[a-f0-9]{32}", path):
+                self._send(200, self.server.controller.call("result", path.rsplit("/", 1)[-1]))
+            else:
+                self._send(404, {"error": "not_found"})
+        except Refusal as error:
+            self._send(400, {"error": error.code})
+        except Exception:
+            self._send(503, {"error": "workbench_unavailable"})
 
     def do_POST(self):
+        shared = urlsplit(self.path).path == "/api/helper"
         try:
-            self.guard_origin(mutation=True)
-            if self.path == "/api/session":
-                value = self.body()
-                token = value.get("token")
-                if set(value) != {"token"} or not isinstance(token, str) or not secrets.compare_digest(token, self.server.boot_token):
-                    raise Refusal("session", "The private launch link is invalid for this service session.")
-                with self.server.session_lock:
-                    if len(self.server.sessions) >= 8:
-                        raise Refusal("session_limit", "Close this service and relaunch to replace its local sessions.")
-                    sid, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
-                    self.server.sessions[sid] = csrf
-                return self.respond(200, {"csrf": csrf}, cookie=f"shake_session={sid}; HttpOnly; SameSite=Strict; Path=/")
-            self.authorize(mutation=True)
-            value = self.body()
-            engine = self.server.engine
-            if self.path == "/api/start":
-                allowed = {"project_id", "request", "selections", "task_kind", "ai_mode", "model", "digest"}
-                if set(value) - allowed or not {"project_id", "request"} <= set(value):
-                    raise Refusal("request_shape", "The task has unsupported fields.")
-                return self.respond(200, engine.start_job(**value))
-            if self.path == "/api/result":
-                if set(value) != {"project_id", "job_id"}:
-                    raise Refusal("request_shape", "A result requires project_id and job_id.")
-                return self.respond(200, engine.get_result(**value))
-            if self.path == "/api/cancel":
-                if set(value) != {"project_id", "job_id"}:
-                    raise Refusal("request_shape", "Cancellation requires project_id and job_id.")
-                return self.respond(200, engine.cancel_job(**value))
-            if self.path == "/api/preferences":
-                return self.respond(200, engine.save_preferences(value))
-            if self.path == "/api/pause":
-                if set(value) != {"paused"}:
-                    raise Refusal("request_shape", "Pause requires one boolean paused value.")
-                return self.respond(200, engine.pause_local_ai(value["paused"]))
-            if self.path == "/api/models":
-                if value:
-                    raise Refusal("request_shape", "Model refresh accepts no configuration changes.")
-                return self.respond(200, engine.inventory())
-            raise Refusal("route", "Unknown workbench route.")
-        except Refusal as exc:
-            self.respond(409 if exc.code == "busy" else 400, {"error": exc.to_dict()})
-        except (OSError, TimeoutError):
-            return
+            shared_allowed = (self.headers.get("Host") in self.server.hosts and self.server.adapter_token is not None and
+                              self.headers.get("Origin") is None and self.headers.get("Sec-Fetch-Site") is None and
+                              secrets.compare_digest(self.headers.get("Authorization", ""), "Bearer " + self.server.adapter_token))
+        except TypeError:
+            shared_allowed = False
+        if (shared and not shared_allowed) or (not shared and not self._allowed(post=True)):
+            self._send(403, {"error": "request_not_allowed"}); return
+        try:
+            if self.headers.get("Content-Type", "").split(";")[0] != "application/json":
+                raise Refusal("json_required")
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 0 < length <= 24000:
+                raise Refusal("request_size")
+            self.connection.settimeout(3)
+            raw = self.rfile.read(length)
+            if len(raw) != length:
+                raise Refusal("request_incomplete")
+            payload = parse_json(raw.decode("utf-8"))
+            path = urlsplit(self.path).path
+            if shared:
+                if not isinstance(payload, dict) or set(payload) != {"method", "arguments"} or not isinstance(payload["method"], str):
+                    raise Refusal("invalid_shared_request")
+                try:
+                    value = self.server.controller.call("adapter", {**payload, "projects": self.server.adapter_projects})
+                except Refusal as error:
+                    value = {"outcome": "DENY", "code": error.code}
+                self._send(200, {"result": value})
+            elif path == "/api/tasks":
+                self._send(202, self.server.controller.call("start", payload))
+            elif path == "/api/settings":
+                self._send(200, self.server.controller.call("settings", payload))
+            elif path == "/api/inventory" and payload == {}:
+                self._send(200, self.server.controller.call("inventory"))
+            elif re.fullmatch(r"/api/tasks/[a-f0-9]{32}/cancel", path) and payload == {}:
+                self._send(200, self.server.controller.call("cancel", path.split("/")[-2]))
+            else:
+                self._send(404, {"error": "not_found"})
+        except (Refusal, ValueError, UnicodeError) as error:
+            self._send(400, {"error": error.code if isinstance(error, Refusal) else "invalid_request"})
         except Exception:
-            self.respond(400, {"error": {"code": "request_invalid", "message": "The local request could not be processed."}})
+            self._send(503, {"error": "workbench_unavailable"})
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Open the standalone local Shake & Bake workbench.")
-    parser.add_argument("--config", type=Path)
-    parser.add_argument("--state-dir", type=Path, default=Path.home() / ".local/state/shake-bake")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--project", action="append", help="Approved ID=/absolute/folder; repeat up to eight")
+    parser.add_argument("--policy", type=Path, default=DEFAULT_POLICY)
     parser.add_argument("--port", type=int, default=8421)
+    parser.add_argument("--ollama-port", type=int, default=11434)
     parser.add_argument("--no-browser", action="store_true")
-    parser.add_argument("--enable-local-ai", action="store_true", help="Allow explicit local Ollama inventory/trials for the bundled demo. Real project permissions remain in --config.")
+    parser.add_argument("--allow-candidate-trials", action="store_true", help="Allow acknowledged pinned model trials; never qualifies a candidate")
+    parser.add_argument("--connection-file", type=Path, help="Publish a private local adapter connection file outside inspected projects")
+    parser.add_argument("--adapter-project", action="append", help="Project ID permitted to the adapter; default starter-demo only")
     args = parser.parse_args(argv)
-    if args.config and args.enable_local_ai:
-        parser.error("Set ollama.enabled in your owner-controlled configuration when using --config.")
-    if not 0 <= args.port <= 65535:
-        parser.error("port must be between 0 and 65535")
+    if not 1 <= args.port <= 65535 or not 1 <= args.ollama_port <= 65535:
+        parser.error("--port and --ollama-port must be between 1 and 65535")
+    if args.adapter_project and args.connection_file is None:
+        parser.error("--adapter-project requires --connection-file")
+    projects = {"starter-demo": DEMO}
+    for entry in args.project or []:
+        name, separator, path = entry.partition("=")
+        if not separator or not Path(path).is_absolute() or name in projects:
+            parser.error("use distinct ID=/absolute/folder entries")
+        projects[name] = Path(path)
     try:
-        state_dir = args.state_dir.absolute()
-        config = load_config(args.config) if args.config else Configuration(state_dir,
-            {"demo": prepare_demo(state_dir)}, OllamaSettings(enabled=args.enable_local_ai))
-        with Engine(config) as engine:
-            server = WorkbenchServer(engine, args.port)
-            print(server.launch_url, flush=True)
-            print("Local session only. Source and model notes stay separate. Stop with Ctrl+C.", flush=True)
-            if not args.no_browser:
-                webbrowser.open(server.launch_url)
-            try:
-                server.serve_forever(poll_interval=0.1)
-            except KeyboardInterrupt:
-                pass
-            finally:
+        controller = Controller(projects, args.policy, args.ollama_port, allow_trials=args.allow_candidate_trials)
+    except Refusal as error:
+        print("The workbench could not start: "+error.code, file=sys.stderr)
+        return 2
+    server, publication = None, None
+    try:
+        try:
+            server = WorkbenchServer(("127.0.0.1", args.port), controller,
+                                     adapter_projects=tuple(args.adapter_project or ["starter-demo"]) if args.connection_file else None)
+        except OSError:
+            print("That local port is unavailable. Try another with --port.", file=sys.stderr)
+            return 2
+        if args.connection_file is not None:
+            publication = ConnectionPublication(args.connection_file, server.server_port, server.adapter_token, projects.values())
+        url = f"http://127.0.0.1:{server.server_port}"
+        print(f"Local: {url}", flush=True)
+        if publication is not None:
+            print("Private assistant connection file ready. Actual host integration remains unqualified.", flush=True)
+        if not args.no_browser:
+            webbrowser.open(url)
+        try:
+            server.serve_forever(poll_interval=0.2)
+        except KeyboardInterrupt:
+            pass
+    except (Refusal, OSError) as error:
+        print("The shared workbench could not start: " + (error.code if isinstance(error, Refusal) else "local_startup_failed"), file=sys.stderr)
+        return 2
+    finally:
+        try:
+            if server is not None:
                 server.server_close()
-        return 0
-    except Refusal as exc:
-        print(json.dumps({"status": "refused", "error": exc.to_dict()}))
-        return 2
-    except OSError:
-        print('{"status":"failed","error":{"code":"gui_startup","message":"The local workbench could not start. Check port availability, the private state path and permissions."}}')
-        return 2
+        finally:
+            try:
+                if publication is not None:
+                    publication.close()
+            finally:
+                controller.close()
+    return 0
 
 
 if __name__ == "__main__":

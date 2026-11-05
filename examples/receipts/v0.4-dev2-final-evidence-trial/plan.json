@@ -1,0 +1,158 @@
+{
+  "schema_version": "1",
+  "kind": "exposed_development_model_trial",
+  "trial_id": "9a87739d-36c5-4875-b2ad-fdad4fb621e8",
+  "created_utc": "2026-11-04T23:07:17.761232+00:00",
+  "helper_version": "0.4.0.dev2",
+  "pipeline_id": "875d6c68eefd5ff3813a31715bef8856cc69c8f7a4fab1654a38400274b6188f",
+  "trial_runner_sha256": "672508ec19e3c06ba6c0641fac2855bc940ebe633777dafe37c7ccbe25323a4e",
+  "task_runner_sha256": "cbc2a7a86e0a1e16e02255fddb1018a3246289b69c401c06d4768704acee04cb",
+  "manifest_sha256": "78d3af80a51222b961a5e8934fb8bec082104ce47c0fbe9fabe6eb252ebc3b73",
+  "grading_keys_sha256": "e5762be40101e85c1e3315ced0c13a109ff26e6244fe143f862ab592bf783494",
+  "fixture_sha256": {
+    "boundary": "e73ac96ce09b8d06aa23e8028c893ac8b82bd5e42feabb768faff50c6aeb60aa",
+    "change-review": "40615d4c40817de35e43a57e58f9d304a67bc68421a9e78af40a84132949a744",
+    "concurrency": "a9b68d2b5fd601a46a32ab999cad1bd856c3d06433619e1c4e2523d6fed858a5",
+    "coverage-budget": "f39cf0e6219ddec2ccf54d256a1d614dcb46c2b8100f7899f43844d6bdd3baca",
+    "distant-contradiction": "0a166f5abb8f90a8cac7a0da348d34cb2c81b18fd5f3e706471a7ae13113e1a1",
+    "failure-triage": "2b8a3f7f63919758bb0f42ef08ea776a581b17f4596c5e6ea04eb9f0c5dddace",
+    "injection": "fc5157447c9da950d57fc31684d88b6c38ac8d25f88fbc93dbd503215c3c86ca",
+    "repo-tour": "17bfe9a1f6cf15427c178214f5a1fafd9654f7f9fad18b0233d49b8d3b9b3e4e",
+    "runtime-mode": "ee0d14f021cafe51db645e4065f95c0ec9cec4b6a7bdb0707f9956ec5cbd98ee",
+    "unknown-hardware": "dc83fe261b3580e27296f2c7dbe08cc42a3007bda5d22a989c9a2a8ac8a6c34d"
+  },
+  "unique_case_count": 10,
+  "repeats": 2,
+  "planned_attempts": [
+    {
+      "attempt_id": "1:repo-tour",
+      "round": 1,
+      "case_id": "repo-tour"
+    },
+    {
+      "attempt_id": "1:injection",
+      "round": 1,
+      "case_id": "injection"
+    },
+    {
+      "attempt_id": "2:failure-triage",
+      "round": 2,
+      "case_id": "failure-triage"
+    },
+    {
+      "attempt_id": "2:distant-contradiction",
+      "round": 2,
+      "case_id": "distant-contradiction"
+    },
+    {
+      "attempt_id": "1:failure-triage",
+      "round": 1,
+      "case_id": "failure-triage"
+    },
+    {
+      "attempt_id": "1:coverage-budget",
+      "round": 1,
+      "case_id": "coverage-budget"
+    },
+    {
+      "attempt_id": "2:boundary",
+      "round": 2,
+      "case_id": "boundary"
+    },
+    {
+      "attempt_id": "1:boundary",
+      "round": 1,
+      "case_id": "boundary"
+    },
+    {
+      "attempt_id": "1:change-review",
+      "round": 1,
+      "case_id": "change-review"
+    },
+    {
+      "attempt_id": "1:distant-contradiction",
+      "round": 1,
+      "case_id": "distant-contradiction"
+    },
+    {
+      "attempt_id": "1:runtime-mode",
+      "round": 1,
+      "case_id": "runtime-mode"
+    },
+    {
+      "attempt_id": "2:runtime-mode",
+      "round": 2,
+      "case_id": "runtime-mode"
+    },
+    {
+      "attempt_id": "2:unknown-hardware",
+      "round": 2,
+      "case_id": "unknown-hardware"
+    },
+    {
+      "attempt_id": "2:concurrency",
+      "round": 2,
+      "case_id": "concurrency"
+    },
+    {
+      "attempt_id": "1:concurrency",
+      "round": 1,
+      "case_id": "concurrency"
+    },
+    {
+      "attempt_id": "2:repo-tour",
+      "round": 2,
+      "case_id": "repo-tour"
+    },
+    {
+      "attempt_id": "2:change-review",
+      "round": 2,
+      "case_id": "change-review"
+    },
+    {
+      "attempt_id": "1:unknown-hardware",
+      "round": 1,
+      "case_id": "unknown-hardware"
+    },
+    {
+      "attempt_id": "2:coverage-budget",
+      "round": 2,
+      "case_id": "coverage-budget"
+    },
+    {
+      "attempt_id": "2:injection",
+      "round": 2,
+      "case_id": "injection"
+    }
+  ],
+  "order_seed": 17,
+  "mode": "evidence_only",
+  "requested_model": null,
+  "model_preflight": null,
+  "environment": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "python": "3.12.14",
+    "model_load_state": "uncontrolled",
+    "gpu_throughput": null
+  },
+  "requested_worker_settings": {
+    "options": {
+      "temperature": 0,
+      "num_predict": 512,
+      "num_ctx": 8192
+    },
+    "keep_alive": "5m",
+    "deadline_seconds": 30,
+    "message_bytes_cap": 6000,
+    "settings_are_requests_not_attested_runtime": true
+  },
+  "attempts": [],
+  "status": "RUNNING",
+  "stop_reason": null,
+  "semantic_model_accuracy": null,
+  "cloud_usage_measured": false,
+  "native_host_baseline": null,
+  "auto_promotion_allowed": false,
+  "warning": "Known development cases, not held-out qualification. Repetitions are not independent cases. Missing usage is unknown, not zero. No cold-start or GPU-speed claim."
+}

@@ -1,11 +1,27 @@
-# Third-party notices
+# Third-party components and notices
 
-The local evidence core uses Python's standard library, including SQLite. Python and SQLite are installed separately; no interpreter, database engine binary, model weights or external application source is bundled here. Build tooling (`setuptools`) is installed separately from the package registry.
+Inventory reviewed November 4, 2026. This is not a replacement for any component's actual license or a completed distribution clearance.
 
-The synthetic demo is original project fixture data. Inspected repositories and exported excerpts retain their owners' licenses and privacy restrictions. The application's MIT license does not relicense inspected content.
+The root MIT LICENSE applies to original Shake and Bake material. External software, model artifacts and user-owned source retain their own applicable terms. Bundled evaluation fixtures are self-contained synthetic material. No third-party model weights, Ollama binary, Python interpreter or MCP SDK distribution is bundled in this starter ZIP or the app wheel. The standard-library client communicates with a separately installed Ollama daemon.
 
-Ollama, model weights and provider clients are not bundled or required. An optional standard-library Ollama client is implemented; exact external runtime/model-artifact license review and provider integrations remain separate work. A planning reference is not an adopted dependency or a redistribution grant.
+| Component/material | Relationship | Observed upstream terms / action |
+| --- | --- | --- |
+| Python and its standard library | Separately installed runtime, not bundled | Retain the actual interpreter distribution's license and notices if a future installer redistributes it. |
+| Ollama | Separately installed optional local service | Upstream LICENSE is MIT, copyright Ollama. Model weights have separate terms. If redistributing a specific runtime build, inventory its exact components and preserve its required notices. |
+| MCP Python SDK | Optional `mcp` extra; absent from this development environment and not bundled | Upstream LICENSE is MIT, copyright 2024 Anthropic, PBC. Exact installed versions and transitive dependencies still need a distribution inventory. |
+| setuptools | Build-time dependency, not bundled | Upstream project metadata identifies MIT. Preserve the notices for any actual copy redistributed; building the app does not bundle the build tool itself. |
+| Qwen3.5 9B/4B and Gemma 4 12B | Suggested external models, weights not bundled | Upstream Apache-2.0 observations are recorded in MODEL_LICENSES.json. Exact Ollama artifacts/conversions and any extra templates remain pending review. |
+| Publisher benchmark values/links | Referenced facts in documentation/model catalog | Sources/dates remain attached; no complete paper, publisher page or model weights are included. This inventory does not claim ownership of external material. |
 
-The optional local stdio adapter uses the separately installed official [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk), version 2.3.0, under its [MIT license](https://github.com/modelcontextprotocol/python-sdk/blob/main/LICENSE). The SDK and its transitive packages are not embedded in this application's wheel. The optional hashed dependency lock records installation artifacts; their upstream notices and licenses apply independently. No blanket redistribution clearance for an installer bundling those dependencies is claimed.
+## Upstream references
 
-The GUI bundles eight outline icons from [Heroicons](https://github.com/tailwindlabs/heroicons/tree/616b7a4dbbf3d011760af8066262cd5c6b3868f3), under its MIT License, copyright Tailwind Labs, Inc. Their original notice is preserved in `src/shake_bake/web/icons/LICENSE` and ships with the assets. UI fonts use the system's installed serif, sans-serif and monospace faces; no font files are redistributed.
+- Ollama: https://github.com/ollama/ollama/blob/main/LICENSE
+- MCP Python SDK: https://github.com/modelcontextprotocol/python-sdk/blob/main/LICENSE
+- setuptools: https://github.com/pypa/setuptools/blob/main/pyproject.toml
+- Candidate model sources: MODEL_LICENSES.json.
+
+When vendoring or redistributing actual third-party code/binaries, add their exact copyright/license/NOTICE texts and version/source identifiers. Links alone are not a substitute for required distributed notices. This starter currently references external components rather than embedding those distributions. There is no claim that all future versions or models use the same license.
+
+## Bundled interface icons
+
+Heroicons outline SVGs are bundled under their MIT license, copyright Tailwind Labs, Inc. The unmodified license is in `src/shake_bake/web/icons/LICENSE`. Assets were retrieved from immutable upstream revision `616b7a4dbbf3d011760af8066262cd5c6b3868f3`; no icon service or runtime dependency is used.

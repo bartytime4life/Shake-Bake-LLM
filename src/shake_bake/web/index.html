@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Shake &amp; Bake — Local workbench</title>
   <link rel="icon" href="/icons/folder.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/styles.css">
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -40,7 +40,7 @@
         </div>
         <p id="project-help" class="sr-only">Only projects approved in the owner's launch configuration are available.</p>
         <label for="request" class="sr-only">Describe your task</label>
-        <textarea id="request" name="request" rows="4" required maxlength="16384" spellcheck="false" placeholder="Describe what you want your assistant to investigate…">Investigate why the app fails to start. Use the provided source and log, identify what is known and missing, and prepare a focused brief for my assistant.</textarea>
+        <textarea id="request" name="request" rows="4" required maxlength="16384" spellcheck="false" placeholder="Describe what you want your assistant to investigate…">Find the executable slice coverage guard. Can it accept fewer reported slices than detected? Provide exact evidence and gaps.</textarea>
         <div class="model-strip">
           <label class="switch-label"><input type="checkbox" id="local-ai"><span>Local AI</span></label>
           <span id="mode-summary" class="muted">Best accuracy · evidence only</span>
@@ -55,9 +55,10 @@
             <p class="small muted" id="model-identity">No installed model selected.</p>
             <label class="check-label"><input id="trial-ack" type="checkbox">I understand candidate notes are unverified. My trusted local Ollama must have cloud features disabled.</label>
           </div>
-          <p class="small muted">Best tested uses only reviewed, comparable profiles for this installation and pipeline. No qualifying profile keeps the brief evidence-only. No automatic downloads or provider fallback.</p>
-          <details class="technical"><summary>Installation &amp; profile identity</summary><p class="small muted">Device, pipeline and saved model identity are local qualification inputs, not hardware or accuracy certificates.</p><pre id="profile-identity"></pre></details>
-          <details class="ranges"><summary>Source ranges <span class="muted small">optional</span></summary><p class="small muted">Leave empty for bounded lexical discovery. To choose exact source, enter up to four relative paths and inclusive line ranges, one per line.</p><label class="sr-only" for="ranges">Exact source ranges</label><textarea id="ranges" rows="3" spellcheck="false" placeholder="src/app.py:10:35&#10;tests/test_app.py:1:40"></textarea></details>
+          <p class="small muted">Best tested uses only reviewed, comparable profiles for this pipeline. No qualifying profile keeps the brief evidence-only. No automatic downloads or provider fallback.</p>
+          <details class="technical"><summary>Installation &amp; profile identity</summary><p class="small muted">Pipeline and saved model identity are qualification inputs, not hardware or accuracy certificates.</p><pre id="profile-identity"></pre></details>
+
+          <details class="technical"><summary>Published statistics &amp; local results</summary><div id="catalog"></div></details>
         </section>
         <div class="action-row"><button type="submit" class="primary" id="prepare">Prepare for my assistant</button><button type="button" class="secondary stop" id="stop" disabled>Stop</button><span id="progress" class="small muted" aria-live="polite"></span></div>
       </form>

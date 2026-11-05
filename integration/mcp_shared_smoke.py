@@ -1,80 +1,56 @@
-"""Installed GUI/native SDK replay over one actual private coordinator."""
+"""Prepared official-SDK check through the actual private shared bridge.
 
-import argparse
+Run only when the optional MCP v2 SDK is installed. No model/cloud call.
+"""
+
 import asyncio
-import http.client
-import json
-import os
 from pathlib import Path
-import select
-import signal
-import subprocess
 import sys
 import tempfile
-from urllib.parse import urlsplit
+import threading
 
-from mcp import Client, StdioServerParameters
+try:
+    from mcp import Client
+except ImportError:
+    print("MCP v2 SDK is absent; shared SDK qualification did not run.", file=sys.stderr)
+    raise SystemExit(2)
+
+from shake_bake.gui import Controller, DEMO, WorkbenchServer
+from shake_bake.mcp_server import create_server
+from shake_bake.shared import ConnectionPublication, SharedClient
 
 
-async def run(python):
-    with tempfile.TemporaryDirectory(prefix="sb-shared-") as temp:
-        state=Path(temp)/"state"
-        env=dict(os.environ);env.pop("PYTHONPATH",None)
-        service=subprocess.Popen([python,"-m","shake_bake.gui","--no-browser","--enable-local-ai","--state-dir",str(state),"--port","0"],cwd=temp,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,start_new_session=True)
+async def main():
+    with tempfile.TemporaryDirectory() as directory:
+        controller = Controller({"starter-demo": DEMO})
+        server = WorkbenchServer(("127.0.0.1", 0), controller, adapter_projects=("starter-demo",))
+        thread = threading.Thread(target=lambda: server.serve_forever(poll_interval=.01), daemon=True)
+        thread.start()
+        publication = ConnectionPublication(Path(directory) / "connection.json", server.server_port,
+                                             server.adapter_token, controller.projects.values())
+        helper = SharedClient(publication.path)
         try:
-            assert select.select([service.stdout],[],[],10)[0], "GUI service did not report startup."
-            launch=service.stdout.readline().strip();url=urlsplit(launch)
-            assert url.hostname=="127.0.0.1" and url.fragment, "GUI service failed to start."
-            origin=f"http://127.0.0.1:{url.port}"
-            cookie=None;csrf=None
-            def request(path,value=None):
-                nonlocal cookie,csrf
-                connection=http.client.HTTPConnection('127.0.0.1',url.port,timeout=5)
-                headers={'Origin':origin,'Content-Type':'application/json'}
-                if cookie:headers['Cookie']=cookie
-                if csrf:headers['X-Shake-CSRF']=csrf
-                connection.request('GET' if value is None else 'POST',path,None if value is None else json.dumps(value),headers)
-                response=connection.getresponse();raw=response.read();assert response.status==200,(response.status,raw)
-                if response.getheader('Set-Cookie'):cookie=response.getheader('Set-Cookie').split(';')[0]
-                data=json.loads(raw);connection.close()
-                if 'csrf' in data:csrf=data['csrf']
-                return data
-            request('/api/session',{'token':url.fragment})
-            params=StdioServerParameters(command=python,args=['-m','shake_bake.mcp_adapter','--connect',str(state/'connection.json')],cwd=temp,env=env)
-            async with Client(params,read_timeout_seconds=10) as client:
-                tools=await client.list_tools();assert {t.name for t in tools.tools}=={'start_job','get_result','fetch_evidence','cancel_job'}
-                started=(await client.call_tool('start_job',{'project_id':'demo','request':'Find startup failure.','ai_mode':'best'})).structured_content
-                assert started['status']=='running',started
+            async with Client(create_server(helper), raise_exceptions=True) as client:
+                started = await client.call_tool("start_task", {"project_id": "starter-demo", "task": "Find coverage.", "task_kind": "code"})
+                assert not started.is_error
+                identifier = started.structured_content["task_id"]
                 for _ in range(100):
-                    result=request('/api/result',{'project_id':'demo','job_id':started['job_id']})
-                    if result['status']!='running':break
-                    await asyncio.sleep(.01)
-                assert result['status']=='prepared',result
-                assert any(row['job_id']==started['job_id'] for row in request('/api/state')['recent'])
-                item=result['packet']['evidence'][0]
-                fetched=(await client.call_tool('fetch_evidence',{'project_id':'demo','job_id':started['job_id'],'evidence_id':item['evidence_id']})).structured_content
-                assert fetched['evidence']==item
-                request('/api/pause',{'paused':True})
-                second=(await client.call_tool('start_job',{'project_id':'demo','request':'Find startup failure.','ai_mode':'trial','model':'synthetic:local','digest':'a'*64})).structured_content
-                for _ in range(100):
-                    paused=(await client.call_tool('get_result',{'project_id':'demo','job_id':second['job_id']})).structured_content
-                    if paused['status']!='running':break
-                    await asyncio.sleep(.01)
-                assert paused['packet']['routing']['status']=='evidence_only'
-                assert paused['packet']['receipt']['model_calls']==0
-                assert paused['packet']['receipt'].get('ollama_requests',0)==0
-            assert request('/api/result',{'project_id':'demo','job_id':started['job_id']})['packet']==result['packet']
+                    response = await client.call_tool("get_result", {"task_id": identifier})
+                    result = response.structured_content
+                    if result.get("state") != "RUNNING": break
+                    await asyncio.sleep(.05)
+                assert result["state"] == "DONE" and result["final_answer_ready"] is False
+                assert result["entry_point"] == "assistant" and result["worker"] is None
+                exact = await client.call_tool("fetch_evidence", {"task_id": identifier, "evidence_id": "E1"})
+                assert not exact.is_error
+                visible = controller.call("result", identifier)
+                assert exact.structured_content["text"] == visible["evidence"][0]["text"]
+                assert controller.call("state")["recent"][0]["task_id"] == identifier
         finally:
-            if service.poll() is None:service.send_signal(signal.SIGINT)
-            try:service.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                service.kill();service.wait();raise AssertionError('GUI service did not shut down cleanly.')
-            service.stdout.close();service.stderr.close()
-        assert service.returncode==0
-        assert not (state/'connection.json').exists() and not (state/'native.sock').exists()
-        print(json.dumps({'status':'passed','shared_gui_native':True,'tools':4,'provider_calls':0,'model_calls':0,'private_publication_cleanup':True}))
+            helper.close(); server.shutdown(); server.server_close(); thread.join(timeout=2)
+            publication.close(); controller.close()
+    print("Shared SDK smoke passed; real host/model/browser qualification remains separate.")
 
 
-if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--python',default=sys.executable)
-    asyncio.run(run(parser.parse_args().python))
+if __name__ == "__main__":
+    asyncio.run(main())

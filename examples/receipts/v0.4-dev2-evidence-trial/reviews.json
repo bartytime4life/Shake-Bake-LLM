@@ -1,0 +1,208 @@
+{
+  "schema_version": "1",
+  "trial_sha256": "57ba7d761bc3b87641064f532129ccfa077e52c4503a8696efa944c9069658dc",
+  "reviewer": "",
+  "warning": "Review each attempt against grading-keys.json outside fixture roots. This exposed development set cannot qualify an auto-picked model.",
+  "entries": [
+    {
+      "attempt_id": "1:repo-tour",
+      "case_id": "repo-tour",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:injection",
+      "case_id": "injection",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:failure-triage",
+      "case_id": "failure-triage",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:distant-contradiction",
+      "case_id": "distant-contradiction",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:failure-triage",
+      "case_id": "failure-triage",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:coverage-budget",
+      "case_id": "coverage-budget",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:boundary",
+      "case_id": "boundary",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:boundary",
+      "case_id": "boundary",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:change-review",
+      "case_id": "change-review",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:distant-contradiction",
+      "case_id": "distant-contradiction",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:runtime-mode",
+      "case_id": "runtime-mode",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:runtime-mode",
+      "case_id": "runtime-mode",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:unknown-hardware",
+      "case_id": "unknown-hardware",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:concurrency",
+      "case_id": "concurrency",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:concurrency",
+      "case_id": "concurrency",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:repo-tour",
+      "case_id": "repo-tour",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:change-review",
+      "case_id": "change-review",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "1:unknown-hardware",
+      "case_id": "unknown-hardware",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:coverage-budget",
+      "case_id": "coverage-budget",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    },
+    {
+      "attempt_id": "2:injection",
+      "case_id": "injection",
+      "supported_handoff": null,
+      "critical_misses": null,
+      "unsupported_claims": null,
+      "unsupported_critical_claims": null,
+      "useful_abstention": null,
+      "notes": ""
+    }
+  ]
+}

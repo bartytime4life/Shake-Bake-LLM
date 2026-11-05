@@ -3,27 +3,28 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "shake-and-bake"
-version = "0.2.0.dev0"
-description = "Bounded local evidence preparation for assistant handoffs"
+name = "shake-and-bake-assistant"
+version = "0.4.0.dev5"
+description = "Standalone local evidence preparation for cloud-assisted work"
 readme = "README.md"
-requires-python = ">=3.11"
 license = "MIT"
-license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
-authors = [{name = "Andy Barta"}]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "MODEL_LICENSES.json"]
+requires-python = ">=3.11"
 dependencies = []
-classifiers = ["Development Status :: 2 - Pre-Alpha", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3"]
 
 [project.optional-dependencies]
 mcp = ["mcp==2.3.0"]
 
 [project.scripts]
 shake-bake = "shake_bake.cli:main"
-shake-bake-mcp = "shake_bake.mcp_adapter:main"
-shake-bake-gui = "shake_bake.gui:main"
+shake-bake-mcp = "shake_bake.mcp_server:main"
+shake-bake-ui = "shake_bake.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-shake_bake = ["fixtures/*.txt", "fixtures/*.py", "fixtures/*.log", "web/*.html", "web/*.css", "web/*.js", "web/icons/*.svg", "web/icons/LICENSE"]
+shake_bake = ["web/*.html", "web/*.css", "web/*.js", "web/*.json", "web/icons/*.svg", "web/icons/LICENSE", "demo/*.py", "demo/*.md", "default-policy.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

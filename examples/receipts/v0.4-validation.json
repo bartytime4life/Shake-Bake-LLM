@@ -1,0 +1,34 @@
+{
+  "version": "0.4.0.dev1",
+  "date": "2026-11-04",
+  "platform": "linux",
+  "python_version": "3.12.14",
+  "program_suite": {
+    "passed": 83,
+    "skipped": 0
+  },
+  "javascript_syntax": "passed_node_check",
+  "wheel_gui_assets": "six_required_assets_present_no_index_build",
+  "gui_backend": "real_loopback_http_and_real_bounded_children",
+  "model_service_tests": "simulated_only",
+  "offline_preview": {
+    "type": "recorded_inert_demo",
+    "evidence_excerpts": 2,
+    "actual_model_inference": false,
+    "includes_owner_project_data": false
+  },
+  "browser_visual_qa": {
+    "status": "blocked_auto_review",
+    "reason": "potential_application_or_project_data_exposure_to_unverified_cloud_browser_destination",
+    "workaround_attempted": false
+  },
+  "unverified": [
+    "desktop_and_phone_rendering",
+    "browser_clipboard_and_download_interaction",
+    "browser_keyboard_and_reduced_motion",
+    "owner_PC_behavior",
+    "real_model_inference_and_accuracy",
+    "MCP SDK_and_host_connection",
+    "cloud_token_savings"
+  ]
+}

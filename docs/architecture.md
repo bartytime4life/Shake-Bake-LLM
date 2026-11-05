@@ -1,52 +1,36 @@
-# Architecture and current contracts
+# Standalone architecture
 
-The evidence core remains offline by default. Version 0.2 adds an optional bounded Ollama worker, conservative owner-profile routing and a packaged local GUI. No provider account or application-specific integration is required.
+Shake and Bake is a general local preparation helper for Claude or ChatGPT. It owns its configuration, data and model profiles. It can inspect any explicitly approved source project; it requires no application-specific code, service or dataset. Bundled evaluations use self-contained synthetic fixtures.
 
-```mermaid
-flowchart LR
-    CLI[CLI] --> Engine[One local coordinator]
-    MCP[Optional official SDK stdio] --> IPC[Private native socket]
-    GUI[Authenticated loopback GUI] --> Engine
-    IPC --> Engine
-    Engine --> Policy[Explicit project registry and bounded collector]
-    Policy --> Source[Approved read-only UTF-8 sources]
-    Engine --> Store[Private SQLite receipts]
-    Engine --> Router[Optional local Ollama + checks]
-    Router --> Packet
-    Store --> Packet[Original request + exact evidence + gaps]
-    Packet --> Reviewer[User-selected assistant or human]
-```
+## Current components
 
-## Source capture
-
-`config.py` accepts a closed TOML configuration with up to sixteen nonoverlapping roots and a separate state directory. `policy.py` opens root ancestors and relative file components with no-follow POSIX descriptor operations. Hidden paths, credential filenames, hard links, special files and oversized files are denied. A heuristic secret screen examines the entire bounded file before any excerpt is published. It does not redact or silently alter exact source.
-
-Files are UTF-8. Line numbers use LF separators with optional preceding CR preserved, starting at one. A terminal LF closes the preceding line; it does not create a phantom additional line. Whole-file and excerpt SHA-256 values, path and range produce a deterministic evidence identity. In-place metadata and path identity are rechecked after capture. Hashes are not signatures, repository revisions or an atomic multi-file snapshot.
-
-## Jobs and storage
-
-`engine.py` owns admission, a single worker thread, a cancellation event and a cooperative deadline. The database terminal transition only succeeds from `running`; cancellation cannot be overwritten by late work. A terminal job cannot be cancelled retroactively. A newly admitted task may need to wait briefly for a cancelled worker to unwind.
-
-`store.py` holds an exclusive advisory owner lock. A second cooperating process refuses startup. Each operation uses a serialized SQLite transaction. The next exclusive startup marks leftover running jobs failed with `interrupted`, without resuming them. The database binds receipts to project ID plus the configured root path/device/inode. Relabeling a project ID onto another root does not expose old receipts. A store remains private to its owning OS account; project IDs are not multi-user authentication.
-
-Evidence is embedded in the captured packet, rather than duplicated in a second cache. `fetch_evidence` requires project, job and evidence IDs and returns the captured snapshot. It does not reread current source or claim freshness. No embedding index, lesson store or Git subprocess exists in this slice.
-
-## Entry points
-
-The CLI, GUI and optional MCP adapter call the same Engine methods. The GUI owns a coordinator and a private native connection publication; MCP `--connect` reaches that exact Engine. Diagnostic MCP `--config` owns a separate Engine and cannot concurrently own the same store. The four native tools cannot change root/configuration grants or invoke a shell/provider. Only an explicit GUI launch starts its loopback browser listener.
-
-Optional lexical discovery reads at most 200 supported files/4,000 directory entries/eight levels within a cooperative five-second scan budget. Selected source is recaptured and hash-checked before publication. Up to two distant windows per file may fill four source slots; different files are prioritized. Cutoffs/exclusions are disclosed, and a no-match job abstains. Discovery is a relevance aid, not an exhaustive review.
-
-After source capture, `off` makes no Ollama requests. `best` applies owner-controlled qualification gates. `trial` uses an explicit installed tag/digest. Model schema, source IDs, runtime/model identities and budgets are checked; failed notes are discarded without losing the exact packet. No note or confidence statement marks the task solved. See [routing](ollama-routing.md) for limits and [the workbench](workbench.md) for sessions and sharing.
-
-## Result semantics
-
-| Status | Meaning |
+| Component | Implemented role |
 | --- | --- |
-| `running` | Work was admitted and has not reached a terminal state. |
-| `prepared` | Every requested range was captured; interpretation remains open. |
-| `incomplete` | Some or all ranges were refused; the packet lists every gap. |
-| `cancelled` | Work was stopped; no completed packet is available. |
-| `failed` | Deadline, interruption or unexpected failure; no completed packet. |
+| `collector.py` and `search.py` | Bounded read-only discovery, exact excerpts, line ranges, hashes, cutoffs and refusals. |
+| `briefing.py` and `worker.py` | Evidence-preserving handoffs and optional bounded loopback Ollama preparation. Notes stay unverified. |
+| `routing.py` | Task-specific owner-record gates, reported model/pipeline identity checks, explanations and evidence-only fallback. Shipped profiles remain unqualified. |
+| `helper.py` and `job_runner.py` | Approved project IDs, one supervised Linux child, captured evidence and owned-job cancellation. Inspected source is not executed. |
+| `gui.py` and `web/` | Local task/evidence/model interface, copy/export and off switch. Connection admission and deadlines are bounded. |
+| `doctor.py` | Startup checks and explicit metadata-only Ollama checks. |
+| `benchmarks/model_trial.py` | Checkpointed development trials and separate receipt-bound human review. No automatic qualification or cloud client. |
+| `mcp_server.py` | Prepared optional SDK adapter; SDK and actual host interoperability remain unqualified. |
 
-The receipt reports actual excerpt bytes, local elapsed time, model-attempt count, Ollama-request count and available local runtime token counts. Cloud calls remain zero. Unknown usage and savings are `null`. It makes no token approximation, quality score or review-completion claim.
+## Flow and ownership
+
+The user selects the job and an approved project. Ordinary code collects bounded exact evidence. An eligible local model can organize it into a short note with references and questions. Claude or ChatGPT still makes the demanding judgment and final answer. Source cutoffs, contradictions and unsupported conclusions must remain visible.
+
+The app's installed package, source-root ancestors and local daemon are trusted components. Source and worker text are untrusted data. No automatic model downloads, inspected-project writes, execution of inspected code or cloud-provider calls are implemented. Manual copy/export is explicit and can contain private source; permitted handling still needs qualification.
+
+## Limits and qualification
+
+Search defaults are 200 supported files, 4,000 entries, eight directory levels, a cooperative five-second scan budget, four windows and 16 KiB of selected excerpts. Individual files are capped at 256 KiB. These limits do not establish exhaustive review.
+
+One Linux task child has 45 seconds wall time, 10 CPU seconds, 512 MiB address space and bounded output. Model preparation requests up to 8,192 context tokens and 512 output tokens with a 6,000-byte message cap and shared 30-second client deadline. Source/model identity changes and invalid responses preserve evidence and refuse an unsupported prepared answer. Cancelling a client/child does not prove daemon GPU work stopped.
+
+The GUI uses loopback, request/session checks, eight active connection slots, an initial three-second idle timeout and a cooperative twelve-second connection deadline. These controls do not provide multi-user isolation or full flood resistance. See connection-limits.md and the root KNOWN_ISSUES.md for tested scope and open gates.
+
+## Evaluation and next milestones
+
+Use `benchmarks/task-lab/` for exposed synthetic development tasks, with grading keys outside each fixture root. Freeze unseen cases for accuracy qualification. Compare a well-configured native host, deterministic evidence and local-model notes using identical allowed source/tasks, retaining failures and unknown usage. A real project may later be an optional test input; it never becomes a required component of this helper.
+
+Real Ollama accuracy, actual host connections, owner-PC behavior, desktop/phone visual review, independent security qualification, per-PC automatic tuning and cloud savings remain pending. Persistent profile/calibration UX, durable GUI recovery, embeddings, vision and execution/patch workflows are future work.

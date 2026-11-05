@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "date": "2026-11-04",
+  "runtime": "3.12.14",
+  "test_suite": {
+    "passed": 35,
+    "failed": 0,
+    "source": "unittest development run"
+  },
+  "synthetic_retrieval_cases": 2,
+  "pinned_source_retrieval_cases": 2,
+  "real_ollama_inference": false,
+  "cloud_tokens": null,
+  "savings": null,
+  "installed_pc_acceptance": false
+}

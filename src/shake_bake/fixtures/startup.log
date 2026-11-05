@@ -1,3 +1,0 @@
-2026-11-04 02:17:09 INFO Starting application.
-2026-11-04 02:17:09 ERROR File startup.py, line 2
-2026-11-04 02:17:09 ERROR ModuleNotFoundError: No module named 'server'

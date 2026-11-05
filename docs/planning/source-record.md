@@ -4,7 +4,7 @@ The implementation brief is [Shake and Bake LLM Assistant — Local Work Engine 
 
 The source describes a standalone Python application that prepares exact local evidence for Claude and ChatGPT. Its priorities are correctness, source coverage, explicit uncertainty, local execution for mechanical operations, and measured cloud assistance. Ollama is optional. No external business application is a required dependency.
 
-The plan reports a separate `0.4.0.dev4` prototype, 121 passing program tests, a local GUI and a shared coordinator. Those are historical claims about a source package linked from ChatGPT Library. They are **not validation results for this checkout**. The repository was empty when this work began. The original package must be recovered and reconciled before claiming parity with it.
+The plan reported a separate `0.4.0.dev4` prototype with 121 program tests, a local GUI and shared coordinator. That archive has now been recovered and byte-verified at commit `67ee5c2`; see [the import record](../import/2026-11-05.md). Current `0.4.0.dev5` work builds on that application and carries separate [validation](../validation-0.4.0.dev5.md). The earlier bootstrap remains in Git history rather than supplying a competing runtime.
 
 The full planning export is retained locally in `.local/recovered/` and excluded from Git. This repository contains only the implementation decisions needed to develop and review the software.
 

@@ -1,0 +1,72 @@
+# Run on your PC: checklist
+
+November 4, 2026 · Shake and Bake 0.4.0.dev4
+
+Nothing below is marked complete until it has been checked on your actual PC. The development environment's program tests and recorded preview do not complete these items. Commands run from the extracted `shake-and-bake` folder on Linux.
+
+Use the [prioritized to-do list](../TODO.md) to choose the next item. Start with actual-PC/model readiness and a reviewed real Ollama trial; host integration, unseen accuracy and whole-task savings have separate qualification checks.
+
+## First: get the app open
+
+- [ ] Keep this project in its own folder with its own configuration and data.
+- [ ] Run `PYTHONPATH=src python3 -B -m shake_bake doctor` and read the startup results. If the port is occupied, check whether the app is already open; otherwise choose another port for both doctor and gui.
+- [ ] Run `PYTHONPATH=src python3 -B -m shake_bake gui` and open the loopback address it prints.
+- [ ] Submit the bundled demo. Confirm the exact source receipts, evidence map and expandable model explanation work.
+- [ ] Check a desktop and narrow phone-width layout: readable text, expanding panels, keyboard focus, reduced motion, copy and JSON download. The offline preview is a recorded demo, not a live connection to your PC.
+
+## Next: verify the local model
+
+- [ ] Start your trusted Ollama service and disable its cloud features using the guidance linked in README. No model downloads happen automatically.
+- [ ] Run `PYTHONPATH=src python3 -B -m shake_bake doctor --check-ollama --json`. Choose an actually installed, permitted local model; do not assume a suggested tag is installed.
+- [ ] Add `--model YOUR_INSTALLED_MODEL` to that command. Confirm local metadata and the reported digest are accepted. This does not attest loaded weight bytes or prove accuracy.
+
+## Then: one small trial
+
+- [ ] Run the mechanical baseline: `PYTHONPATH=src python3 -B benchmarks/model_trial.py run --evidence-only --case boundary --output trial-runs/pc-evidence-01`.
+- [ ] Run the same case with the installed model: `PYTHONPATH=src python3 -B benchmarks/model_trial.py run --model YOUR_INSTALLED_MODEL --case boundary --output trial-runs/pc-model-01`.
+- [ ] Review the actual handoff against captured source and `benchmarks/task-lab/grading-keys.json`; fill every field in `trial-runs/pc-model-01/reviews.json`, including reviewer and evidence notes.
+- [ ] Score it with `PYTHONPATH=src python3 -B benchmarks/model_trial.py score --trial trial-runs/pc-model-01/trial.json --reviews trial-runs/pc-model-01/reviews.json`. A finished run is not a correctness pass; incomplete reviews leave accuracy unset.
+- [ ] Keep failed attempts and unknown usage in the record. Preserve interrupted folders; use a new output directory for the next run.
+
+## Before automatic model selection
+
+- [ ] Calibrate this PC individually: record its actual hardware/runtime, test models and quantizations that fit, and compare task-specific settings. Save measured results for this machine; re-test after material model/runtime/hardware changes. The [per-PC calibration design](per-pc-calibration.md) is planned work, not an implemented automatic tuner.
+- [ ] Qualify the [Your computer & tuning GUI](per-pc-calibration-ui.md) so users can see hardware, test progress, task-specific results, selection reasons and stale-profile warnings. This screen is planned, not shipped in this build.
+
+- [ ] Expand to the full development set, compare candidates with matching cases/settings, and test timeouts, cancellation and source/model changes on the real machine.
+- [ ] Create an unseen evaluation set and compare against a well-configured native Claude/ChatGPT baseline. Review final task correctness and critical omissions before speed or tokens.
+- [ ] Qualify the actual host connection separately. No current SDK/Claude/ChatGPT connection is proven by these local tests.
+- [ ] Promote only an owner-reviewed profile meeting the held-out baseline and identity gates. The trial runner never promotes a model; all shipped profiles remain unqualified.
+- [ ] Measure actual cloud usage and successful-task time before claiming savings. Do not promise subscription-limit improvements from estimated tokens.
+
+## Whole-workflow UX checks
+
+- [ ] Walk through first setup, an inert demo, source selection, preparation, evidence review and assistant handoff using the [UX workflow plan](UX-WORKFLOW.md).
+- [ ] Verify a user can distinguish evidence-only, actual model preparation, copied/delivered brief and final-answer-pending states.
+- [ ] Verify current request, active job and completed result remain distinct through a new draft, failed/cancelled job, retry and export.
+- [ ] Qualify the [shared coordinator](shared-coordinator.md) through the actual SDK and host: native loopback tests already cover shared jobs, scoped permissions and pause/cancel, but do not complete real-client qualification.
+- [ ] Make missing models, stale profiles, limited evidence and connection errors offer specific next actions.
+- [ ] Explain and test draft/history/evidence/settings retention, clearing, expiry and restart behavior.
+- [ ] Complete actual desktop/phone/keyboard/reduced-motion walkthroughs and record findings before closing UX-01/UI-01.
+
+## Security and bug release gates
+
+- [ ] Review the app's existing MIT licensing choice against the intended distribution model; MIT permits commercial reuse and resale. Preserve required notices and the separate terms in the licensing guide.
+- [ ] Inventory exact shipped dependency/model artifacts and their notices. Keep bundled test fixtures self-contained; do not relabel newly added external material under the app license.
+- [ ] Retain model source/digest, quantization, actual license/NOTICE text and review evidence before bundling or offering model downloads. MODEL_LICENSES.json contains upstream observations, not completed artifact clearance.
+
+These project-level gates remain pending until their evidence is recorded; the existing development tests do not complete them automatically. Selected development checks for connection limits and queued-expiry recovery are recorded in Known Issues; real-machine and broader qualification remain pending.
+
+- [ ] Verify that inspected source remains unchanged and cannot trigger execution, arbitrary path reads or model-directed actions through any supported interface.
+- [ ] Test permitted secret/private-data handling inside ordinary source files, captured evidence, logs and exports. Filename exclusions alone do not establish complete secret protection.
+- [ ] Review dependency/optional-SDK origins and exact versions, update/package integrity and integration behavior before release.
+- [ ] Complete an independent review of source, local web, model/daemon and export trust boundaries; track findings and closure evidence.
+- [ ] Exercise hostile/malformed input, slow connections, concurrency/load and resource exhaustion; record bounded failure and recovery on real machines.
+- [ ] Verify unavailable-model, timeout, cancellation, source/model-change and restart behavior. Do not claim a disconnect stops the daemon's GPU work or that hard-crash resume exists.
+- [ ] Test real models against source-injected instructions, critical omissions and unsupported claims on unseen reviewed tasks, with the paired native-host baseline.
+- [ ] Keep public/shared-user exposure disabled until a separately designed authorization boundary is qualified. Localhost is not multi-user isolation.
+- [ ] Close every known release-blocking data exposure, unauthorized execution, source corruption, gate bypass, critical accuracy regression or required stop/recovery failure for the feature being promoted.
+- [ ] For each important fix, record reproduction steps, expected/actual behavior, impact, regression check and relevant verification. Keep minor cosmetic defects visible when deferring them.
+- [ ] Review [Known Issues](../KNOWN_ISSUES.md), retain honest pending statuses, choose a private reporting channel before a public release, and document recovery/rollback for that release.
+
+Detailed instructions: [PC readiness and trials](pc-readiness-and-trials.md). Remaining engineering gaps: [open gaps](open-gaps.md). Issue statuses and release rules: [Known Issues](../KNOWN_ISSUES.md).
