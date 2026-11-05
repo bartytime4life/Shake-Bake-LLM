@@ -20,9 +20,12 @@ to truncation. The shipped worker remains thinking off with a 512-token cap and
 | [Initial thinking probe](thinking-probe-2026-11-05.md) | Thinking on at 512: three complete/supported answers, seven truncations | Paired known-case diagnostic rejected; production acceptance unchanged. |
 | [Four-arm budget comparison](thinking-budget-2026-11-05.md) | Off/512: 6/10 supported. On/512: 3/10. On/1,024 and on/2,048: 6/10 each, with nine complete answers and two critical unsupported claims each | Forty attempts, separate masked AI grading; both larger budgets rejected. No new reserved cohort started. |
 
-These small synthetic cohorts measure source handoffs under their stated rubrics.
-They are not population accuracy estimates or final answers from the user's main
-assistant. Missing and truncated responses stay in the denominator. Program-test
+The subsequent [host-note diagnostic](host-note-diagnostic-2026-11-05.md) completed twenty final answers: **9/10** met the rubric with evidence alone and **8/10** with the same evidence plus retained local notes. Neither arm made a counted unsupported claim or citation error. Both missed the hardware next-evidence request, and the assisted arm additionally omitted the intended-contract uncertainty on the boundary case. The no-regression gate failed; no local profile is promoted.
+
+The local-model cohorts measure source handoffs; the host-note diagnostic
+measures final answers from separate, explicitly invoked Codex sessions. These
+small exposed cohorts are not population accuracy estimates or qualification of
+the user's consumer ChatGPT conversation. Missing and truncated responses stay in the denominator. Program-test
 passes, valid JSON, evidence references and confident language do not establish
 semantic correctness.
 
@@ -36,6 +39,7 @@ semantic correctness.
 | [Copy recovery](copy-and-screening-2026-11-05.md) | Job-bound feedback, selectable exact text, JSON export and one exact 3,392-character native/manual clipboard transfer; earlier empty readbacks retained | Every browser, permission state and device |
 | [Actual Codex smoke](codex-host-handoff.md) | Synthetic evidence-only handoff and cancellation/recovery using an explicitly stopped owned runner | Model-assisted orchestration, disconnect/deadline/restart, private source, Claude and consumer ChatGPT |
 | [Larger-budget probe](thinking-budget-2026-11-05.md) | Fourteen focused probe checks, forty recorded attempts and configured cloud-disabled local inference | Production thinking support, unseen accuracy, controlled cold/warm behavior and peak memory |
+| [Host-note diagnostic](host-note-diagnostic-2026-11-05.md) | Seventeen private runner checks, including two real process-cleanup regressions; twenty complete host answers; 9/10 evidence-only versus 8/10 with notes under separate AI review | Native retrieval comparison, live helper/model orchestration, unseen accuracy, human qualification and whole-task benefit |
 
 ## Shipped behavior and diagnostic boundaries
 

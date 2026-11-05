@@ -10,7 +10,7 @@ A standalone local preparation helper for Claude or ChatGPT, with an Ollama work
 | Verified in development | 176 offline program tests on the local PC; synthetic retrieval and ten exposed evidence-only Task Lab cases. Model-service tests use simulations. Official SDK 2.3.0 stdio/shared checks and actual Codex synthetic handoff/cancellation checks passed. |
 | Partially qualified | The [Codex smoke checks](docs/codex-host-handoff.md) cover an exposed synthetic task and cancellation of an explicitly stopped owned runner followed by a fresh successful task. Actual Claude/consumer ChatGPT, disconnect/deadline/restart, model-assisted host orchestration and private-source handoffs remain unqualified. |
 | Planned | Guided setup, automatic per-PC calibration, persistent profiles, durable job recovery and direct cloud-provider clients. Local AI on/off persistence is implemented. |
-| Unverified or unmeasured | Full owner-PC workflows, unseen/final-host model accuracy, controlled runtime performance and peak memory, broader host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
+| Unverified or unmeasured | Full owner-PC workflows, unseen final-host model accuracy, controlled runtime performance and peak memory, broader host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
 
 ## Get the source
 
@@ -72,7 +72,9 @@ Fresh [owner-PC screening](docs/screening-2026-11-05.md) now has retained record
 
 Read [current evaluation status](docs/evaluation-status.md) for the complete sequence of retained trials. The latest [four-arm thinking-budget comparison](docs/thinking-budget-2026-11-05.md) ran forty attempts: thinking off at 512 tokens produced 6/10 supported handoffs; thinking on produced 3/10 at 512 and 6/10 at both 1,024 and 2,048. Each larger budget still truncated the concurrency case and retained two critical unsupported claims, so both were rejected. These private diagnostics do not change the shipped thinking-off, 512-token worker or add GUI/CLI budget controls.
 
-The [earlier frozen-prompt comparison](docs/reasoning-screening-2026-11-05.md) includes a separately authored cohort with 2/10 supported original handoffs and 3/10 experimental handoffs. That cohort is now exposed and must not be reused as unseen. [External datasets](docs/held-out-evaluation.md) support pinned inputs and isolated grading keys; independent human qualification and a paired final-host comparison remain open.
+The separate [host-note diagnostic](docs/host-note-diagnostic-2026-11-05.md) completed twenty final answers: evidence alone met the rubric on 9/10 cases, versus 8/10 with the same evidence plus existing local notes. Both avoided counted false claims, but the assisted arm lost a required uncertainty. The no-regression gate failed; this does not establish a useful local-model contribution or whole-task savings.
+
+The [earlier frozen-prompt comparison](docs/reasoning-screening-2026-11-05.md) includes a separately authored cohort with 2/10 supported original handoffs and 3/10 experimental handoffs. That cohort is now exposed and must not be reused as unseen. [External datasets](docs/held-out-evaluation.md) support pinned inputs and isolated grading keys; independent human qualification and a paired native-host benefit comparison remain open. The separate [host-note diagnostic](docs/host-note-diagnostic-2026-11-05.md) isolates whether the host corrects known local errors from identical captured evidence.
 
 Start with the [Run on your PC checklist](docs/PC-CHECKLIST.md). Every owner-PC item stays unchecked until actually verified there.
 

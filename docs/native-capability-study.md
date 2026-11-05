@@ -45,7 +45,7 @@ Freeze tasks, source versions and the grading rubric before comparison. Separate
 
 Reject an efficiency claim if the helper causes additional critical misses or unsupported critical claims. Among profiles meeting the accuracy requirements, compare complete-task time, cloud input/output, cached input, evidence follow-ups, local loading/inference, retries and correction effort. A routed system need not strictly outperform a fixed model to have operational value, but it must preserve the accuracy requirement and justify its added complexity. Keep routing only where it earns that complexity.
 
-This November 4 research snapshot added no subscriptions, paid API experiments or owner-PC installations. Later [evaluation records](evaluation-status.md) include actual local inference, installed/browser checks and scoped Codex synthetic handoff/cancellation. A paired final-host comparison and whole-task usage/savings remain unmeasured; those later checks do not turn the product-documentation hypotheses above into measured benefits.
+This November 4 research snapshot added no subscriptions, paid API experiments or owner-PC installations. Later [evaluation records](evaluation-status.md) include actual local inference, installed/browser checks and scoped Codex synthetic handoff/cancellation. The separate [host-note diagnostic](host-note-diagnostic-2026-11-05.md) isolates error recovery using the same captured evidence in both arms. A native retrieval comparison and whole-task usage/savings remain unmeasured; these scoped checks do not turn the product-documentation hypotheses above into measured benefits.
 
 ## Primary sources
 

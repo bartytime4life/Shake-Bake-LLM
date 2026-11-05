@@ -61,3 +61,11 @@ INT-01 remains open. These runs did not exercise host disconnect/restart, deadli
 Recover and review the original exposed model-output receipts, extend actual-host disconnect/deadline/restart coverage, then freeze genuinely unseen source/tasks and independent review keys for the [paired comparison](next-trial.md). The two historical Qwen screening folders were not located in the checked owner workspace, parent folders or connected Drive during this follow-up; their scores remain unset. The committed `.dev2` receipts are evidence-only and cannot substitute for them. Keep native-host, deterministic-evidence and model-assisted arms separate. Do not promote a model or claim whole-task savings from these smoke checks.
 
 Host configuration references: [official Codex MCP guide](https://developers.openai.com/codex/mcp/) and [configuration reference](https://developers.openai.com/codex/config-reference/), checked November 5, 2026 alongside installed CLI help. These document host options, not certification of this application.
+
+## Separate final-answer diagnostic
+
+The later [host-note comparison](host-note-diagnostic-2026-11-05.md) uses fresh
+Codex sessions with identical captured evidence, with and without existing local
+notes. It exercises no helper tools and performs no new local inference, so its
+final-answer results do not qualify live model-assisted MCP orchestration,
+disconnect/restart behavior or consumer ChatGPT integration.

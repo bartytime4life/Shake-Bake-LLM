@@ -16,12 +16,25 @@ Actual Codex [synthetic handoff and injected cancellation/recovery](codex-host-h
 
 Use identical pinned source and task text, the same host model/settings, and separate fresh sessions. Use the bundled synthetic Task Lab for exposed development checks only. Reserve new, unseen cases for qualification; do not reuse known answers as blind evaluation evidence.
 
-First screen explicitly permitted installed model/profile candidates locally using the [current evaluation record](evaluation-status.md). Dated research shortlists are not installed-model inventories or download instructions. Only after a candidate clears development and reserved-cohort gates, compare the relevant host arms: host with the permitted full source baseline; host with deterministic exact evidence only; host with exact evidence plus finalist A notes; host with exact evidence plus finalist B notes. Randomize arm order, record cold/warm local runs, repeat sufficiently to see variation, and retain every refusal and failed attempt. Freeze a development set separately from held-out decisions so tuning does not leak the answers.
+A development comparison of competent native retrieval and deterministic evidence can proceed without selecting a local model. For model-assisted arms, first screen explicitly permitted installed model/profile candidates locally using the [current evaluation record](evaluation-status.md). Dated research shortlists are not installed-model inventories or download instructions. Only after a candidate clears development and reserved-cohort gates, compare the relevant qualified-profile host arms: host with the permitted full source baseline; host with deterministic exact evidence only; host with exact evidence plus finalist A notes; host with exact evidence plus finalist B notes. Randomize arm order, record cold/warm local runs, repeat sufficiently to see variation, and retain every refusal and failed attempt. Freeze a development set separately from held-out decisions so tuning does not leak the answers.
 
 Include relevant evidence near the beginning/middle/end, misleading comments, contradictory branches, no-answer questions, changed files and injected worker notes. Known critical findings must remain detectable; zero additional critical misses on this finite set is a promotion gate, not proof of universal correctness. Unsupported critical claims fail the gate. Investigate any drop in task success or evidence coverage before considering an efficiency win.
 
 Use actual provider usage records when available. If a chat interface does not expose exact usage, label local token estimates as estimates and leave exact billed/quota savings unknown. Track cached/uncached input and output separately. Do not convert token reduction directly into a subscription-limit promise. Include local preprocessing latency, CPU/GPU use, retries and human correction time.
 
+## Bounded host-note diagnostic
+
+The [November 5 host-note diagnostic](host-note-diagnostic-2026-11-05.md) tests
+error recovery on exposed development cases before investing in a full benefit
+study. It uses fresh cloud-host sessions with identical captured evidence, with
+or without existing unqualified local notes. This deliberate error-sensitivity
+probe is not the qualified-profile comparison above: it has no native retrieval
+arm, live helper integration, unseen cohort or promotion decision. Keep its
+results separate from final-host qualification and whole-task savings. All
+twenty answers completed: evidence alone met the rubric on 9/10 cases and the
+notes-assisted arm on 8/10, with no counted unsupported claims. One missing
+intended-contract uncertainty caused a regression; the frozen gate failed.
+
 ## Current boundary
 
-Linux task core, SDK 2.3.0 transport and scoped actual Codex synthetic handoff/cancellation have evidence. [Current evaluation status](evaluation-status.md) links every retained model experiment, including the 8B prompt comparison, separately authored cohort and bounded thinking-budget diagnostics. The separately authored cohort was kept out of prompt tuning, then became evaluation-exposed; it cannot be reused as unseen. No local profile is qualified and no paired final-host accuracy or savings study has run. Original `.dev6` outputs remain unavailable. The [external dataset harness](held-out-evaluation.md) supports a newly reserved cohort only after the candidate is frozen. The app stays standalone; future real-project trials require an explicitly approved source root and do not create an application dependency.
+Linux task core, SDK 2.3.0 transport and scoped actual Codex synthetic handoff/cancellation have evidence. [Current evaluation status](evaluation-status.md) links every retained model experiment, including the 8B prompt comparison, separately authored cohort and bounded thinking-budget diagnostics. The separately authored cohort was kept out of prompt tuning, then became evaluation-exposed; it cannot be reused as unseen. No local profile is qualified. The bounded host-note diagnostic does not replace a paired native-host qualification or whole-task savings study. Original `.dev6` outputs remain unavailable. The [external dataset harness](held-out-evaluation.md) supports a newly reserved cohort only after the candidate is frozen. The app stays standalone; future real-project trials require an explicitly approved source root and do not create an application dependency.
