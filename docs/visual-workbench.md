@@ -30,6 +30,8 @@ Candidate notes remain separate from source. Structured-output/reference checks 
 
 ## State and boundaries
 
+A browser request that stalls for 15 seconds reports a timeout and releases its pending controls; browser suspension can delay this timer. If a task start was not confirmed, the service may still have accepted it. The app checks session state, resumes monitoring any retained running job and asks you to check Recent briefs before starting again. It never automatically repeats a start. Save any pinned brief before reloading after a service restart. See [request-recovery checks](request-recovery-2026-11-05.md).
+
 The browser remembers the original request draft, project/task/mode and selected candidate identity in localStorage. It does not persist captured source there. The checkbox follows the running controller's pause/policy state. The normal GUI persists Local AI on/off in private service state and new installations start off; up to eight jobs with a five-minute lifetime remain session-only. Explicit test/SDK Controllers can use session-only preferences; see [preference boundaries](local-ai-preferences.md). There is no SQLite/durable job recovery in this recovered runtime. Restart invalidates old task handles. Root grants and profile policy remain owner launch configuration.
 
 The numeric-loopback service uses an HttpOnly SameSite cookie, Host/Origin/CSRF checks, a fixed asset allowlist and bounded request/connection handling. It is a trusted local owner session, not multi-user isolation or a public service. `--connection-file` publishes a private shared-adapter capability outside source; each host needs separate qualification. See [shared coordinator](shared-coordinator.md).

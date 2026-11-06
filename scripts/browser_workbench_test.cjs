@@ -18,7 +18,7 @@ async function prepare(page,request){
   await page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
   await page.waitForFunction(text=>[...document.querySelectorAll('#recent-list strong')].some(el=>el.textContent===text),request);
 }
-async function scenario(label,run,{startupFailure=false,preview=null}={}){
+async function scenario(label,run,{startupFailure=false,preview=null,setup=null,waitForStartup=true}={}){
   const context=await browser.newContext({reducedMotion:'reduce'}),page=await context.newPage();
   page.setDefaultTimeout(10000);
   if(preview)await context.addInitScript(value=>{window.__SB_RECORDED_PREVIEW__=value;},preview);
@@ -35,6 +35,7 @@ async function scenario(label,run,{startupFailure=false,preview=null}={}){
     if(h.failState){await route.fulfill({status:503,body:''});return;}
     const response=await route.fetch(),value=await response.json();
     const result={...value,local_ai_enabled:h.enabled,policy:{...value.policy,enabled:h.policyEnabled}};
+    if(h.stateTransform)h.stateTransform(result);
     const wait=h.stateWait;h.stateWait=null;
     if(wait){h.stateSeen.resolve();await wait.promise;}
     await route.fulfill(h.failOldState&&wait?{status:503,json:{error:'synthetic_old_failure'}}:{json:result});
@@ -49,8 +50,9 @@ async function scenario(label,run,{startupFailure=false,preview=null}={}){
   });
   h.defer=()=>{const wait=deferred();h.releases.push(wait);return wait;};
   try{
+    if(setup)await setup(h);
     await page.goto(baseURL);
-    await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.')||!document.querySelector('#notice').hidden);
+    if(waitForStartup)await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.')||!document.querySelector('#notice').hidden);
     await run(h);assert.deepEqual(errors,[]);passed++;console.log('PASS '+label);
   }finally{h.releases.forEach(wait=>wait.resolve());await context.close();}
 }
@@ -58,6 +60,87 @@ async function scenario(label,run,{startupFailure=false,preview=null}={}){
   baseURL=await waitForServer(server);
   browser=await chromium.launch({headless:true,...(process.env.SB_CHROMIUM_EXECUTABLE?{executablePath:process.env.SB_CHROMIUM_EXECUTABLE}:{})});
   console.log('Chromium '+browser.version());
+  await scenario('stalled initial state times out and can retry without reloading',async h=>{
+    await h.stateSeen.promise;await h.page.clock.fastForward(16000);
+    await h.page.waitForFunction(()=>!document.querySelector('#retry-connection').hidden);
+    assert.match(await h.page.locator('#notice').innerText(),/timed out/);
+    h.stateWait=null;await h.page.locator('#retry-connection').click();
+    await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(h.tasks,0);
+  },{waitForStartup:false,setup:async h=>{await h.page.clock.install();h.stateWait=h.defer();}});
+  await scenario('stalled setting times out, reconciles, and preserves the pinned brief and draft',async h=>{
+    await prepare(h.page,'Find coverage before a stalled setting.');
+    const captured=await h.page.locator('#handoff-text').inputValue();
+    await h.page.locator('#request').fill('Keep this timeout recovery draft');
+    h.settingsWait=h.defer();await h.page.locator('#local-ai').uncheck();await h.settingsSeen.promise;
+    await h.page.clock.fastForward(16000);
+    await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('#local-ai').isChecked(),true);
+    assert.match(await h.page.locator('#notice').innerText(),/timed out/);
+    assert.equal(await h.page.locator('#request').inputValue(),'Keep this timeout recovery draft');
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),captured);
+  },{setup:async h=>{await h.page.clock.install();}});
+  await scenario('lost accepted start response blocks duplicate submission until state is reconciled',async h=>{
+    const request='Find coverage after a lost start acknowledgement.';
+    const accepted=deferred();
+    await h.page.route('**/api/tasks',async route=>{
+      h.tasks++;const started=await (await route.fetch()).json();let result;
+      // Exercise the completed-history path explicitly; a running job is resumed
+      // automatically and can legitimately replace the start warning on completion.
+      for(let i=0;i<100;i++){
+        result=await (await h.page.request.get(baseURL+'/api/tasks/'+started.task_id)).json();
+        if(result.state!=='RUNNING')break;
+        await new Promise(resolve=>setTimeout(resolve,10));
+      }
+      assert.equal(result.state,'DONE');
+      h.stateWait=h.defer();await route.abort('failed');accepted.resolve();
+    });
+    await h.page.locator('#request').fill(request);await h.page.locator('#prepare').click();await accepted.promise;
+    await h.page.waitForFunction(()=>document.querySelector('#notice').classList.contains('error'));
+    assert.equal(await h.page.locator('#prepare').isDisabled(),true);
+    await h.page.locator('#task-form').dispatchEvent('submit');assert.equal(h.tasks,1);
+    await h.stateSeen.promise;h.releases[0].resolve();
+    await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    await h.page.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Check Recent briefs'));
+    assert.match(await h.page.locator('#notice').innerText(),/Check Recent briefs/);
+    await h.page.getByRole('button',{name:new RegExp(request)}).click();
+    await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,request);
+    assert.equal(h.tasks,1);
+  });
+  await scenario('lost running start response resumes the retained job without repeating it',async h=>{
+    let running=true,identifier;
+    h.stateTransform=value=>{if(running)for(const item of value.recent)if(item.task_id===identifier)item.state='RUNNING';};
+    await h.page.route('**/api/tasks/*',async route=>{
+      const value=await (await route.fetch()).json();await route.fulfill({json:running?{...value,state:'RUNNING'}:value});
+    });
+    await h.page.route('**/api/tasks',async route=>{
+      h.tasks++;identifier=(await (await route.fetch()).json()).task_id;await route.abort('failed');
+    });
+    const request='Find coverage after a lost running-task response.';
+    await h.page.locator('#request').fill(request);await h.page.locator('#prepare').click();
+    await h.page.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Check Recent briefs'));
+    assert.equal(await h.page.locator('#stop').isEnabled(),true);
+    assert.equal(await h.page.locator('#prepare').isDisabled(),true);assert.equal(h.tasks,1);
+    running=false;
+    await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,request);
+    await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);assert.equal(h.tasks,1);
+  });
+  await scenario('running job polling reconnects automatically after a transient failure',async h=>{
+    let outage=true,running=true,reads=0;
+    h.stateTransform=value=>{if(running)for(const item of value.recent)item.state='RUNNING';};
+    await h.page.route('**/api/tasks/*',async route=>{
+      reads++;if(outage){await route.abort('failed');return;}
+      const value=await (await route.fetch()).json();
+      await route.fulfill({json:running?{...value,state:'RUNNING'}:value});
+    });
+    await h.page.locator('#request').fill('Find coverage after a polling outage.');await h.page.locator('#prepare').click();
+    await h.page.waitForFunction(()=>!document.querySelector('#retry-connection').hidden);
+    outage=false;await h.page.waitForFunction(()=>document.querySelector('#retry-connection').hidden);
+    assert.ok(reads>1);assert.equal(await h.page.locator('#prepare').isDisabled(),true);
+    assert.equal(await h.page.locator('#stop').isEnabled(),true);
+    running=false;await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('#original-request').textContent(),'Find coverage after a polling outage.');
+  });
   await scenario('pending Local AI change blocks task submission until confirmed',async h=>{
     h.settingsWait=h.defer();await h.page.locator('#local-ai').uncheck();await h.settingsSeen.promise;
     for(const id of ['prepare','local-ai','refresh-models','check-model'])assert.equal(await h.page.locator('#'+id).isDisabled(),true,id);

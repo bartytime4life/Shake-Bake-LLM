@@ -33,7 +33,7 @@ function harness() {
   const requests=[];
   let respond=async()=>({models:[]});
   const context={document:{getElementById:element,createElement:()=>new Element(),querySelectorAll:()=>[]},
-    window:{},Option:function(label,value){const e=new Element(value);e.textContent=label;return e;},
+    window:{},AbortController,Option:function(label,value){const e=new Element(value);e.textContent=label;return e;},
     localStorage:{setItem(){},getItem(){return null;}},setTimeout(){},clearTimeout(){},setInterval(){},clearInterval(){},
     fetch:async(target,options)=>{requests.push({target,options});const data=await respond(target,options);return {ok:!data.error,json:async()=>data};}};
   vm.createContext(context);
