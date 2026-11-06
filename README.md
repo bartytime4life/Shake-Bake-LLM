@@ -64,6 +64,10 @@ Add an approved source folder at launch with `--project my-project=/absolute/pro
 
 The offline preview is a **recorded demo inspector**, with synthetic source and no model inference. It is a separate export; it does not run new jobs. Read [the workbench guide](docs/visual-workbench.md) for scope and setup. Current local Chrome interaction and comparison evidence is in [design-qa.md](design-qa.md). The earlier blocked cloud-browser attempt remains historical; current checks do not establish a formal accessibility audit.
 
+### Continue in Claude or ChatGPT
+
+After preparing, review the source and use **Continue in your assistant**: choose Claude or ChatGPT, select **Copy brief**, then open the assistant and paste/send the text. The brief includes your original request, exact evidence, gaps and instructions for the assistant. **Save brief as .txt** and selectable text provide alternatives; JSON is under **Long brief or need the full record?** Opening an assistant sends nothing automatically. See [the handoff guide and check boundaries](docs/assistant-handoff.md).
+
 Start with evidence-only or **Best tested**; the shipped candidate profiles do not qualify for automatic model use. To enable an explicit diagnostic candidate trial on inert source:
 
 ```bash

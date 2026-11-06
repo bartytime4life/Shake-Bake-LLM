@@ -16,6 +16,8 @@ Choose a project and task type, enter the request and select Prepare for my assi
 
 Documents currently means supported text files. PDF/image extraction, semantic embeddings and guided folder setup remain planned. Lexical selection is bounded and can omit relevant source. The current GUI does not provide explicit range selection.
 
+**Continue in your assistant** explains the manual handoff: review, copy, then open Claude or ChatGPT and paste/send. The text includes receiving-assistant instructions while preserving the request and evidence. **Save brief as .txt** uses the same text; JSON remains under **Long brief or need the full record?** Choosing or opening a destination does not send a brief. See [the handoff guide](assistant-handoff.md).
+
 ## Local AI modes
 
 Local AI off disables new model use and cancels this controller's owned active runner. It does not stop the separate Ollama daemon or attest GPU cancellation. Off also prevents inventory requests. Best tested selects only eligible owner-record profiles on comparable reviewed trials; the shipped candidates do not qualify. Model availability and reported digest are checked on use. No model is downloaded and no cloud-provider fallback exists.

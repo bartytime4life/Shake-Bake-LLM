@@ -16,6 +16,8 @@ The [draft-context follow-up](docs/draft-context-2026-11-05.md) keeps restored t
 
 The [page-file follow-up](docs/file-launch-recovery-2026-11-05.md) fixes missing assets and provides a launch guide when the HTML file is opened directly. HTTP browser acceptance and file-path/VM checks are recorded separately; direct-file visual acceptance remains unverified.
 
+The [guided assistant handoff](docs/assistant-handoff.md) now explains review, copy and paste into Claude or ChatGPT, with receiving-assistant instructions and a text-file alternative. It does not send automatically or establish host delivery.
+
 ## Next qualification steps
 
 - [ ] **1. Complete actual-PC/model qualification (partial).** Startup, installed-package identity, hardware observations and pinned Qwen 3 8B metadata are now recorded privately; the local in-app-browser demo/readiness walkthrough passed the stated cases in `docs/pc-readiness-2026-11-05.md`. The shared daemon still reports cloud features enabled, so it received metadata-only requests. A separate cloud-disabled daemon completed ten Qwen 3 8B attempts with retained receipts. Persistent copy feedback, selectable text and JSON export passed the stated installed-browser checks; a final synthetic brief also passed exact native and manual clipboard readback. Earlier empty readbacks are retained; broader browser checks and natural model-change/failure scenarios remain open. Use `docs/PC-CHECKLIST.md`.
