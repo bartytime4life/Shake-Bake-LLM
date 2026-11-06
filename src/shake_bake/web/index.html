@@ -42,6 +42,7 @@
     <main id="workspace" tabindex="-1">
       <div class="topline"><span id="today" class="eyebrow"></span><div class="connection-controls"><span class="small muted" id="connection-status">Connecting to local session…</span><button type="button" id="retry-connection" class="secondary compact" hidden>Retry connection</button></div></div>
       <h1>Turn local source into a clear brief.</h1>
+      <p class="workflow-intro muted">Prepare evidence here. Review it, then continue the work in Claude or ChatGPT.</p>
       <form id="task-form">
         <div class="task-options">
           <label class="project-label" for="project">Project</label>
@@ -89,15 +90,31 @@
       <section class="brief-bar" id="brief-bar" aria-label="Pinned brief">
         <img src="icons/map-pin.svg" alt="" class="pin">
         <div class="brief-identity"><h2 id="brief-title" tabindex="-1">Your next brief starts here</h2><p class="small muted" id="brief-subtitle">Choose a project and prepare exact local evidence.</p></div>
-        <div class="export-actions"><button class="secondary compact" id="copy" disabled><img src="icons/copy.svg" alt="">Copy brief</button><button class="secondary compact" id="download" disabled><img src="icons/download.svg" alt="">Download JSON</button></div>
       </section>
-      <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>
-      <details id="handoff-copy" class="handoff-copy" hidden>
-        <summary>Review or copy brief text</summary>
-        <p id="copy-help" class="small muted">Select all text, then use your device’s Copy command. Check the pasted text before sharing; the brief contains exact source.</p>
-        <button type="button" id="select-handoff" class="secondary compact">Select all text</button>
-        <textarea id="handoff-text" aria-label="Exact handoff text" aria-describedby="copy-help" readonly spellcheck="false" rows="10"></textarea>
-      </details>
+      <section class="assistant-handoff" aria-labelledby="handoff-heading">
+        <div class="handoff-heading"><div><p class="eyebrow">Your next step</p><h2 id="handoff-heading">Continue in your assistant</h2></div><span class="handoff-badge">Manual handoff</span></div>
+        <p id="handoff-summary" class="small muted">Prepare a brief above to get a ready-to-paste request with exact source and visible gaps.</p>
+        <ol class="handoff-steps">
+          <li><strong>Review the brief</strong><span>Check the source and gaps below. Only share content you intend to send.</span></li>
+          <li><strong>Copy it</strong><span>The brief includes your request, evidence, and instructions for the assistant.</span></li>
+          <li><strong>Paste and send</strong><span id="handoff-paste-help">Open ChatGPT, choose a chat, paste the brief, then send it.</span></li>
+        </ol>
+        <div class="handoff-actions">
+          <label for="handoff-assistant">Assistant<select id="handoff-assistant"><option value="chatgpt">ChatGPT</option><option value="claude">Claude</option></select></label>
+          <button type="button" class="primary" id="copy" disabled><img src="icons/copy.svg" alt="">Copy brief</button>
+          <a id="open-assistant" class="secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-describedby="handoff-privacy" hidden>Open ChatGPT</a>
+          <button type="button" class="text-button" id="download-text" disabled>Save brief as .txt</button>
+        </div>
+        <p id="handoff-privacy" class="small muted">Opening an assistant sends no brief. Paste it into the web or desktop app yourself. Nothing is sent automatically.</p>
+        <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+        <details id="handoff-copy" class="handoff-copy" hidden>
+          <summary>Review or copy brief text</summary>
+          <p id="copy-help" class="small muted">This is the exact text that Copy brief and Save brief as .txt use. To copy manually, select all text and use your device’s Copy command. Review private source before sharing.</p>
+          <button type="button" id="select-handoff" class="secondary compact">Select all text</button>
+          <textarea id="handoff-text" aria-label="Exact handoff text" aria-describedby="copy-help" readonly spellcheck="false" rows="10"></textarea>
+        </details>
+        <details class="handoff-more"><summary>Long brief or need the full record?</summary><p class="small muted">Save the brief as a text file and attach it in your assistant if file uploads are available. If it is too large, prepare a more focused request. JSON keeps the full technical record.</p><button type="button" class="secondary compact" id="download" disabled><img src="icons/download.svg" alt="">Download JSON</button></details>
+      </section>
       <p id="worker-status" class="small" hidden></p>
       <div id="brief-details" hidden><details class="original"><summary>Original request &amp; job identity</summary><p id="job-identity" class="small muted"></p><pre id="original-request"></pre><p class="small muted" id="route-reason"></p></details></div>
       <section class="evidence-section" aria-labelledby="evidence-heading">
