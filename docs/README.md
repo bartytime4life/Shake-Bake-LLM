@@ -23,6 +23,7 @@ Read these as successive experiments with separate identities and preserved fail
 - [Smaller-model screening](screening-2026-11-05.md) and [rejected 1.7B prompt](validation-0.4.0.dev8.md).
 - [Installed readiness](pc-readiness-2026-11-05.md), [readiness invalidation](readiness-invalidation-2026-11-05.md), and [copy recovery plus 8B baseline](copy-and-screening-2026-11-05.md).
 - [Workbench state and navigation fixes](workbench-fixes-2026-11-05.md) and [browser request recovery](request-recovery-2026-11-05.md), with scoped synthetic regression evidence.
+- [Draft context and saving feedback](draft-context-2026-11-05.md), including missing choices, edits during connection and storage failure recovery.
 - [Frozen 8B prompt and separately authored cohort](reasoning-screening-2026-11-05.md).
 - [Thinking at 512 tokens](thinking-probe-2026-11-05.md) and [the four-arm budget comparison](thinking-budget-2026-11-05.md).
 - [Host correction of imperfect local notes](host-note-diagnostic-2026-11-05.md), a separate development diagnostic.

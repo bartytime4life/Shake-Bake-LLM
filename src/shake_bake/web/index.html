@@ -29,17 +29,18 @@
       <form id="task-form">
         <div class="task-options">
           <label class="project-label" for="project">Project</label>
-          <select id="project" name="project" aria-describedby="project-help"></select>
-          <fieldset class="task-types"><legend>Task type</legend>
+          <select id="project" name="project" aria-describedby="project-help" required></select>
+          <fieldset class="task-types" aria-describedby="project-help"><legend>Task type</legend>
             <label><input type="radio" name="task-kind" value="code" checked><span>Code</span></label>
             <label><input type="radio" name="task-kind" value="troubleshoot"><span>Troubleshoot</span></label>
             <label><input type="radio" name="task-kind" value="documents"><span>Documents</span></label>
             <label><input type="radio" name="task-kind" value="search"><span>Search</span></label>
           </fieldset>
         </div>
-        <p id="project-help" class="sr-only">Only projects approved in the owner's launch configuration are available.</p>
+        <p id="project-help" class="small muted sr-only" role="status">Only projects approved in the owner's launch configuration are available.</p>
         <label for="request" class="sr-only">Describe your task</label>
         <textarea id="request" name="request" rows="4" required maxlength="16384" spellcheck="false" placeholder="Describe what you want your assistant to investigate…">Find the executable slice coverage guard. Can it accept fewer reported slices than detected? Provide exact evidence and gaps.</textarea>
+        <p id="draft-status" class="small muted" role="status" aria-live="polite">Draft saving starts after the local session connects.</p>
         <div class="model-strip">
           <label class="switch-label"><input type="checkbox" id="local-ai" disabled><span>Local AI</span></label>
           <span id="mode-summary" class="muted">Exact evidence · Local AI off</span>

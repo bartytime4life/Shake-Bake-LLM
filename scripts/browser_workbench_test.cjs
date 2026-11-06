@@ -60,6 +60,80 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   baseURL=await waitForServer(server);
   browser=await chromium.launch({headless:true,...(process.env.SB_CHROMIUM_EXECUTABLE?{executablePath:process.env.SB_CHROMIUM_EXECUTABLE}:{})});
   console.log('Chromium '+browser.version());
+  await scenario('restored draft keeps its own project and task type',async h=>{
+    assert.equal(await h.page.locator('#request').inputValue(),'Preserve this synthetic search draft.');
+    assert.equal(await h.page.locator('#project').inputValue(),'starter-demo');
+    assert.equal(await h.page.locator('input[name="task-kind"]:checked').inputValue(),'search');
+    assert.match(await h.page.locator('#draft-status').innerText(),/saved in this browser/i);
+  },{setup:async h=>{
+    h.stateTransform=value=>{value.projects.push({...value.projects[0],id:'another-demo'});};
+    await h.page.addInitScript(()=>{
+      localStorage.setItem('shake-bake-preferences',JSON.stringify({project_id:'another-demo',task_kind:'code'}));
+      localStorage.setItem('sb-workbench-draft',JSON.stringify({task:'Preserve this synthetic search draft.',project:'starter-demo',kind:'search'}));
+    });
+  }});
+  await scenario('missing draft project requires an explicit choice before submission',async h=>{
+    assert.equal(await h.page.locator('#request').inputValue(),'Keep the request for the unavailable synthetic project.');
+    assert.equal(await h.page.locator('#project').inputValue(),'');
+    assert.equal(await h.page.locator('#prepare').isDisabled(),true);
+    assert.match(await h.page.locator('#project-help').innerText(),/unavailable/);
+    await h.page.locator('#task-form').dispatchEvent('submit');assert.equal(h.tasks,0);
+    await h.page.locator('#project').selectOption('starter-demo');
+    await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('input[name="task-kind"]:checked').inputValue(),'documents');
+    assert.equal(await h.page.locator('#request').inputValue(),'Keep the request for the unavailable synthetic project.');
+    assert.equal(await h.page.evaluate(()=>JSON.parse(localStorage.getItem('sb-workbench-draft')).project),'starter-demo');
+  },{setup:async h=>{await h.page.addInitScript(()=>{
+    localStorage.setItem('sb-workbench-draft',JSON.stringify({task:'Keep the request for the unavailable synthetic project.',project:'missing-demo',kind:'documents'}));
+  });}});
+  await scenario('typing during initial connection survives restoration even when saving fails',async h=>{
+    await h.stateSeen.promise;
+    await h.page.locator('#request').fill('New text typed while the connection is pending.');
+    await h.page.locator('input[name="task-kind"][value="search"]').check();
+    assert.match(await h.page.locator('#draft-status').innerText(),/this page/);
+    h.releases[0].resolve();await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('#request').inputValue(),'New text typed while the connection is pending.');
+    assert.equal(await h.page.locator('input[name="task-kind"]:checked').inputValue(),'search');
+    assert.match(await h.page.locator('#draft-status').innerText(),/could not be saved/);
+    assert.equal(await h.page.evaluate(()=>JSON.parse(localStorage.getItem('sb-workbench-draft')).task),'Older synthetic draft.');
+  },{waitForStartup:false,setup:async h=>{
+    h.stateWait=h.defer();await h.page.addInitScript(()=>{
+      localStorage.setItem('sb-workbench-draft',JSON.stringify({task:'Older synthetic draft.',project:'starter-demo',kind:'code'}));
+      Storage.prototype.setItem=function(){throw new DOMException('Synthetic full storage','QuotaExceededError');};
+    });
+  }});
+  await scenario('unknown saved task type requires an explicit supported choice',async h=>{
+    assert.equal(await h.page.locator('#request').inputValue(),'Preserve the synthetic request with an unavailable task type.');
+    assert.equal(await h.page.locator('#prepare').isDisabled(),true);
+    assert.equal(await h.page.locator('input[name="task-kind"]:checked').count(),0);
+    assert.match(await h.page.locator('#project-help').innerText(),/task type is unavailable/);
+    await h.page.locator('#task-form').dispatchEvent('submit');assert.equal(h.tasks,0);
+    await h.page.locator('input[name="task-kind"][value="search"]').check();
+    await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.evaluate(()=>JSON.parse(localStorage.getItem('sb-workbench-draft')).kind),'search');
+  },{setup:async h=>{await h.page.addInitScript(()=>{
+    localStorage.setItem('sb-workbench-draft',JSON.stringify({task:'Preserve the synthetic request with an unavailable task type.',project:'starter-demo',kind:'unsupported'}));
+  });}});
+  await scenario('storage failure is visible, recovery saves exact text, and reload retains the draft context',async h=>{
+    await prepare(h.page,'Find coverage before editing the next draft.');
+    const pin=await h.page.locator('#handoff-text').inputValue();
+    await h.page.evaluate(()=>{window.originalStorageSet=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='sb-workbench-draft')throw new DOMException('Synthetic full storage','QuotaExceededError');return window.originalStorageSet.call(this,key,value);};});
+    const draft='  Exact synthetic draft: α <untrusted>\nKeep the final space. ';
+    await h.page.locator('#request').fill(draft);await h.page.locator('input[name="task-kind"][value="documents"]').check();
+    assert.match(await h.page.locator('#draft-status').innerText(),/could not be saved/);
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
+    assert.equal(await h.page.locator('#copy').isEnabled(),true);
+    await h.page.evaluate(()=>{Storage.prototype.setItem=window.originalStorageSet;});
+    await h.page.locator('#request').dispatchEvent('input');
+    assert.match(await h.page.locator('#draft-status').innerText(),/saved in this browser/);
+    assert.equal(await h.page.evaluate(()=>JSON.parse(localStorage.getItem('sb-workbench-draft')).task),draft);
+    await h.page.reload();await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('#request').inputValue(),draft);
+    assert.equal(await h.page.locator('input[name="task-kind"]:checked').inputValue(),'documents');
+    assert.equal(await h.page.locator('#project').inputValue(),'starter-demo');
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
+    if(process.env.SB_DRAFT_SCREENSHOT){await h.page.setViewportSize({width:390,height:844});await h.page.screenshot({path:process.env.SB_DRAFT_SCREENSHOT,fullPage:true});}
+  });
   await scenario('stalled initial state times out and can retry without reloading',async h=>{
     await h.stateSeen.promise;await h.page.clock.fastForward(16000);
     await h.page.waitForFunction(()=>!document.querySelector('#retry-connection').hidden);
