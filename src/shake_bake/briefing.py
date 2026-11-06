@@ -28,7 +28,7 @@ def collection_scope(search):
             "cutoffs": list(search.cutoffs), "exclusions": dict(search.exclusions)}
 
 
-def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 11434, limits: SearchLimits | None = None, expected_digest: str | None = None, expected_runtime: str | None = None) -> Brief:
+def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 11434, limits: SearchLimits | None = None, expected_digest: str | None = None, expected_runtime: str | None = None, task_kind: str | None = None) -> Brief:
     search = prepare(root, task, limits)
     if search.packet is None:
         return Brief("ABSTAIN", search, None, None)
@@ -36,10 +36,34 @@ def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 
     if model is not None:
         try:
             worker = organize(search.packet, model, port=port, expected_digest=expected_digest,
-                              expected_runtime=expected_runtime, collection_context=collection_scope(search))
+                              expected_runtime=expected_runtime, collection_context=collection_scope(search),
+                              task_kind=task_kind)
         except Refusal as refusal:
             error = refusal.code
     return Brief("ABSTAIN" if error else "ANSWER", search, worker, error)
+
+
+def prompt_lines(worker: WorkerNote, evidence) -> list[str]:
+    """The intern's drafted prompt as plain lines; empty when no prompt was produced."""
+    if not worker.has_prompt:
+        return []
+    labels = {f"E{index}": f"E{index} {record.path} lines {record.start_line}-{record.end_line}"
+              for index, record in enumerate(evidence, 1)}
+    lines = [f"Prompt drafted by local model {worker.model} (unverified; a suggestion, not a verified fact):",
+             "Goal: " + worker.goal]
+    if worker.focus:
+        lines.append("Read first:")
+        lines.extend(f"- {labels.get(item['evidence_id'], item['evidence_id'])}: {item['why']}" for item in worker.focus)
+    lines.append("Please answer:")
+    lines.extend(f"{number}. {ask}" for number, ask in enumerate(worker.asks, 1))
+    if worker.approach:
+        lines.append("Suggested approach:")
+        lines.extend(f"{number}. {step}" for number, step in enumerate(worker.approach, 1))
+    if worker.questions:
+        lines.append("Open questions the evidence does not settle:")
+        lines.extend(f"- {question}" for question in worker.questions)
+    lines.append("Local notes (cite " + ", ".join(worker.evidence_ids) + "): " + worker.summary)
+    return lines
 
 
 def _quote(text: str) -> str:
@@ -58,7 +82,11 @@ def render(brief: Brief) -> str:
         packet = search.packet
         lines.extend(["", "## Source identity",
                       f"Selected-file snapshot: {packet.snapshot_id}", "Coverage: selected-files-only; lexical selection is not an exhaustive review."])
-        if brief.worker:
+        if brief.worker and brief.worker.has_prompt:
+            lines.extend(["", "## Prompt for the assistant - drafted locally, unverified",
+                          "Read this as a suggestion from a small local model, then verify every claim against the exact source below.",
+                          _quote("\n".join(prompt_lines(brief.worker, packet.evidence)))])
+        elif brief.worker:
             lines.extend(["", "## Worker interpretation - unverified", _quote(brief.worker.summary),
                           "Worker references: " + ", ".join(brief.worker.evidence_ids)])
             for question in brief.worker.questions:

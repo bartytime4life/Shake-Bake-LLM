@@ -47,10 +47,11 @@ def brief_main(argv: list[str]) -> int:
     parser.add_argument("--task", required=True)
     parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
     parser.add_argument("--model", help="Explicitly enable an installed local Ollama model; no download is performed.")
+    parser.add_argument("--task-kind", choices=("code", "troubleshoot", "documents", "search"), help="Optional hint for the local model's drafted prompt; collection is unchanged.")
     parser.add_argument("--ollama-port", type=int, default=11434)
     args = parser.parse_args(argv)
     try:
-        brief = build_brief(args.root, args.task, model=args.model, port=args.ollama_port)
+        brief = build_brief(args.root, args.task, model=args.model, port=args.ollama_port, task_kind=args.task_kind)
     except Refusal as refusal:
         print(json.dumps({"outcome": "DENY", "code": refusal.code}, sort_keys=True))
         return 2

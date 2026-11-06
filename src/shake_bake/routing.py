@@ -198,7 +198,7 @@ def assist(root: Path, task: str, task_kind: str, *, policy_path: Path | None, p
     if decision.mode == "local_model" and search.packet:
         try:
             worker = organize(search.packet, decision.model, port=port, expected_digest=decision.expected_digest,
-                              collection_context=collection_scope(search))
+                              collection_context=collection_scope(search), task_kind=task_kind)
         except Refusal as refusal:
             error = refusal.code
             failed = fallback(task_kind, refusal.code, decision.rejected)
@@ -215,7 +215,7 @@ def candidate_trial(root, task, task_kind, candidate, *, port=11434):
     validate_settings(candidate["model"], port)
     if not isinstance(candidate["digest"], str) or not re.fullmatch(r"[a-f0-9]{64}", candidate["digest"]):
         raise Refusal("invalid_expected_digest")
-    brief = build_brief(root, task, model=candidate["model"], port=port, expected_digest=candidate["digest"])
+    brief = build_brief(root, task, model=candidate["model"], port=port, expected_digest=candidate["digest"], task_kind=task_kind)
     decision = Decision(task_kind, "candidate_trial", "unqualified_candidate_trial",
         "Explicit candidate trial. Notes are unverified; this run does not qualify accuracy or change routing policy.",
         model=candidate["model"], expected_digest=candidate["digest"])

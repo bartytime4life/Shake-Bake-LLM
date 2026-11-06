@@ -1,11 +1,12 @@
 # Current evaluation status
 
-Updated November 5, 2026 for `0.4.0.dev8`. No local model profile is qualified for
+Updated November 6, 2026 for `0.4.0.dev9`. No local model profile is qualified for
 automatic selection. The latest larger-budget experiment is rejected: both
 thinking-on candidates produced six supported handoffs out of ten, retained two
 critical unsupported claims and lost a previously supported concurrency answer
-to truncation. The shipped worker remains thinking off with a 512-token cap and
-30-second deadline. These defaults are a bounded baseline, not a qualified model recommendation.
+to truncation. The shipped worker is thinking off with a 30-second deadline and,
+since `0.4.0.dev9`, the `handoff_prompt_v1` design with a 1,024-token cap, under which
+the local model drafts the assistant's prompt. These defaults are a bounded baseline, not a qualified model recommendation.
 
 ## Retained model evidence
 
@@ -19,6 +20,7 @@ to truncation. The shipped worker remains thinking off with a 512-token cap and
 | [Separately authored cohort](reasoning-screening-2026-11-05.md#new-cases-kept-outside-prompt-tuning) | Original prompt 2/10; experiment 3/10; nine and eight critical unsupported claims | Cases were outside prompt tuning and are now evaluation-exposed. AI author also graded them; no human qualification. |
 | [Initial thinking probe](thinking-probe-2026-11-05.md) | Thinking on at 512: three complete/supported answers, seven truncations | Paired known-case diagnostic rejected; production acceptance unchanged. |
 | [Four-arm budget comparison](thinking-budget-2026-11-05.md) | Off/512: 6/10 supported. On/512: 3/10. On/1,024 and on/2,048: 6/10 each, with nine complete answers and two critical unsupported claims each | Forty attempts, separate masked AI grading; both larger budgets rejected. No new reserved cohort started. |
+| [Handoff-prompt design](handoff-prompt-2026-11-06.md) | Qwen 3 8B and Qwen 3.5 4B: 10/10 complete drafts each, no worker errors; Qwen 3 4B refused pre-source. Author read: 4B drafts met intent on 10/10, 8B on 7/10 | New worker design, exposed cases, author-only review with instruction tuning between two retained runs; no promotion. |
 
 The subsequent [host-note diagnostic](host-note-diagnostic-2026-11-05.md) completed twenty final answers: **9/10** met the rubric with evidence alone and **8/10** with the same evidence plus retained local notes. Neither arm made a counted unsupported claim or citation error. Both missed the hardware next-evidence request, and the assisted arm additionally omitted the intended-contract uncertainty on the boundary case. The no-regression gate failed; no local profile is promoted.
 
@@ -56,12 +58,14 @@ semantic correctness.
 
 The worker requests `think: false`, checks declared compatibility before source
 submission, and refuses returned thinking, tools, incomplete output and invalid
-references. Routed and explicit candidate paths check reported model digest;
+references. Since `0.4.0.dev9` it requests the `handoff_prompt_v1` structure with
+1,024 output tokens; a draft that omits goal or asks falls back to notes only. Routed and explicit candidate paths check reported model digest;
 worker/trial records retain runtime and pipeline identity. These checks trust
 daemon metadata and do not attest weight bytes or complete hardware qualification.
 
-The 1,024/2,048-token arms used a private frozen diagnostic runner. The normal
-CLI/workbench has no new budget controls, and offline final-content projection
+The earlier 1,024/2,048-token thinking arms used a private frozen diagnostic runner
+with thinking on; the shipped 1,024-token cap keeps thinking off. The normal
+CLI/workbench has no budget controls, and offline final-content projection
 is not an accepted production response. The app remains read-only toward approved
 source roots, with no automatic model download or cloud-provider fallback.
 

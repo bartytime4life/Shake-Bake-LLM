@@ -8,7 +8,7 @@ Shake and Bake prepares evidence and local model notes for Claude or ChatGPT. Th
 | --- | --- | --- |
 | `list_projects` | None | Approved project IDs and selected mode. |
 | `start_task` | Approved ID, exact task text | Task handle or explicit refusal. |
-| `get_result` | Task handle | Status, unverified notes, every evidence reference, search gaps. |
+| `get_result` | Task handle | Status, unverified notes and drafted prompt fields (`goal`, `focus`, `asks`, `approach`), every evidence reference, search gaps. |
 | `fetch_evidence` | Task handle, E1–E4 | Captured exact source, line range and hashes. |
 | `cancel_task` | Task handle | Owned runner stopped and reaped, or terminal status. |
 

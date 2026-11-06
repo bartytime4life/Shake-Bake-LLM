@@ -2,7 +2,7 @@
 
 Start with [current evaluation status](evaluation-status.md), the root
 [README](../README.md), [TODO](../TODO.md) and [Known Issues](../KNOWN_ISSUES.md).
-They describe the current `0.4.0.dev8` behavior and measured limits. Dated reports
+They describe the current `0.4.0.dev9` behavior and measured limits. Dated reports
 below retain the exact scope of earlier checks; an older test count or pending
 state is not a statement about the latest build.
 
@@ -21,6 +21,7 @@ state is not a statement about the latest build.
 
 Read these as successive experiments with separate identities and preserved failures:
 
+- [Handoff-prompt design and two-model runs](handoff-prompt-2026-11-06.md), where the local model drafts the assistant's prompt.
 - [Smaller-model screening](screening-2026-11-05.md) and [rejected 1.7B prompt](validation-0.4.0.dev8.md).
 - [Installed readiness](pc-readiness-2026-11-05.md), [readiness invalidation](readiness-invalidation-2026-11-05.md), and [copy recovery plus 8B baseline](copy-and-screening-2026-11-05.md).
 - [Workbench state and navigation fixes](workbench-fixes-2026-11-05.md) and [browser request recovery](request-recovery-2026-11-05.md), with scoped synthetic regression evidence.
