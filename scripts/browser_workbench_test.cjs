@@ -134,6 +134,61 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
     if(process.env.SB_DRAFT_SCREENSHOT){await h.page.setViewportSize({width:390,height:844});await h.page.screenshot({path:process.env.SB_DRAFT_SCREENSHOT,fullPage:true});}
   });
+  for(const outcome of ['success','failure'])for(const next of ['task','selection'])await scenario(`late startup brief ${outcome} cannot replace a newer ${next}`,async h=>{
+    const older=`Find coverage: retained ${outcome} ${next}`,latest=`Find coverage: startup ${outcome} ${next}`;
+    await prepare(h.page,older);await prepare(h.page,latest);
+    const recent=(await (await h.page.request.get(baseURL+'/api/state')).json()).recent;
+    const startup=recent.find(item=>item.task===latest),held=h.defer(),seen=deferred();let once=true;
+    await h.page.route('**/api/tasks/*',async route=>{
+      const response=await route.fetch(),value=await response.json();
+      if(once&&value.task_id===startup.task_id){once=false;seen.resolve();await held.promise;await route.fulfill(outcome==='failure'?{status:400,json:{error:'unknown_or_expired_task'}}:{json:value});}
+      else await route.fulfill({json:value});
+    });
+    await h.page.reload();await seen.promise;
+    const expected=next==='selection'?older:`Find coverage: new task after startup ${outcome}`;
+    if(next==='selection')await h.page.getByRole('button',{name:new RegExp(older)}).click();
+    else{
+      // A task-type change exposed the old startup race by enabling Prepare.
+      // Hold the new acknowledgement until DONE so the pre-fix startup timer
+      // delay cannot hide the stale-result regression behind a polling timeout.
+      await h.page.route('**/api/tasks',async route=>{
+        const response=await route.fetch(),started=await response.json();let result;
+        for(let i=0;i<100;i++){
+          result=await (await h.page.request.get(baseURL+'/api/tasks/'+started.task_id)).json();
+          if(result.state!=='RUNNING')break;
+          await new Promise(resolve=>setTimeout(resolve,10));
+        }
+        assert.equal(result.state,'DONE');await route.fulfill({response,json:started});
+      });
+      await h.page.locator('input[name="task-kind"][value="search"]').check();await prepare(h.page,expected);
+    }
+    await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,expected);
+    const pin=await h.page.locator('#handoff-text').inputValue(),notice=await h.page.locator('#notice').innerText();
+    const response=h.page.waitForResponse(r=>r.url().endsWith('/api/tasks/'+startup.task_id));held.resolve();await (await response).finished();await rendered(h.page);
+    assert.equal(await h.page.locator('#original-request').textContent(),expected);
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
+    assert.equal(await h.page.locator('#notice').innerText(),notice);
+    assert.equal(await h.page.locator('#prepare').isEnabled(),true);
+  });
+  await scenario('pending startup brief leaves controls, history and active polling available',async h=>{
+    const older='Find coverage: startup must not block new work.';
+    await prepare(h.page,older);
+    const startup=(await (await h.page.request.get(baseURL+'/api/state')).json()).recent[0];
+    const held=h.defer(),seen=deferred();let once=true,polls=0;
+    await h.page.route('**/api/tasks/*',async route=>{
+      const response=await route.fetch(),value=await response.json();
+      if(once&&value.task_id===startup.task_id){once=false;seen.resolve();await held.promise;await route.fulfill({json:value});return;}
+      if(value.task_id!==startup.task_id){polls++;if(polls===1){await route.fulfill({json:{...value,state:'RUNNING'}});return;}}
+      await route.fulfill({json:value});
+    });
+    await h.page.reload();await seen.promise;
+    assert.equal(await h.page.locator('#prepare').isEnabled(),true);
+    assert.equal(await h.page.getByRole('button',{name:new RegExp(older)}).count(),1);
+    const request='Find coverage: finish new preparation while restoration waits.';
+    await prepare(h.page,request);assert.ok(polls>=2,'New work must keep polling before the startup brief arrives');
+    const response=h.page.waitForResponse(r=>r.url().endsWith('/api/tasks/'+startup.task_id));held.resolve();await (await response).finished();await rendered(h.page);
+    assert.equal(await h.page.locator('#original-request').textContent(),request);
+  });
   await scenario('stalled initial state times out and can retry without reloading',async h=>{
     await h.stateSeen.promise;await h.page.clock.fastForward(16000);
     await h.page.waitForFunction(()=>!document.querySelector('#retry-connection').hidden);

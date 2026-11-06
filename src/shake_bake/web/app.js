@@ -155,6 +155,20 @@ function controls() {
   $('download').disabled = !pinned?.packet;
   readinessControls();
 }
+async function loadBrief(item,{focus=false}={}){
+  // Automatic restoration and explicit selections share the same result owner.
+  // New selections/tasks revoke both late success and late failure feedback.
+  const revision=++pinRevision;
+  try{
+    const job=await api('/api/result',{project_id:item.project_id,job_id:item.job_id});
+    if(revision!==pinRevision)return;
+    if(job.packet){
+      pinned=job;renderBrief(!!active);renderHistory(state.recent);
+      if(focus){showWorkspace();$('brief-title').focus();message('Showing this captured brief. Your task draft is unchanged.');}
+    }else message(`Job ${job.status}. ${job.error?.message || 'No completed packet is available.'}`,true);
+    controls();
+  }catch(error){if(revision===pinRevision)message(error.message,true);}
+}
 function renderHistory(recent) {
   const signature=JSON.stringify(recent)+pinned?.job_id;if(signature===historySignature)return;historySignature=signature;
   const parent = $('recent-list'); parent.replaceChildren();
@@ -165,16 +179,7 @@ function renderHistory(recent) {
     const date=document.createElement('time'); date.dateTime=item.created_at; date.textContent=`${new Date(item.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})} · ${item.status}`;
     button.append(title,date);
     if(item.status==='expired'){button.disabled=true;date.textContent+=' · prepare again to refresh';}
-    button.addEventListener('click',async()=>{
-      const revision=++pinRevision;
-      try {
-        const job=await api('/api/result',{project_id:item.project_id,job_id:item.job_id});
-        if(revision!==pinRevision)return;
-        if(job.packet){pinned=job;renderBrief(!!active);renderHistory(state.recent);showWorkspace();$('brief-title').focus();message('Showing this captured brief. Your task draft is unchanged.');}
-        else message(`Job ${job.status}. ${job.error?.message || 'No completed packet is available.'}`,true);
-        controls();
-      }catch(error){if(revision===pinRevision)message(error.message,true);}
-    });
+    button.addEventListener('click',()=>loadBrief(item,{focus:true}));
     parent.append(button);
   }
 }
@@ -227,7 +232,8 @@ async function refreshState(initial=false){
     if(prefs.model){const saved=new Option(`${prefs.model} — saved candidate`,prefs.model);saved.dataset.digest=prefs.digest;$('model').append(saved);$('model').value=prefs.model;}
     $('profile-identity').textContent=`Pipeline SHA-256: ${state.pipeline_sha256}\nNo hardware or accuracy certificate is implied.`;
     if(state.active) active=state.active;
-    const latest=state.recent.find(item=>item.status==='prepared'||item.status==='incomplete');if(latest){try{pinned=await api('/api/result',{project_id:latest.project_id,job_id:latest.job_id});renderBrief(!!active);}catch(error){message(error.message,true);}}
+    // Loading old evidence must not hold up task controls, history or polling.
+    const latest=state.recent.find(item=>item.status==='prepared'||item.status==='incomplete');if(latest)void loadBrief(latest);
   }
   if(!initial)$('local-ai').checked=!state.local_ai_paused;renderHistory(state.recent);modelView();controls();
 }

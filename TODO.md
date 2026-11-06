@@ -8,7 +8,7 @@ Cross-cutting product priority: connect setup, local preparation, evidence revie
 
 The [native-retrieval comparison](docs/native-preparation-2026-11-05.md) is also complete: 8/8 supported answers in each condition, 24.35% fewer reported input tokens with deterministic preparation, but an 8.03% slower median timed workflow. The quality gate passed and the efficiency signal failed. Its four synthetic projects are now exposed; the initial setup failure and all sixteen corrected attempts remain recorded.
 
-The focused workbench review fixes setting-confirmation and stale-result races, initial connection recovery, mobile history navigation and keyboard source scrolling. Source and isolated installed-browser checks are recorded in `docs/workbench-fixes-2026-11-05.md`; the broader qualification items below remain open.
+The focused workbench review fixes setting-confirmation and stale-result races, initial connection recovery, mobile history navigation and keyboard source scrolling. Source and isolated installed-browser checks are recorded in `docs/workbench-fixes-2026-11-05.md`. The [startup-restoration follow-up](docs/startup-brief-recovery-2026-11-05.md) protects newer results/feedback and keeps controls, history and polling available while retained evidence loads; the broader qualification items below remain open.
 
 The [request-recovery follow-up](docs/request-recovery-2026-11-05.md) adds browser request deadlines, uncertain-start reconciliation and connection recovery during active polling. Jobs still belong to the running session; this does not complete durable recovery or actual-model interruption qualification.
 
