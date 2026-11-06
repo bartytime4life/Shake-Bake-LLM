@@ -74,13 +74,15 @@ Read [current evaluation status](docs/evaluation-status.md) for the complete seq
 
 The separate [host-note diagnostic](docs/host-note-diagnostic-2026-11-05.md) completed twenty final answers: evidence alone met the rubric on 9/10 cases, versus 8/10 with the same evidence plus existing local notes. Both avoided counted false claims, but the assisted arm lost a required uncertainty. The no-regression gate failed; this does not establish a useful local-model contribution or whole-task savings.
 
-The [earlier frozen-prompt comparison](docs/reasoning-screening-2026-11-05.md) includes a separately authored cohort with 2/10 supported original handoffs and 3/10 experimental handoffs. That cohort is now exposed and must not be reused as unseen. [External datasets](docs/held-out-evaluation.md) support pinned inputs and isolated grading keys; independent human qualification and a paired native-host benefit comparison remain open. The separate [host-note diagnostic](docs/host-note-diagnostic-2026-11-05.md) isolates whether the host corrects known local errors from identical captured evidence.
+The subsequent [native-retrieval comparison](docs/native-preparation-2026-11-05.md) tested four larger synthetic projects twice per condition. Native search and the same tools plus deterministic preparation both met the rubric on 8/8 answers. Preparation used 24.35% fewer reported input tokens but had an 8.03% slower median timed workflow; the predeclared efficiency signal failed. One initial setup failure and all sixteen corrected attempts are retained. No local model was used, and these exposed cases do not establish whole-task savings.
+
+The [earlier frozen-prompt comparison](docs/reasoning-screening-2026-11-05.md) includes a separately authored cohort with 2/10 supported original handoffs and 3/10 experimental handoffs. That cohort is now exposed and must not be reused as unseen. [External datasets](docs/held-out-evaluation.md) support pinned inputs and isolated grading keys; independent human qualification and representative native-host benefit qualification remain open.
 
 Start with the [Run on your PC checklist](docs/PC-CHECKLIST.md). Every owner-PC item stays unchecked until actually verified there.
 
 The [per-PC calibration plan](docs/per-pc-calibration.md) and [Your computer & tuning GUI design](docs/per-pc-calibration-ui.md) explain the next hardware-aware milestone. Automatic tuning and that new dashboard remain planned.
 
-The startup check and repeatable trial runner are ready. They record reported model identity, settings, source integrity, per-attempt failures and a separate grading sheet. Accuracy stays unset until review. Start with the [PC readiness and trial guide](docs/pc-readiness-and-trials.md). The [open-gap review](docs/open-gaps.md) records what still needs proving, including native-host comparison and actual hardware behavior. No trial automatically promotes a model.
+The startup check and repeatable trial runner are ready. They record reported model identity, settings, source integrity, per-attempt failures and a separate grading sheet. Accuracy stays unset until review. Start with the [PC readiness and trial guide](docs/pc-readiness-and-trials.md). The [open-gap review](docs/open-gaps.md) records what still needs proving, including representative native-host benefit and actual hardware behavior. No trial automatically promotes a model.
 
 ## Run the working demo
 

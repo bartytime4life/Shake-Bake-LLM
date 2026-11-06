@@ -22,8 +22,18 @@ to truncation. The shipped worker remains thinking off with a 512-token cap and
 
 The subsequent [host-note diagnostic](host-note-diagnostic-2026-11-05.md) completed twenty final answers: **9/10** met the rubric with evidence alone and **8/10** with the same evidence plus retained local notes. Neither arm made a counted unsupported claim or citation error. Both missed the hardware next-evidence request, and the assisted arm additionally omitted the intended-contract uncertainty on the boundary case. The no-regression gate failed; no local profile is promoted.
 
-The local-model cohorts measure source handoffs; the host-note diagnostic
-measures final answers from separate, explicitly invoked Codex sessions. These
+The [native-retrieval comparison](native-preparation-2026-11-05.md) then used four
+new synthetic development projects, two repetitions and identical native tools
+in both arms. All sixteen corrected attempts completed: **8/8** answers met the
+rubric with native search and **8/8** with the unchanged deterministic brief.
+No required omissions, unsupported claims or citation errors were counted.
+Reported input fell **24.35%**, but median timed workflow rose **8.03%**; the
+quality gate passed and the predeclared efficiency signal failed. The earlier
+Code Mode setup failure remains separately accounted for, including usage.
+No local model was involved and no profile is promoted.
+
+The local-model cohorts measure source handoffs; the host-note and native
+diagnostics measure final answers from explicitly invoked Codex sessions. These
 small exposed cohorts are not population accuracy estimates or qualification of
 the user's consumer ChatGPT conversation. Missing and truncated responses stay in the denominator. Program-test
 passes, valid JSON, evidence references and confident language do not establish
@@ -39,7 +49,8 @@ semantic correctness.
 | [Copy recovery](copy-and-screening-2026-11-05.md) | Job-bound feedback, selectable exact text, JSON export and one exact 3,392-character native/manual clipboard transfer; earlier empty readbacks retained | Every browser, permission state and device |
 | [Actual Codex smoke](codex-host-handoff.md) | Synthetic evidence-only handoff and cancellation/recovery using an explicitly stopped owned runner | Model-assisted orchestration, disconnect/deadline/restart, private source, Claude and consumer ChatGPT |
 | [Larger-budget probe](thinking-budget-2026-11-05.md) | Fourteen focused probe checks, forty recorded attempts and configured cloud-disabled local inference | Production thinking support, unseen accuracy, controlled cold/warm behavior and peak memory |
-| [Host-note diagnostic](host-note-diagnostic-2026-11-05.md) | Seventeen private runner checks, including two real process-cleanup regressions; twenty complete host answers; 9/10 evidence-only versus 8/10 with notes under separate AI review | Native retrieval comparison, live helper/model orchestration, unseen accuracy, human qualification and whole-task benefit |
+| [Host-note diagnostic](host-note-diagnostic-2026-11-05.md) | Seventeen private runner checks, including two real process-cleanup regressions; twenty complete host answers; 9/10 evidence-only versus 8/10 with notes under separate AI review | Live helper/model orchestration, unseen accuracy, human qualification and whole-task benefit |
+| [Native retrieval comparison](native-preparation-2026-11-05.md) | Twenty-three runner checks, six grade-binding regressions, 313 exactly reproduced fixture files, sixteen complete corrected answers and a separately retained startup failure; 8/8 supported in each arm | More realistic tasks, controlled repeatable performance, correction work, billed/quota savings and human qualification. The AI grader saw keys during preflight and one answer exposed its arm in a link target. |
 
 ## Shipped behavior and diagnostic boundaries
 
@@ -66,8 +77,10 @@ source roots, with no automatic model download or cloud-provider fallback.
    same source/tasks with native retrieval, deterministic evidence and local
    notes. The local note's score does not prove whether the host corrects or
    repeats its mistakes.
-4. Measure complete-task time, retries, correction work and actual provider usage
-   before claiming benefit. Peak memory, whole-task savings and a complete
+4. Build a focused preparation candidate for one workflow and measure it on
+   fresh realistic cases with equal native source access. The first deterministic
+   comparison passed quality but failed efficiency; include complete-task time,
+   retries, correction work and provider usage before claiming benefit. Peak memory, whole-task savings and a complete
    independent security qualification remain open.
 
 [TODO](../TODO.md) tracks implementation work, [Known Issues](../KNOWN_ISSUES.md)

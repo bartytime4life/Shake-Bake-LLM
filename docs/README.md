@@ -25,8 +25,11 @@ Read these as successive experiments with separate identities and preserved fail
 - [Frozen 8B prompt and separately authored cohort](reasoning-screening-2026-11-05.md).
 - [Thinking at 512 tokens](thinking-probe-2026-11-05.md) and [the four-arm budget comparison](thinking-budget-2026-11-05.md).
 - [Host correction of imperfect local notes](host-note-diagnostic-2026-11-05.md), a separate development diagnostic.
+- [Native retrieval versus deterministic preparation](native-preparation-2026-11-05.md): equal supported-answer counts, lower reported input, slower median workflow and a failed efficiency signal; [reproducible synthetic projects](../benchmarks/native-preparation/README.md).
 
-Public receipts contain synthetic evidence and reviewed final notes. Private raw
+Public receipts contain synthetic evidence and reviewed final notes or answers.
+The native comparison discloses removal of machine-specific link prefixes from
+one public answer while retaining the exact original privately. Private raw
 responses, local settings, captured owner source, stores, keys, environments and
 build output do not belong in Git. AI assessments are labeled as such and do not
 replace independent human qualification.
