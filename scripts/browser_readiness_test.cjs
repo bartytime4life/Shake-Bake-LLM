@@ -3,14 +3,14 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const {spawn} = require('node:child_process');
-const {once} = require('node:events');
+const {waitForServer} = require('./browser_server.cjs');
 const {chromium} = require('playwright');
 const A={name:'fixture:a',digest:'a'.repeat(64)},B={name:'fixture:b',digest:'b'.repeat(64)},C={...A,digest:'c'.repeat(64)};
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 const env={...process.env};
 if(process.argv[2])delete env.PYTHONPATH;else env.PYTHONPATH=path.join(__dirname,'../src');
 const server=spawn(process.argv[2]||'python3',['-u','-c',
-  'from shake_bake.gui import Controller, DEMO, WorkbenchServer\nc=Controller({"starter-demo":DEMO},allow_trials=True)\ns=WorkbenchServer(("127.0.0.1",0),c)\nprint(s.server_port,flush=True)\ntry: s.serve_forever()\nfinally: s.server_close(); c.close()'],{env,stdio:['ignore','pipe','inherit']});
+  'from shake_bake.gui import Controller, DEMO, WorkbenchServer\nc=Controller({"starter-demo":DEMO},allow_trials=True)\ns=WorkbenchServer(("127.0.0.1",0),c)\nprint(s.server_port,flush=True)\ntry: s.serve_forever()\nexcept KeyboardInterrupt: pass\nfinally: s.server_close(); c.close()'],{env,stdio:['ignore','pipe','inherit']});
 let browser;
 let passed=0;
 async function scenario(label,run){
@@ -37,8 +37,8 @@ async function scenario(label,run){
 }
 let baseURL;
 (async()=>{
-  const [chunk]=await once(server.stdout,'data');baseURL='http://127.0.0.1:'+String(chunk).trim();
-  browser=await chromium.launch({headless:true});console.log('Chromium '+browser.version());
+  baseURL=await waitForServer(server);
+  browser=await chromium.launch({headless:true,...(process.env.SB_CHROMIUM_EXECUTABLE?{executablePath:process.env.SB_CHROMIUM_EXECUTABLE}:{})});console.log('Chromium '+browser.version());
   await scenario('direct name change and empty selection',async h=>{await h.check();await h.choose(B);await h.cleared();await h.check();await h.choose(null);await h.cleared();});
   await scenario('replacement keeps exact pin until explicit digest selection',async h=>{
     await h.check();h.items=[C,B];await h.refresh();await h.cleared();assert.match(await h.page.locator('#model-identity').innerText(),/unavailable or changed/);

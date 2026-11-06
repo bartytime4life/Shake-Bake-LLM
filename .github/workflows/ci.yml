@@ -31,6 +31,7 @@ jobs:
           node scripts/frontend_smoke.cjs
           node scripts/model_readiness_test.cjs
           node scripts/clipboard_test.cjs
+          node scripts/browser_server_test.cjs
 
   installed-wheel:
     runs-on: ubuntu-latest
@@ -86,6 +87,10 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
         run: node scripts/browser_clipboard_test.cjs
+      - name: Verify source workbench state and keyboard recovery
+        env:
+          NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
+        run: node scripts/browser_workbench_test.cjs
       - name: Build and install exact candidate
         run: |
           python -m pip install 'setuptools==84.2.1' 'wheel==0.48.0'
@@ -101,3 +106,7 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
         run: node scripts/browser_clipboard_test.cjs /tmp/sb-browser-installed/bin/python
+      - name: Verify installed workbench state and keyboard recovery
+        env:
+          NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
+        run: node scripts/browser_workbench_test.cjs /tmp/sb-browser-installed/bin/python

@@ -26,6 +26,8 @@ The [documentation guide](docs/README.md) separates current instructions from da
 
 The [whole-workflow UX plan](docs/UX-WORKFLOW.md) connects first setup, shared job/policy state, local preparation, evidence review, handoff and recovery. It records current code-level gaps and planned implementation slices; browser/user-flow qualification remains pending.
 
+The [focused workbench fixes](docs/workbench-fixes-2026-11-05.md) confirm Local AI changes before allowing new work, protect the selected brief from delayed responses, add connection retry, and improve mobile history and keyboard source scrolling. Status messages stay beside the task controls without covering them. Wider accessibility and real-model qualification remain open.
+
 The [local PC readiness walkthrough](docs/pc-readiness-2026-11-05.md) verifies installed-package identity, real model metadata and selected in-app-browser flows. It also corrects a refresh message that stayed in progress after completion. That walkthrough was metadata-only. The [subsequent copy and screening review](docs/copy-and-screening-2026-11-05.md) adds persistent copy status and selectable exact handoff text, and records a cloud-disabled Qwen 3 8B run: six of ten exposed handoffs met the assistant-review rubric. A final installed synthetic brief passed both native and manual clipboard readback; independent accuracy and wider browser qualification remain open.
 
 Shake and Bake is a standalone app with its own configuration, test fixtures and data. Its bundled code evaluations use self-contained synthetic projects; no other application is required.

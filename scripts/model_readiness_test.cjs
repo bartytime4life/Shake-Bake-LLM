@@ -46,7 +46,7 @@ function harness() {
     if(!option){option=new context.Option(item?.model||'Choose',item?.model||'');if(item)option.dataset.digest=item.digest;elements.model.append(option);}
     option.selected=true;if(notify)elements.model.events.change();
   }
-  choose(A,false);vm.runInContext('state={allow_candidate_trials:true};modelView();',context);
+  choose(A,false);vm.runInContext('state={allow_candidate_trials:true};connected=true;modelView();',context);
   return {elements,requests,choose,respond(fn){respond=fn;},fire(id){return element(id).events.click();},
     selection(){return JSON.parse(vm.runInContext('JSON.stringify(selectedModel())',context));},
     text(id){return element(id).textContent;},toggle(on){element('local-ai').checked=on;vm.runInContext('modelView()',context);}};

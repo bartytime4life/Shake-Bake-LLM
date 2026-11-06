@@ -8,6 +8,8 @@ Cross-cutting product priority: connect setup, local preparation, evidence revie
 
 The [native-retrieval comparison](docs/native-preparation-2026-11-05.md) is also complete: 8/8 supported answers in each condition, 24.35% fewer reported input tokens with deterministic preparation, but an 8.03% slower median timed workflow. The quality gate passed and the efficiency signal failed. Its four synthetic projects are now exposed; the initial setup failure and all sixteen corrected attempts remain recorded.
 
+The focused workbench review fixes setting-confirmation and stale-result races, initial connection recovery, mobile history navigation and keyboard source scrolling. Source and isolated installed-browser checks are recorded in `docs/workbench-fixes-2026-11-05.md`; the broader qualification items below remain open.
+
 ## Next qualification steps
 
 - [ ] **1. Complete actual-PC/model qualification (partial).** Startup, installed-package identity, hardware observations and pinned Qwen 3 8B metadata are now recorded privately; the local in-app-browser demo/readiness walkthrough passed the stated cases in `docs/pc-readiness-2026-11-05.md`. The shared daemon still reports cloud features enabled, so it received metadata-only requests. A separate cloud-disabled daemon completed ten Qwen 3 8B attempts with retained receipts. Persistent copy feedback, selectable text and JSON export passed the stated installed-browser checks; a final synthetic brief also passed exact native and manual clipboard readback. Earlier empty readbacks are retained; broader browser checks and natural model-change/failure scenarios remain open. Use `docs/PC-CHECKLIST.md`.
