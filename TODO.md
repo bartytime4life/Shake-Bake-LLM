@@ -1,6 +1,6 @@
 # Shake and Bake: prioritized to-do list
 
-Updated November 5, 2026 for `0.4.0.dev8`. The application baseline has 176 passing tests. [Current evaluation status](docs/evaluation-status.md) records the retained model, browser, installed and host evidence. The latest [forty-attempt budget comparison](docs/thinking-budget-2026-11-05.md) produced 6/10 supported handoffs with thinking off and 6/10 at each larger thinking budget. Both larger budgets completed only nine answers, lost the concurrency case and retained two critical unsupported claims; both are rejected. No model is promoted, no new reserved cohort was started, and production settings are unchanged. Missing original `.dev6` outputs, human qualification, broader host behavior and whole-task savings remain open.
+Updated November 5, 2026 for `0.4.0.dev8`. The application baseline has 177 passing tests. [Current evaluation status](docs/evaluation-status.md) records the retained model, browser, installed and host evidence. The latest [forty-attempt budget comparison](docs/thinking-budget-2026-11-05.md) produced 6/10 supported handoffs with thinking off and 6/10 at each larger thinking budget. Both larger budgets completed only nine answers, lost the concurrency case and retained two critical unsupported claims; both are rejected. No model is promoted, no new reserved cohort was started, and production settings are unchanged. Missing original `.dev6` outputs, human qualification, broader host behavior and whole-task savings remain open.
 
 The subsequent [host-note diagnostic](docs/host-note-diagnostic-2026-11-05.md) completed all twenty answers. Evidence alone met the rubric on 9/10 cases; adding retained local notes met it on 8/10. Neither arm made a counted false claim, but the assisted arm omitted one uncertainty present in baseline, so its no-regression gate failed. This does not qualify local notes or complete a native-host benefit study.
 
@@ -13,6 +13,8 @@ The focused workbench review fixes setting-confirmation and stale-result races, 
 The [request-recovery follow-up](docs/request-recovery-2026-11-05.md) adds browser request deadlines, uncertain-start reconciliation and connection recovery during active polling. Jobs still belong to the running session; this does not complete durable recovery or actual-model interruption qualification.
 
 The [draft-context follow-up](docs/draft-context-2026-11-05.md) keeps restored text with its saved project/task type, requires explicit replacement of unavailable choices, preserves edits made during connection and exposes browser saving failures. Draft opt-out/clear controls, cross-tab coordination and durable jobs remain open.
+
+The [page-file follow-up](docs/file-launch-recovery-2026-11-05.md) fixes missing assets and provides a launch guide when the HTML file is opened directly. HTTP browser acceptance and file-path/VM checks are recorded separately; direct-file visual acceptance remains unverified.
 
 ## Next qualification steps
 
@@ -48,7 +50,7 @@ Steps 1–2 require the actual local model/PC. Host-dependent steps need the sup
 - New owner-PC exposed screening with a retained timeout, ten reviewed smaller-model notes and a checksummed portable review packet; no model promotion.
 - Tested pre-source thinking-mode refusal with exact evidence retained; rejected prompt experiment and portable comparison records.
 - Shared local GUI/adapter jobs, routed policy, scoped project access and session pause/cancel verified through native clients.
-- Selected local connection/queued-expiry regressions; 176 offline program tests passed on the local PC, including the owned-runner process gate without a skip.
+- Selected local connection/queued-expiry regressions; 177 offline program tests passed on the local PC, including the owned-runner process gate without a skip.
 - Installed-package PC readiness and actual local metadata/UI checks; successful synthetic JSON export and selectable handoff text, with one exact native/manual clipboard transfer verified and remaining qualification gaps retained explicitly.
 - Actual Codex evidence-only synthetic handoff and injected cancellation/recovery, with opt-in replay and sanitized receipts; full host qualification remains open.
 - Paired final-host diagnostics: 9/10 versus 8/10 with local notes, and 8/8 in both native-search/deterministic-preparation conditions. Timings, usage, separate AI grades and failed setup are retained; useful whole-task savings remain unproved.

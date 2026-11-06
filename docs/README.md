@@ -25,6 +25,7 @@ Read these as successive experiments with separate identities and preserved fail
 - [Workbench state and navigation fixes](workbench-fixes-2026-11-05.md) and [browser request recovery](request-recovery-2026-11-05.md), with scoped synthetic regression evidence.
 - [Draft context and saving feedback](draft-context-2026-11-05.md), including missing choices, edits during connection and storage failure recovery.
 - [Startup brief recovery](startup-brief-recovery-2026-11-05.md), including delayed restoration, newer result ownership and available controls/polling.
+- [Page-file launch recovery](file-launch-recovery-2026-11-05.md), including relative assets, a launch guide and separate HTTP-browser versus file-path/VM evidence.
 - [Frozen 8B prompt and separately authored cohort](reasoning-screening-2026-11-05.md).
 - [Thinking at 512 tokens](thinking-probe-2026-11-05.md) and [the four-arm budget comparison](thinking-budget-2026-11-05.md).
 - [Host correction of imperfect local notes](host-note-diagnostic-2026-11-05.md), a separate development diagnostic.

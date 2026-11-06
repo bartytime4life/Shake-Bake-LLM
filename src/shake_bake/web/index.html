@@ -4,18 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Shake &amp; Bake — Local workbench</title>
-  <link rel="icon" href="/icons/folder.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/styles.css">
-  <script src="/app.js" defer></script>
+  <link rel="icon" href="icons/folder.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
-  <a class="skip" href="#workspace">Skip to workspace</a>
-  <div class="shell">
+  <noscript><p class="notice">JavaScript is needed to use the local workbench. Start Shake &amp; Bake with <code>./scripts/run-workbench</code> from its project folder, then open the local address it prints in a browser with JavaScript enabled.</p></noscript>
+  <main id="file-launch" class="file-launch" aria-labelledby="file-launch-title" hidden>
+    <header class="brand"><span>Shake &amp; Bake</span><small>Local workbench</small></header>
+    <p class="eyebrow launch-kicker">A workspace on your computer</p>
+    <h1 id="file-launch-title">Open the app.<br>Keep your source close.</h1>
+    <p class="launch-intro">This is the page file. The running workbench connects your task to local evidence, with source excerpts you can review.</p>
+    <a class="primary" href="http://127.0.0.1:8421/">Open local workbench <span aria-hidden="true">↗</span></a>
+    <p class="small muted">Uses the default local address. If you chose another port, open the address printed by the launcher.</p>
+    <section class="launch-help" aria-labelledby="launch-help-title">
+      <h2 id="launch-help-title">Not running yet?</h2>
+      <p>Open a terminal in the Shake &amp; Bake project folder and run:</p>
+      <pre aria-label="Command to start the local workbench"><code>./scripts/run-workbench</code></pre>
+      <p class="small muted">The launcher opens the app in your browser. Start with the synthetic demo; no model installation is needed.</p>
+    </section>
+    <p class="launch-footer small muted">No source is read and no task is started from this file page.</p>
+  </main>
+  <a class="skip" id="skip-workspace" href="#workspace">Skip to workspace</a>
+  <div class="shell" id="workbench-shell">
     <aside class="sidebar" aria-label="Workspace navigation">
       <header class="brand"><span>Shake &amp; Bake</span><small>Local workbench</small></header>
       <nav>
-        <button class="nav-button selected" id="workspace-nav" aria-pressed="true"><img src="/icons/folder.svg" alt="">Workspace</button>
-        <button class="nav-button" id="history-nav" aria-controls="recent-section" aria-pressed="false"><img src="/icons/clock.svg" alt="">Recent briefs</button>
+        <button class="nav-button selected" id="workspace-nav" aria-pressed="true"><img src="icons/folder.svg" alt="">Workspace</button>
+        <button class="nav-button" id="history-nav" aria-controls="recent-section" aria-pressed="false"><img src="icons/clock.svg" alt="">Recent briefs</button>
       </nav>
       <section id="recent-section" aria-label="Recent briefs">
         <h2 class="eyebrow">Recent briefs</h2>
@@ -44,7 +60,7 @@
         <div class="model-strip">
           <label class="switch-label"><input type="checkbox" id="local-ai" disabled><span>Local AI</span></label>
           <span id="mode-summary" class="muted">Exact evidence · Local AI off</span>
-          <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="/icons/chevron-down.svg" alt=""></button>
+          <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="icons/chevron-down.svg" alt=""></button>
         </div>
         <section id="model-details" class="details-surface" hidden aria-label="Model details">
           <div class="details-heading"><div><h2>Choose how local AI helps</h2><p id="model-help" class="muted small">Exact evidence remains available with Local AI off.</p></div><button type="button" id="refresh-models" class="secondary compact">Refresh installed models</button></div>
@@ -71,9 +87,9 @@
         <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       </form>
       <section class="brief-bar" id="brief-bar" aria-label="Pinned brief">
-        <img src="/icons/map-pin.svg" alt="" class="pin">
+        <img src="icons/map-pin.svg" alt="" class="pin">
         <div class="brief-identity"><h2 id="brief-title" tabindex="-1">Your next brief starts here</h2><p class="small muted" id="brief-subtitle">Choose a project and prepare exact local evidence.</p></div>
-        <div class="export-actions"><button class="secondary compact" id="copy" disabled><img src="/icons/copy.svg" alt="">Copy brief</button><button class="secondary compact" id="download" disabled><img src="/icons/download.svg" alt="">Download JSON</button></div>
+        <div class="export-actions"><button class="secondary compact" id="copy" disabled><img src="icons/copy.svg" alt="">Copy brief</button><button class="secondary compact" id="download" disabled><img src="icons/download.svg" alt="">Download JSON</button></div>
       </section>
       <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>
       <details id="handoff-copy" class="handoff-copy" hidden>

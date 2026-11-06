@@ -11,6 +11,7 @@ let draftInitialized = false, draftProjectId = '';
 const draftTouched = new Set(), taskKinds = ['code','troubleshoot','documents','search'];
 function message(text, error = false) { $('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text; }
 const preview = window.__SB_RECORDED_PREVIEW__ || null;
+const fileLaunch = !preview && window.location?.protocol==='file:';
 let nativeState = null, readinessRunning = false;
 let modelCheckRevision = 0, modelCheckContext = null;
 function savedPreferences() {
@@ -42,6 +43,7 @@ function viewJob(value) {
     limitations:['Selected excerpts are not a complete repository review.','Source identities refer to captured bytes; later changes require a fresh task.','Model notes are unverified. Real host delivery, accuracy, hardware calibration and savings remain unqualified.','Jobs are retained only in this running session, up to eight and approximately five minutes.']}};
 }
 async function api(path, body) {
+  if(fileLaunch)throw new Error('Open the running local workbench to prepare evidence.');
   if(path==='/api/preferences'){if(!preview)localStorage.setItem('shake-bake-preferences',JSON.stringify(body));return body;}
   if(preview){if(path==='/api/state')return viewState(preview.state);if(path==='/api/result'&&body.job_id===preview.result.task_id)return viewJob(preview.result);throw new Error('This is a recorded inert demo. New tasks run in the local application.');}
   let target=path, payload=body;
@@ -111,7 +113,7 @@ function draftContext(){
     : !kindValid?'The saved task type is unavailable. Choose a task type for this draft.':"Only projects approved in the owner's launch configuration are available.";
 }
 function saveDraft(){
-  if(preview)return;
+  if(preview||fileLaunch)return;
   // Initial connection must resolve the saved context before replacing it.
   if(!draftInitialized){draftStatus('Draft kept in this page while the local session connects.');return;}
   if(validDraftProject())draftProjectId=$('project').value;
@@ -198,7 +200,7 @@ function renderBrief(previous = false) {
   const grid=$('evidence'); grid.replaceChildren();
   for(const item of packet.evidence){
     const article=document.createElement('article'); article.className='source'; const header=document.createElement('header');
-    const icon=document.createElement('img'); icon.src='/icons/document.svg'; icon.alt=''; const name=document.createElement('strong'); name.textContent=item.path;
+    const icon=document.createElement('img'); icon.src='icons/document.svg'; icon.alt=''; const name=document.createElement('strong'); name.textContent=item.path;
     const range=document.createElement('span'); range.className='source-meta'; range.textContent=`Lines ${item.start_line}–${item.end_line}`; header.append(icon,name,range);
     const pre=document.createElement('pre'); pre.tabIndex=0;pre.setAttribute('role','region');pre.setAttribute('aria-label',`Exact source from ${item.path}`);
     const lines=item.content.split('\n'); if(item.content.endsWith('\n')) lines.pop();
@@ -369,6 +371,11 @@ function syncSession(announce=true){
 $('retry-connection').addEventListener('click',async()=>{await syncSession();if(connected)message('Local session reconnected. Your task draft and pinned brief are unchanged.');else message('The local session is still unavailable. Check the workbench is running. If it restarted, save any pinned brief, then reload this page.',true);});
 async function initialize(){
   clearInterval(timer);clearInterval(serviceTimer);controls();
+  if(fileLaunch){
+    $('workbench-shell').hidden=true;$('skip-workspace').hidden=true;$('file-launch').hidden=false;
+    $('connection-status').textContent='Open the running local workbench to connect.';
+    return;
+  }
   try{await refreshState(true);if(preview){pinned=viewJob(preview.result);renderBrief(false);message('Recorded inert demo. New tasks require the local app.');}}
   catch(error){message(error.message,true);connectionFailed();}
   if(!preview){timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(()=>{if(!active||!connected)syncSession();},3000);}

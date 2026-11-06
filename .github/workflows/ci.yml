@@ -29,6 +29,7 @@ jobs:
         run: |
           node --check src/shake_bake/web/app.js
           node scripts/frontend_smoke.cjs
+          node scripts/file_launch_test.cjs
           node scripts/model_readiness_test.cjs
           node scripts/clipboard_test.cjs
           node scripts/browser_server_test.cjs
@@ -62,6 +63,7 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/model_readiness_test.cjs" /tmp/shake-bake-installed/lib/python3.12/site-packages/shake_bake/web/app.js
           node "$GITHUB_WORKSPACE/scripts/clipboard_test.cjs" /tmp/shake-bake-installed/lib/python3.12/site-packages/shake_bake/web/app.js
           node "$GITHUB_WORKSPACE/scripts/request_timeout_test.cjs" /tmp/shake-bake-installed/lib/python3.12/site-packages/shake_bake/web/app.js
+          node "$GITHUB_WORKSPACE/scripts/file_launch_test.cjs" /tmp/shake-bake-installed/lib/python3.12/site-packages/shake_bake/web/app.js
       - name: Verify optional official SDK over stdio and shared service
         run: |
           /tmp/shake-bake-installed/bin/python -m pip install --require-hashes -r requirements/mcp.lock
