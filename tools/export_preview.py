@@ -37,12 +37,12 @@ def render_preview(record):
     css=(ASSETS/"styles.css").read_text()
     script=(ASSETS/"app.js").read_text().replace("</script","<\\/script")
     html=(ASSETS/"index.html").read_text()
-    html=html.replace('<link rel="stylesheet" href="/styles.css">', '<style>'+css+'</style>')
-    html=html.replace('<script src="/app.js" defer></script>', '')
+    html=html.replace('<link rel="stylesheet" href="styles.css">', '<style>'+css+'</style>')
+    html=html.replace('<script src="app.js" defer></script>', '')
     for icon in (ASSETS / "icons").glob("*.svg"):
         inline = "data:image/svg+xml;base64," + base64.b64encode(icon.read_bytes()).decode()
-        html = html.replace("/icons/" + icon.name, inline)
-        script = script.replace("/icons/" + icon.name, inline)
+        html = html.replace("icons/" + icon.name, inline)
+        script = script.replace("icons/" + icon.name, inline)
     return html.replace('</body>', '<script>window.__SB_RECORDED_PREVIEW__='+payload+';</script><script>'+script+'</script></body>')
 
 

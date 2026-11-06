@@ -1,6 +1,7 @@
 """Real local HTTP and child-process GUI contracts; no real model inference."""
 
 import http.client
+from html.parser import HTMLParser
 import importlib.util
 import json
 from pathlib import Path
@@ -10,8 +11,22 @@ import threading
 import time
 import unittest
 from unittest.mock import patch
+from urllib.parse import unquote, urljoin, urlsplit
 
 from shake_bake.gui import ASSETS, Controller, DEFAULT_POLICY, DEMO, WorkbenchServer
+
+
+class AssetReferences(HTMLParser):
+    def __init__(self, html):
+        super().__init__()
+        self.urls = []
+        self.feed(html)
+
+    def handle_starttag(self, tag, attributes):
+        attributes = dict(attributes)
+        key = "href" if tag == "link" else "src" if tag in ("img", "script") else None
+        if key and key in attributes:
+            self.urls.append(attributes[key])
 
 
 class WorkbenchAcceptance(unittest.TestCase):
@@ -69,6 +84,19 @@ class WorkbenchAcceptance(unittest.TestCase):
         script=(ASSETS/"app.js").read_text()
         self.assertIn("Published statistics",script)
         self.assertIn("No reviewed local trial",script)
+
+    def test_page_assets_resolve_from_both_the_service_and_the_page_file(self):
+        html = (ASSETS / "index.html").read_text()
+        references = AssetReferences(html).urls
+        self.assertGreaterEqual(len(references), 3)
+        for reference in references:
+            with self.subTest(asset=reference):
+                file_url = urljoin((ASSETS / "index.html").as_uri(), reference)
+                target = Path(unquote(urlsplit(file_url).path))
+                self.assertTrue(target.is_relative_to(ASSETS))
+                self.assertTrue(target.is_file())
+                service_url = urljoin(f"http://127.0.0.1:{self.server.server_port}/", reference)
+                self.assertEqual(self.request("GET", urlsplit(service_url).path)[0], 200)
 
     def test_unauthenticated_api_and_foreign_host_are_refused(self):
         self.assertEqual(self.request("GET","/api/state")[0],403)
@@ -171,8 +199,8 @@ class WorkbenchAcceptance(unittest.TestCase):
         self.assertNotIn("csrf_token",record["state"])
         self.assertEqual(record["state"]["projects"][0]["path"],"Bundled inert demo source")
         html=module.render_preview(record)
-        self.assertNotIn('src="/app.js"',html)
-        self.assertNotIn('href="/styles.css"',html)
+        self.assertTrue(all(url.startswith("data:") for url in AssetReferences(html).urls))
+        self.assertNotIn("icons/document.svg", html)
         self.assertIn("window.__SB_RECORDED_PREVIEW__",html)
         self.assertIn("len(reported_slices)",html)
         hostile=dict(record,note="</script><script>alert(1)</script>")
