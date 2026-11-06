@@ -1,9 +1,10 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 let csrf = '', state = null, active = null, pinned = null, models = [], timer = null, polling = false;
-let inventoryLoading = false, noticeTimer = null, historySignature = '', serviceTimer = null;
+let inventoryLoading = false, historySignature = '', serviceTimer = null, sessionSync = null;
 let copyState = null;
-function message(text, error = false) { clearTimeout(noticeTimer);$('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text;if(text&&!error)noticeTimer=setTimeout(()=>{$('notice').hidden=true;},5000); }
+let settingsPending = false, connected = null, stateRevision = 0, pinRevision = 0;
+function message(text, error = false) { $('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text; }
 const preview = window.__SB_RECORDED_PREVIEW__ || null;
 let nativeState = null, readinessRunning = false;
 let modelCheckRevision = 0, modelCheckContext = null;
@@ -11,12 +12,11 @@ function savedPreferences() {
   try { const p=JSON.parse(localStorage.getItem('shake-bake-preferences')||'{}');return p&&typeof p==='object'?p:{}; } catch { return {}; }
 }
 function viewState(value) {
-  nativeState=value;
   const saved=savedPreferences();
   const project=value.projects.some(p=>p.id===saved.project_id)?saved.project_id:value.projects[0].id;
   const kind=['code','troubleshoot','documents','search'].includes(saved.task_kind)?saved.task_kind:'code';
   const recent=value.recent.map(r=>({...r,job_id:r.task_id,request_preview:r.task,created_at:new Date(r.created*1000).toISOString(),status:r.state==='DONE'?'prepared':r.state.toLowerCase()}));
-  return {version:value.version,csrf:value.csrf_token,projects:value.projects.map(p=>p.id),
+  return {native:value,version:value.version,csrf:value.csrf_token,projects:value.projects.map(p=>p.id),
     preferences:{project_id:project,task_kind:kind,ai_mode:value.local_ai_enabled?(saved.ai_mode==='trial'?'trial':'best'):'off',model:saved.model||null,digest:saved.digest||null},
     recent,active:recent.find(r=>r.status==='running')||null,local_ai_allowed:value.policy.enabled,local_ai_paused:!value.local_ai_enabled,
     pipeline_sha256:value.pipeline_id,shared_native:value.shared_native===true,allow_candidate_trials:value.allow_candidate_trials};
@@ -49,8 +49,12 @@ async function api(path, body) {
   if(path==='/api/pause'){target='/api/settings';payload={enabled:!body.paused};}
   if(path==='/api/models')target='/api/inventory';
   const options=payload===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-SB-CSRF':csrf},body:JSON.stringify(payload)};
-  const response=await fetch(target,{credentials:'same-origin',cache:'no-store',...options});
-  const data=await response.json();
+  let response;
+  try{response=await fetch(target,{credentials:'same-origin',cache:'no-store',...options});}
+  catch{throw new Error('The local service could not be reached. Check that the workbench is running, then retry the connection.');}
+  let data;
+  try{data=await response.json();}
+  catch{throw new Error(`The local service returned an unreadable response (HTTP ${response.status}). Retry the connection.`);}
   if(!response.ok||data.error){const error=new Error('The local request could not complete ('+(data.error||response.status)+'). Your source is unchanged.');error.code=data.error;throw error;}
   if(path==='/api/state')return viewState(data);
   if(path==='/api/result')return viewJob(data);
@@ -82,7 +86,7 @@ function modelView() {
   const context = JSON.stringify([selected.model, selected.digest, $('local-ai').checked]);
   if(context!==modelCheckContext){modelCheckContext=context;$('trial-ack').checked=false;resetModelCheck();}
   $('model-identity').textContent = selected.model ? `Saved candidate · digest ${selected.digest} · ${$('model').selectedOptions[0]?.dataset.availability==='unavailable'?'unavailable or changed; explicitly choose an installed artifact.':$('model').selectedOptions[0]?.dataset.availability==='unknown'?'inventory unavailable; refresh or check again.':'availability checked only on refresh/run.'}` : 'No installed model selected.';
-  $('mode-summary').textContent = !$('local-ai').checked ? 'Best accuracy · Local AI off' : $('ai-mode').value === 'trial' ? 'Explicit candidate trial · unqualified' : 'Best accuracy · qualified profiles only';
+  $('mode-summary').textContent = settingsPending ? 'Saving Local AI choice…' : !$('local-ai').checked ? 'Exact evidence · Local AI off' : $('ai-mode').value === 'trial' ? 'Explicit candidate trial · unqualified' : 'Reviewed profiles only';
   readinessControls();
   $('model-help').textContent = state?.allow_candidate_trials ? 'Your selected candidate persists in this browser, including when Ollama is offline. Notes still require review.' : 'Candidate trials require the owner launch flag --allow-candidate-trials. Best tested uses reviewed profiles only.';
 }
@@ -90,9 +94,14 @@ function saveDraft(){if(preview)return;try{localStorage.setItem('sb-workbench-dr
 function preferences() { return {project_id:$('project').value, task_kind:taskKind(), ai_mode:mode(), ...selectedModel()}; }
 async function savePreferences() { saveDraft();try { await api('/api/preferences', preferences()); } catch(error) { message(error.message, true); } }
 function controls() {
-  $('prepare').disabled = !!active || !state;
-  $('stop').disabled = !active;
-  $('progress').textContent = active ? 'Preparing evidence and bounded local notes…' : '';
+  $('prepare').disabled = !!active || !state || !connected || settingsPending || !!preview;
+  $('stop').disabled = !active?.job_id || !!preview;
+  $('local-ai').disabled = !state || !connected || settingsPending || !!preview || !state.local_ai_allowed;
+  $('local-ai').setAttribute('aria-busy',String(settingsPending));
+  $('refresh-models').disabled = inventoryLoading || settingsPending || !connected || !!preview || !$('local-ai').checked;
+  $('retry-connection').hidden = connected!==false || !!preview;
+  $('retry-connection').disabled = !!sessionSync;
+  $('progress').textContent = settingsPending ? 'Confirming Local AI with the local service…' : active?.pending ? 'Starting preparation…' : active ? 'Preparing evidence and bounded local notes…' : preview ? 'Recorded demo — open the local app to prepare a new task.' : '';
   renderCopyStatus();
   $('download').disabled = !pinned?.packet;
   readinessControls();
@@ -105,7 +114,19 @@ function renderHistory(recent) {
     const button=document.createElement('button'); button.type='button'; button.className='recent-button'; button.classList.toggle('active', pinned?.job_id===item.job_id);
     const title=document.createElement('strong'); title.textContent=item.request_preview || item.project_id;
     const date=document.createElement('time'); date.dateTime=item.created_at; date.textContent=`${new Date(item.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})} · ${item.status}`;
-    button.append(title,date); button.addEventListener('click',async()=>{try { const job=await api('/api/result',{project_id:item.project_id,job_id:item.job_id}); if(job.packet){pinned=job; renderBrief(false); message('Showing this captured brief. Your task draft is unchanged.');}else message(`Job ${job.status}. ${job.error?.message || 'No completed packet is available.'}`,true); controls(); }catch(error){message(error.message,true);}}); parent.append(button);
+    button.append(title,date);
+    if(item.status==='expired'){button.disabled=true;date.textContent+=' · prepare again to refresh';}
+    button.addEventListener('click',async()=>{
+      const revision=++pinRevision;
+      try {
+        const job=await api('/api/result',{project_id:item.project_id,job_id:item.job_id});
+        if(revision!==pinRevision)return;
+        if(job.packet){pinned=job;renderBrief(!!active);renderHistory(state.recent);showWorkspace();$('brief-title').focus();message('Showing this captured brief. Your task draft is unchanged.');}
+        else message(`Job ${job.status}. ${job.error?.message || 'No completed packet is available.'}`,true);
+        controls();
+      }catch(error){if(revision===pinRevision)message(error.message,true);}
+    });
+    parent.append(button);
   }
 }
 function renderBrief(previous = false) {
@@ -125,7 +146,7 @@ function renderBrief(previous = false) {
     const article=document.createElement('article'); article.className='source'; const header=document.createElement('header');
     const icon=document.createElement('img'); icon.src='/icons/document.svg'; icon.alt=''; const name=document.createElement('strong'); name.textContent=item.path;
     const range=document.createElement('span'); range.className='source-meta'; range.textContent=`Lines ${item.start_line}–${item.end_line}`; header.append(icon,name,range);
-    const pre=document.createElement('pre'); pre.setAttribute('aria-label',`Exact source from ${item.path}`);
+    const pre=document.createElement('pre'); pre.tabIndex=0;pre.setAttribute('role','region');pre.setAttribute('aria-label',`Exact source from ${item.path}`);
     const lines=item.content.split('\n'); if(item.content.endsWith('\n')) lines.pop();
     lines.forEach((text,index)=>{const row=document.createElement('span'); row.className='line'; const number=document.createElement('span'); number.className='line-number'; number.setAttribute('aria-hidden','true'); number.textContent=String(item.start_line+index); const code=document.createElement('code'); code.textContent=text; row.append(number,code); pre.append(row);});
     const hash=document.createElement('div'); hash.className='hash'; hash.textContent=`SHA-256 ${item.file_sha256}`; article.append(header,pre,hash); grid.append(article);
@@ -139,7 +160,13 @@ function renderBrief(previous = false) {
   $('receipt-section').hidden=false;$('receipt').textContent=JSON.stringify({job_id:pinned.job_id,routing:packet.routing,usage:packet.receipt},null,2);$('limitations').replaceChildren();for(const text of packet.limitations){const li=document.createElement('li');li.textContent=text;$('limitations').append(li);} controls();
 }
 async function refreshState(initial=false){
-  const next=await api('/api/state');state=next;csrf=next.csrf;
+  if(settingsPending)return;
+  const revision=++stateRevision;
+  let next;
+  try{next=await api('/api/state');}
+  catch(error){if(revision!==stateRevision||settingsPending)return;throw error;}
+  if(revision!==stateRevision||settingsPending)return;
+  state=next;nativeState=next.native;csrf=next.csrf;connected=true;
   $('version').textContent=`v${state.version} · ${state.shared_native?'Shared coordinator':'Local session'}`;
   $('connection-status').textContent='Local session connected';
   $('local-ai-retention').textContent=nativeState.local_ai_preference_persistent?'Local AI choice is saved on this computer. Briefs expire with the session.':'Local AI choice and briefs last only for this diagnostic session.';
@@ -157,23 +184,42 @@ async function refreshState(initial=false){
   if(!initial)$('local-ai').checked=!state.local_ai_paused;renderHistory(state.recent);modelView();controls();
 }
 async function poll(){
-  if(polling||!active)return;polling=true;
+  if(polling||!active?.job_id)return;polling=true;
   try {const job=await api('/api/result',{project_id:active.project_id,job_id:active.job_id});if(job.status!=='running'){
-    active=null;if(job.packet){pinned=job;renderBrief(false);message(job.packet.routing?.status==='abstained'?`Local model notes were withheld. ${job.packet.routing.reason}`:job.status==='incomplete'?'Preparation finished with source gaps.':'Evidence prepared. Review the source and gaps, then copy the brief.');}else{if(pinned)renderBrief(true);message(`${job.status==='cancelled'?'Preparation stopped.':'Preparation failed.'} ${job.error?.message||'No new completed brief is available.'}`,true);}await refreshState();
-  }}catch(error){$('connection-status').textContent='Local session unavailable — refresh to reconnect.';if(error.code==='unknown_or_expired_task'){active=null;if(pinned)renderBrief(true);}message(`Connection interrupted. ${error.message} Reopen the launch link to reconnect; job status is unknown.`,true);}finally{polling=false;controls();}
+    active=null;++pinRevision;if(job.packet){pinned=job;renderBrief(false);message(job.packet.routing?.status==='abstained'?`Local model notes were withheld. ${job.packet.routing.reason}`:job.status==='incomplete'?'Preparation finished with source gaps.':'Evidence prepared. Review the source and gaps, then copy the brief.');}else{if(pinned)renderBrief(true);message(`${job.status==='cancelled'?'Preparation stopped.':'Preparation failed.'} ${job.error?.message||'No new completed brief is available.'}`,true);}await refreshState();
+  }}catch(error){connectionFailed();if(error.code==='unknown_or_expired_task'){active=null;if(pinned)renderBrief(true);message('This task has expired from the local session. Your pinned brief remains available; prepare a new task for fresh evidence.',true);}else message(`Connection interrupted. ${error.message} Job status is unknown until reconnected.`,true);}finally{polling=false;controls();}
 }
-$('task-form').addEventListener('submit',async(event)=>{event.preventDefault();if(active)return;try{
+$('task-form').addEventListener('submit',async(event)=>{event.preventDefault();if(active||settingsPending||!connected||!state||preview)return;try{
   if(!$('request').value.trim())throw new Error('Describe the task first.');if(mode()==='trial'&&!state.allow_candidate_trials)throw new Error('Relaunch with --allow-candidate-trials to enable explicit trials.');if(mode()==='trial'&&(!$('trial-ack').checked||!selectedModel().model))throw new Error('Choose an installed candidate and acknowledge that its notes are unverified.');
-  const params={...preferences(),request:$('request').value};active={pending:true};controls();if(pinned)renderBrief(true);message(pinned?'Preparing the current task. The earlier brief stays pinned to its original job.':'Preparing exact evidence for this task.');
+  const params={...preferences(),request:$('request').value};++pinRevision;active={pending:true};controls();if(pinned)renderBrief(true);message(pinned?'Preparing the current task. The earlier brief stays pinned to its original job.':'Preparing exact evidence for this task.');
   const job=await api('/api/start',params);active=job;await savePreferences();await poll();
 }catch(error){active=null;message(error.message,true);controls();}});
 $('request').addEventListener('input',saveDraft);
 $('stop').addEventListener('click',async()=>{if(!active?.job_id)return;try{await api('/api/cancel',{project_id:active.project_id,job_id:active.job_id});await poll();}catch(error){message(error.message,true);}});
-$('local-ai').addEventListener('change',async()=>{modelView();try{await api('/api/pause',{paused:!$('local-ai').checked});await savePreferences();if($('local-ai').checked){$('model-details').hidden=false;$('model-details-toggle').setAttribute('aria-expanded','true');if(!state.local_ai_allowed)message('Local AI is disabled in this launch configuration. Evidence-only preparation remains available.');}}catch(error){message(error.message,true);}});
+$('local-ai').addEventListener('change',async()=>{
+  if(settingsPending||!connected||!state||preview)return;
+  const requested=$('local-ai').checked;
+  settingsPending=true;++stateRevision;modelView();controls();
+  try{
+    const result=await api('/api/pause',{paused:!requested});
+    $('local-ai').checked=result.enabled===true;state.local_ai_paused=!$('local-ai').checked;
+    await savePreferences();
+    if($('local-ai').checked){$('model-details').hidden=false;$('model-details-toggle').setAttribute('aria-expanded','true');}
+    message(requested&&!result.enabled?'Local AI is disabled in this launch configuration. Evidence-only preparation remains available.':result.enabled?'Local AI is on. Model use still requires an eligible profile or an explicit candidate trial.':'Local AI is off. New tasks will prepare exact evidence only.');
+  }catch(error){
+    connected=false;$('local-ai').checked=!state.local_ai_paused;
+    message(`Local AI change was not confirmed. ${error.message}`,true);
+  }finally{
+    settingsPending=false;
+    try{await refreshState();}catch{connectionFailed();}
+    modelView();controls();
+  }
+});
 $('model-details-toggle').addEventListener('click',()=>{const open=$('model-details').hidden;$('model-details').hidden=!open;$('model-details-toggle').setAttribute('aria-expanded',String(open));});
 $('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{modelView();savePreferences();});$('project').addEventListener('change',savePreferences);document.querySelectorAll('input[name="task-kind"]').forEach(input=>input.addEventListener('change',savePreferences));
 $('refresh-models').addEventListener('click',async()=>{
   if(inventoryLoading)return;
+  if(settingsPending||preview)return;
   if(!$('local-ai').checked){message('Local AI is off. No inventory request was made.');return;}
   // Revoke before awaiting inventory: it may reveal replacement/removal or fail entirely.
   inventoryLoading=true;resetModelCheck();$('trial-ack').checked=false;
@@ -202,7 +248,7 @@ $('refresh-models').addEventListener('click',async()=>{
     for(const option of $('model').options)option.dataset.availability='unknown';
     $('readiness-status').textContent='Inventory unavailable. Previous model metadata cleared; refresh or check the selected model again.';
     message(error.message,true);
-  }finally{inventoryLoading=false;$('refresh-models').disabled=false;modelView();}
+  }finally{inventoryLoading=false;modelView();controls();}
 });
 // A textarea normalizes raw CR/CRLF. Encode the request as a JSON string so both
 // copy paths retain its original value, including whitespace and line endings.
@@ -239,16 +285,35 @@ $('select-handoff').addEventListener('click',()=>{
   $('handoff-text').focus();$('handoff-text').select();
 });
 $('download').addEventListener('click',()=>{if(!pinned?.packet)return;const blob=new Blob([JSON.stringify(pinned,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`shake-bake-${pinned.job_id}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message('Downloaded the pinned JSON brief. It contains exact source; review it before sharing.');});
-$('history-nav').addEventListener('click',()=>{document.querySelector('.sidebar').classList.toggle('show-history');$('history-nav').classList.add('selected');$('workspace-nav').classList.remove('selected');$('recent-section').scrollIntoView({block:'nearest'});});$('workspace-nav').addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('show-history');$('workspace-nav').classList.add('selected');$('history-nav').classList.remove('selected');$('request').focus();});
-async function initialize(){clearInterval(timer);clearInterval(serviceTimer);try{await refreshState(true);if(preview){pinned=viewJob(preview.result);renderBrief(false);message('Recorded inert demo. New tasks require the local app.');return;}timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(async()=>{if(!active)try{await refreshState();if(state.active){active=state.active;controls();poll();}}catch{$('connection-status').textContent='Local session unavailable — refresh to reconnect.';/* retain the last captured brief */}},3000);}catch(error){message(error.message,true);$('connection-status').textContent='Local session needs attention';controls();}}
+function showWorkspace(){document.querySelector('.sidebar').classList.remove('show-history');$('workspace-nav').classList.add('selected');$('workspace-nav').setAttribute('aria-pressed','true');$('history-nav').classList.remove('selected');$('history-nav').setAttribute('aria-pressed','false');}
+$('history-nav').addEventListener('click',()=>{document.querySelector('.sidebar').classList.add('show-history');$('history-nav').classList.add('selected');$('history-nav').setAttribute('aria-pressed','true');$('workspace-nav').classList.remove('selected');$('workspace-nav').setAttribute('aria-pressed','false');$('recent-section').scrollIntoView({block:'nearest'});});
+$('workspace-nav').addEventListener('click',()=>{showWorkspace();$('request').focus();});
+function connectionFailed(){connected=false;$('connection-status').textContent='Local session unavailable — retry or reload this page.';controls();}
+function syncSession(){
+  if(settingsPending)return Promise.resolve();
+  if(sessionSync)return sessionSync;
+  const wasConnected=connected;
+  sessionSync=(async()=>{
+    try{await refreshState(!state);if(!active&&state?.active){active=state.active;controls();}if(active?.job_id)await poll();if(!wasConnected&&connected)message('Local session reconnected. Your task draft and pinned brief are unchanged.');}
+    catch{connectionFailed();}
+  })().finally(()=>{sessionSync=null;controls();});
+  controls();return sessionSync;
+}
+$('retry-connection').addEventListener('click',async()=>{await syncSession();if(connected)message('Local session reconnected. Your task draft and pinned brief are unchanged.');else message('The local session is still unavailable. Check the workbench is running. If it restarted, save any pinned brief, then reload this page.',true);});
+async function initialize(){
+  clearInterval(timer);clearInterval(serviceTimer);controls();
+  try{await refreshState(true);if(preview){pinned=viewJob(preview.result);renderBrief(false);message('Recorded inert demo. New tasks require the local app.');}}
+  catch(error){message(error.message,true);connectionFailed();}
+  if(!preview){timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(()=>{if(!active)syncSession();},3000);}
+}
 
 $('today').textContent=new Date().toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});initialize();
 
 function memoryText(value){return typeof value==='number'?`${(value/1073741824).toFixed(1)} GiB`:'Not detected';}
 function facts(id,entries){const list=$(id);list.replaceChildren();for(const [name,value]of entries){const term=document.createElement('dt'),detail=document.createElement('dd');term.textContent=name;detail.textContent=value;list.append(term,detail);}}
 function readinessControls(){
-  $('check-computer').disabled=readinessRunning||!!active||!state||!!preview;
-  $('check-model').disabled=inventoryLoading||readinessRunning||!!active||!state||!!preview||!$('local-ai').checked||!selectedModel().model;
+  $('check-computer').disabled=readinessRunning||!!active||!state||!!preview||settingsPending||!connected;
+  $('check-model').disabled=inventoryLoading||readinessRunning||!!active||!state||!!preview||settingsPending||!connected||!$('local-ai').checked||!selectedModel().model;
 }
 function resetModelCheck(){modelCheckRevision++;facts('model-facts',[['Model','No check for this selection']]);$('readiness-status').textContent='Selection changed. Check this model again before relying on its metadata.';}
 $('check-computer').addEventListener('click',async()=>{
@@ -261,7 +326,7 @@ $('check-computer').addEventListener('click',async()=>{
   }catch(error){facts('computer-facts',[['Current check','Unavailable']]);$('readiness-status').textContent=error.message;}finally{readinessRunning=false;readinessControls();}
 });
 $('check-model').addEventListener('click',async()=>{
-  if(readinessRunning||inventoryLoading)return;modelView();const selection=selectedModel(),key=JSON.stringify(selection),revision=modelCheckRevision;if(!selection.model||!$('local-ai').checked)return;
+  if(readinessRunning||inventoryLoading||settingsPending||!connected||preview)return;modelView();const selection=selectedModel(),key=JSON.stringify(selection),revision=modelCheckRevision;if(!selection.model||!$('local-ai').checked)return;
   readinessRunning=true;readinessControls();facts('model-facts',[['Current check','Checking selected model…']]);$('readiness-status').textContent='Checking the pinned digest, runtime and model metadata. No source or generation is sent.';
   const current=()=>revision===modelCheckRevision&&key===JSON.stringify(selectedModel())&&$('local-ai').checked&&!inventoryLoading;
   try{const r=await api('/api/model-check',selection);if(!current())return;

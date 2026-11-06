@@ -14,8 +14,8 @@
     <aside class="sidebar" aria-label="Workspace navigation">
       <header class="brand"><span>Shake &amp; Bake</span><small>Local workbench</small></header>
       <nav>
-        <button class="nav-button selected" id="workspace-nav"><img src="/icons/folder.svg" alt="">Workspace</button>
-        <button class="nav-button" id="history-nav"><img src="/icons/clock.svg" alt="">Recent briefs</button>
+        <button class="nav-button selected" id="workspace-nav" aria-pressed="true"><img src="/icons/folder.svg" alt="">Workspace</button>
+        <button class="nav-button" id="history-nav" aria-controls="recent-section" aria-pressed="false"><img src="/icons/clock.svg" alt="">Recent briefs</button>
       </nav>
       <section id="recent-section" aria-label="Recent briefs">
         <h2 class="eyebrow">Recent briefs</h2>
@@ -24,9 +24,8 @@
       <footer class="sidebar-footer"><span class="eyebrow">On your computer</span><p>Exact source. Visible gaps.<br>A clear next step.</p><span id="version" class="small muted"></span></footer>
     </aside>
     <main id="workspace" tabindex="-1">
-      <div class="topline"><span id="today" class="eyebrow"></span><span class="small muted" id="connection-status">Connecting to local session…</span></div>
+      <div class="topline"><span id="today" class="eyebrow"></span><div class="connection-controls"><span class="small muted" id="connection-status">Connecting to local session…</span><button type="button" id="retry-connection" class="secondary compact" hidden>Retry connection</button></div></div>
       <h1>Turn local source into a clear brief.</h1>
-      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       <form id="task-form">
         <div class="task-options">
           <label class="project-label" for="project">Project</label>
@@ -42,8 +41,8 @@
         <label for="request" class="sr-only">Describe your task</label>
         <textarea id="request" name="request" rows="4" required maxlength="16384" spellcheck="false" placeholder="Describe what you want your assistant to investigate…">Find the executable slice coverage guard. Can it accept fewer reported slices than detected? Provide exact evidence and gaps.</textarea>
         <div class="model-strip">
-          <label class="switch-label"><input type="checkbox" id="local-ai"><span>Local AI</span></label>
-          <span id="mode-summary" class="muted">Best accuracy · evidence only</span>
+          <label class="switch-label"><input type="checkbox" id="local-ai" disabled><span>Local AI</span></label>
+          <span id="mode-summary" class="muted">Exact evidence · Local AI off</span>
           <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="/icons/chevron-down.svg" alt=""></button>
         </div>
         <section id="model-details" class="details-surface" hidden aria-label="Model details">
@@ -67,11 +66,12 @@
           <details class="technical"><summary>Published statistics &amp; local results</summary><div id="catalog"></div></details>
         </section>
         <p id="local-ai-retention" class="small muted"></p>
-        <div class="action-row"><button type="submit" class="primary" id="prepare">Prepare for my assistant</button><button type="button" class="secondary stop" id="stop" disabled>Stop</button><span id="progress" class="small muted" aria-live="polite"></span></div>
+        <div class="action-row"><button type="submit" class="primary" id="prepare" disabled>Prepare for my assistant</button><button type="button" class="secondary stop" id="stop" disabled>Stop</button><span id="progress" class="small muted" aria-live="polite"></span></div>
+        <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       </form>
       <section class="brief-bar" id="brief-bar" aria-label="Pinned brief">
         <img src="/icons/map-pin.svg" alt="" class="pin">
-        <div class="brief-identity"><h2 id="brief-title">Your next brief starts here</h2><p class="small muted" id="brief-subtitle">Choose a project and prepare exact local evidence.</p></div>
+        <div class="brief-identity"><h2 id="brief-title" tabindex="-1">Your next brief starts here</h2><p class="small muted" id="brief-subtitle">Choose a project and prepare exact local evidence.</p></div>
         <div class="export-actions"><button class="secondary compact" id="copy" disabled><img src="/icons/copy.svg" alt="">Copy brief</button><button class="secondary compact" id="download" disabled><img src="/icons/download.svg" alt="">Download JSON</button></div>
       </section>
       <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>

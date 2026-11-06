@@ -2,12 +2,12 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const {spawn} = require('node:child_process');
-const {once} = require('node:events');
+const {waitForServer} = require('./browser_server.cjs');
 const {chromium} = require('playwright');
 const env={...process.env};
 if(process.argv[2])delete env.PYTHONPATH;else env.PYTHONPATH=path.join(__dirname,'../src');
 const server=spawn(process.argv[2]||'python3',['-u','-c',
-  'from shake_bake.gui import Controller, DEMO, WorkbenchServer\nc=Controller({"starter-demo":DEMO})\ns=WorkbenchServer(("127.0.0.1",0),c)\nprint(s.server_port,flush=True)\ntry: s.serve_forever()\nfinally: s.server_close(); c.close()'],{env,stdio:['ignore','pipe','inherit']});
+  'from shake_bake.gui import Controller, DEMO, WorkbenchServer\nc=Controller({"starter-demo":DEMO})\ns=WorkbenchServer(("127.0.0.1",0),c)\nprint(s.server_port,flush=True)\ntry: s.serve_forever()\nexcept KeyboardInterrupt: pass\nfinally: s.server_close(); c.close()'],{env,stdio:['ignore','pipe','inherit']});
 let browser,baseURL,passed=0;
 async function prepare(page,request,capturedRequest=request) {
   await page.locator('#request').fill(request);await page.locator('#prepare').click();
@@ -31,8 +31,8 @@ async function scenario(mode,run) {
   }finally{await context.close();}
 }
 (async()=>{
-  const [chunk]=await once(server.stdout,'data');baseURL='http://127.0.0.1:'+String(chunk).trim();
-  browser=await chromium.launch({headless:true});console.log('Chromium '+browser.version());
+  baseURL=await waitForServer(server);
+  browser=await chromium.launch({headless:true,...(process.env.SB_CHROMIUM_EXECUTABLE?{executablePath:process.env.SB_CHROMIUM_EXECUTABLE}:{})});console.log('Chromium '+browser.version());
   await scenario('native',async page=>{
     const request='  Find the executable slice coverage guard. Preserve α and <script>untrusted()</script>.\n  ';
     // A native-host request can contain CRLF even though browser input normalizes it.
