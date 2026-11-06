@@ -6,11 +6,11 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../src/shake_bake/web/app.js'), 'utf8');
 const requests = [];
 const context = {
-  document: {getElementById: () => ({})}, window: {},
+  document: {getElementById: () => ({})}, window: {}, AbortController, setTimeout, clearTimeout,
   localStorage: {getItem: () => JSON.stringify({ai_mode: 'off'})},
   fetch: async (target, options) => {
     requests.push({target, options});
-    return {ok: true, json: async () => ({task_id: 'synthetic-job'})};
+    return {ok: true, json: async () => ({task_id: 'a'.repeat(32)})};
   },
 };
 vm.createContext(context);

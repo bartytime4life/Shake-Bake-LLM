@@ -28,6 +28,8 @@ The [whole-workflow UX plan](docs/UX-WORKFLOW.md) connects first setup, shared j
 
 The [focused workbench fixes](docs/workbench-fixes-2026-11-05.md) confirm Local AI changes before allowing new work, protect the selected brief from delayed responses, add connection retry, and improve mobile history and keyboard source scrolling. Status messages stay beside the task controls without covering them. Wider accessibility and real-model qualification remain open.
 
+The [request-recovery follow-up](docs/request-recovery-2026-11-05.md) bounds stalled browser requests, checks session state after an uncertain task start and restores connection status during active-job polling. If a start response is lost, check Recent briefs before starting again; the app does not automatically repeat the task.
+
 The [local PC readiness walkthrough](docs/pc-readiness-2026-11-05.md) verifies installed-package identity, real model metadata and selected in-app-browser flows. It also corrects a refresh message that stayed in progress after completion. That walkthrough was metadata-only. The [subsequent copy and screening review](docs/copy-and-screening-2026-11-05.md) adds persistent copy status and selectable exact handoff text, and records a cloud-disabled Qwen 3 8B run: six of ten exposed handoffs met the assistant-review rubric. A final installed synthetic brief passed both native and manual clipboard readback; independent accuracy and wider browser qualification remain open.
 
 Shake and Bake is a standalone app with its own configuration, test fixtures and data. Its bundled code evaluations use self-contained synthetic projects; no other application is required.

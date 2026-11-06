@@ -64,6 +64,8 @@ For source UI startup use `./scripts/run-workbench`; it selects an installed Pyt
 
 ## Model readiness UI regression checks
 
+`node scripts/request_timeout_test.cjs` checks browser request deadlines through headers and body, cleanup and uncertain task acknowledgements. Its optional argument is an installed app.js path. The workbench browser suite also checks stalled initialization/settings, an accepted task with a lost acknowledgement, and reconnection during active polling. See [browser request recovery](docs/request-recovery-2026-11-05.md) for the reproduction evidence and limits.
+
 `node scripts/model_readiness_test.cjs` runs deterministic DOM-event and deferred-response checks without browser dependencies. Pass an installed `shake_bake/web/app.js` path as its optional argument to test wheel bytes.
 
 The isolated `readiness-browser` CI job installs pinned Playwright development tools and checks source and installed interfaces over loopback HTTP with synthetic metadata. To reproduce with Playwright available, run `node scripts/browser_readiness_test.cjs`, or append the isolated installed Python path. The 14 readiness Chromium scenarios cover replacement, removal, empty/unavailable inventories, late success/failure, selection changes and Local AI off/on. The same job runs `node scripts/browser_clipboard_test.cjs` against source and the installed package; the manual keyboard-copy check first writes and verifies a distinct clipboard marker. Twelve dependency-free Promise checks in `scripts/clipboard_test.cjs` cover delayed/failing/missing APIs, retry, job switching and exact text. These synthetic checks do not call Ollama or establish model accuracy, owner-PC clipboard behavior in every browser, fit or speed.

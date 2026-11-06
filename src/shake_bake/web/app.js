@@ -1,5 +1,8 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
+// Longer than the server's 12-second connection budget. Aborting this browser
+// request does not establish whether a service operation ran or a job stopped.
+const REQUEST_TIMEOUT_MS = 15000;
 let csrf = '', state = null, active = null, pinned = null, models = [], timer = null, polling = false;
 let inventoryLoading = false, historySignature = '', serviceTimer = null, sessionSync = null;
 let copyState = null;
@@ -49,13 +52,19 @@ async function api(path, body) {
   if(path==='/api/pause'){target='/api/settings';payload={enabled:!body.paused};}
   if(path==='/api/models')target='/api/inventory';
   const options=payload===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-SB-CSRF':csrf},body:JSON.stringify(payload)};
-  let response;
-  try{response=await fetch(target,{credentials:'same-origin',cache:'no-store',...options});}
-  catch{throw new Error('The local service could not be reached. Check that the workbench is running, then retry the connection.');}
-  let data;
-  try{data=await response.json();}
-  catch{throw new Error(`The local service returned an unreadable response (HTTP ${response.status}). Retry the connection.`);}
-  if(!response.ok||data.error){const error=new Error('The local request could not complete ('+(data.error||response.status)+'). Your source is unchanged.');error.code=data.error;throw error;}
+  const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
+  let response,data;
+  try{
+    response=await fetch(target,{credentials:'same-origin',cache:'no-store',...options,signal:controller.signal});
+    data=await response.json();
+    if(!data||typeof data!=='object'||Array.isArray(data)||
+       (path==='/api/start'&&response.ok&&!data.error&&(typeof data.task_id!=='string'||!/^[a-f0-9]{32}$/.test(data.task_id))))throw new Error('Invalid service acknowledgement');
+  }catch{
+    const timedOut=controller.signal.aborted;
+    const error=new Error(timedOut?'The local request timed out. Retry the connection to check the service.':response?`The local service returned an unreadable response (HTTP ${response.status}). Retry the connection.`:'The local service could not be reached. Check that the workbench is running, then retry the connection.');
+    error.code=timedOut?'request_timeout':response?'unreadable_response':'connection_unavailable';error.uncertain=true;throw error;
+  }finally{clearTimeout(deadline);}
+  if(!response.ok||data.error){const error=new Error('The local request could not complete ('+(data.error||response.status)+'). Your source is unchanged.');error.code=data.error;error.uncertain=response.status>=500||data.error==='workbench_request_timeout';throw error;}
   if(path==='/api/state')return viewState(data);
   if(path==='/api/result')return viewJob(data);
   if(path==='/api/start')return {job_id:data.task_id,project_id:body.project_id,status:'running'};
@@ -101,7 +110,7 @@ function controls() {
   $('refresh-models').disabled = inventoryLoading || settingsPending || !connected || !!preview || !$('local-ai').checked;
   $('retry-connection').hidden = connected!==false || !!preview;
   $('retry-connection').disabled = !!sessionSync;
-  $('progress').textContent = settingsPending ? 'Confirming Local AI with the local service…' : active?.pending ? 'Starting preparation…' : active ? 'Preparing evidence and bounded local notes…' : preview ? 'Recorded demo — open the local app to prepare a new task.' : '';
+  $('progress').textContent = settingsPending ? 'Confirming Local AI with the local service…' : active?.pending ? 'Starting preparation…' : active&&!connected ? 'Job status is unknown — reconnect to check preparation.' : active ? 'Preparing evidence and bounded local notes…' : preview ? 'Recorded demo — open the local app to prepare a new task.' : '';
   renderCopyStatus();
   $('download').disabled = !pinned?.packet;
   readinessControls();
@@ -191,9 +200,19 @@ async function poll(){
 }
 $('task-form').addEventListener('submit',async(event)=>{event.preventDefault();if(active||settingsPending||!connected||!state||preview)return;try{
   if(!$('request').value.trim())throw new Error('Describe the task first.');if(mode()==='trial'&&!state.allow_candidate_trials)throw new Error('Relaunch with --allow-candidate-trials to enable explicit trials.');if(mode()==='trial'&&(!$('trial-ack').checked||!selectedModel().model))throw new Error('Choose an installed candidate and acknowledge that its notes are unverified.');
-  const params={...preferences(),request:$('request').value};++pinRevision;active={pending:true};controls();if(pinned)renderBrief(true);message(pinned?'Preparing the current task. The earlier brief stays pinned to its original job.':'Preparing exact evidence for this task.');
+  const params={...preferences(),request:$('request').value};++pinRevision;++stateRevision;active={pending:true};controls();if(pinned)renderBrief(true);message(pinned?'Preparing the current task. The earlier brief stays pinned to its original job.':'Preparing exact evidence for this task.');
   const job=await api('/api/start',params);active=job;await savePreferences();await poll();
-}catch(error){active=null;message(error.message,true);controls();}});
+}catch(error){
+  active=null;
+  if(error.uncertain){
+    connectionFailed();message(`Preparation start was not confirmed. ${error.message} Checking the local session…`,true);
+    // An older background snapshot cannot establish what happened to this start.
+    if(sessionSync)await sessionSync;
+    await syncSession(false);
+    message(`Preparation start was not confirmed. ${error.message} The service may have accepted this task. Check Recent briefs before starting again. No start request was retried.`,true);
+  }else message(error.message,true);
+  controls();
+}});
 $('request').addEventListener('input',saveDraft);
 $('stop').addEventListener('click',async()=>{if(!active?.job_id)return;try{await api('/api/cancel',{project_id:active.project_id,job_id:active.job_id});await poll();}catch(error){message(error.message,true);}});
 $('local-ai').addEventListener('change',async()=>{
@@ -289,12 +308,12 @@ function showWorkspace(){document.querySelector('.sidebar').classList.remove('sh
 $('history-nav').addEventListener('click',()=>{document.querySelector('.sidebar').classList.add('show-history');$('history-nav').classList.add('selected');$('history-nav').setAttribute('aria-pressed','true');$('workspace-nav').classList.remove('selected');$('workspace-nav').setAttribute('aria-pressed','false');$('recent-section').scrollIntoView({block:'nearest'});});
 $('workspace-nav').addEventListener('click',()=>{showWorkspace();$('request').focus();});
 function connectionFailed(){connected=false;$('connection-status').textContent='Local session unavailable — retry or reload this page.';controls();}
-function syncSession(){
+function syncSession(announce=true){
   if(settingsPending)return Promise.resolve();
   if(sessionSync)return sessionSync;
   const wasConnected=connected;
   sessionSync=(async()=>{
-    try{await refreshState(!state);if(!active&&state?.active){active=state.active;controls();}if(active?.job_id)await poll();if(!wasConnected&&connected)message('Local session reconnected. Your task draft and pinned brief are unchanged.');}
+    try{await refreshState(!state);if(!active&&state?.active){active=state.active;controls();}if(active?.job_id)await poll();if(announce&&!wasConnected&&connected)message('Local session reconnected. Your task draft and pinned brief are unchanged.');}
     catch{connectionFailed();}
   })().finally(()=>{sessionSync=null;controls();});
   controls();return sessionSync;
@@ -304,7 +323,7 @@ async function initialize(){
   clearInterval(timer);clearInterval(serviceTimer);controls();
   try{await refreshState(true);if(preview){pinned=viewJob(preview.result);renderBrief(false);message('Recorded inert demo. New tasks require the local app.');}}
   catch(error){message(error.message,true);connectionFailed();}
-  if(!preview){timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(()=>{if(!active)syncSession();},3000);}
+  if(!preview){timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(()=>{if(!active||!connected)syncSession();},3000);}
 }
 
 $('today').textContent=new Date().toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});initialize();

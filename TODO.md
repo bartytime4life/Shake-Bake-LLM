@@ -10,6 +10,8 @@ The [native-retrieval comparison](docs/native-preparation-2026-11-05.md) is also
 
 The focused workbench review fixes setting-confirmation and stale-result races, initial connection recovery, mobile history navigation and keyboard source scrolling. Source and isolated installed-browser checks are recorded in `docs/workbench-fixes-2026-11-05.md`; the broader qualification items below remain open.
 
+The [request-recovery follow-up](docs/request-recovery-2026-11-05.md) adds browser request deadlines, uncertain-start reconciliation and connection recovery during active polling. Jobs still belong to the running session; this does not complete durable recovery or actual-model interruption qualification.
+
 ## Next qualification steps
 
 - [ ] **1. Complete actual-PC/model qualification (partial).** Startup, installed-package identity, hardware observations and pinned Qwen 3 8B metadata are now recorded privately; the local in-app-browser demo/readiness walkthrough passed the stated cases in `docs/pc-readiness-2026-11-05.md`. The shared daemon still reports cloud features enabled, so it received metadata-only requests. A separate cloud-disabled daemon completed ten Qwen 3 8B attempts with retained receipts. Persistent copy feedback, selectable text and JSON export passed the stated installed-browser checks; a final synthetic brief also passed exact native and manual clipboard readback. Earlier empty readbacks are retained; broader browser checks and natural model-change/failure scenarios remain open. Use `docs/PC-CHECKLIST.md`.
