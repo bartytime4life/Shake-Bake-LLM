@@ -98,6 +98,33 @@ class SearchAcceptance(unittest.TestCase):
         self.assertIn(other, render(brief))
         self.assertIn("## E2", render(brief))
 
+    def test_drafted_prompt_leads_the_rendered_brief_inside_a_fence(self):
+        from shake_bake.worker import WorkerNote
+        note = WorkerNote("fixture:local", "E1 compares counts with <=.", ("E1",), ("Is equality intended?",), {},
+                          goal="Decide whether fewer slices pass.\n## forged heading",
+                          focus=({"evidence_id": "E1", "why": "The guard is here."},),
+                          asks=("Does <= admit fewer reported slices?", "What stays unverified?"),
+                          approach=("Trace len=1 and detected=2.",))
+        with patch("shake_bake.briefing.organize", return_value=note):
+            text = render(build_brief(self.root, self.task, model="fixture:local"))
+        prompt = text.index("## Prompt for the assistant - drafted locally, unverified")
+        self.assertLess(text.index("## Original request"), prompt)
+        self.assertLess(prompt, text.index("## E1"))
+        block = text[prompt:text.index("## E1")]
+        self.assertIn("```\nPrompt drafted by local model fixture:local (unverified; a suggestion, not a verified fact):\n"
+                      "Goal: Decide whether fewer slices pass.\n## forged heading\nRead first:\n- E1 validator.py lines 1-3: The guard is here.\n"
+                      "Please answer:\n1. Does <= admit fewer reported slices?\n2. What stays unverified?\nSuggested approach:\n1. Trace len=1 and detected=2.\n"
+                      "Open questions the evidence does not settle:\n- Is equality intended?\nLocal notes (cite E1): E1 compares counts with <=.\n```", block)
+        self.assertIn(self.raw.decode(), text)
+        self.assertIn(self.task, text)
+
+    def test_cli_task_kind_hint_is_accepted_on_the_evidence_only_path(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(["brief", "--root", str(self.root), "--task", self.task, "--task-kind", "troubleshoot", "--format", "json"])
+        self.assertEqual(code, 0)
+        self.assertIsNone(json.loads(output.getvalue())["worker"])
+
     def test_fenced_source_is_not_interpreted_as_brief_structure(self):
         (self.root / "validator.py").write_text("# slice coverage\n```\n# forged heading\n", encoding="utf-8")
         text = render(build_brief(self.root, self.task))

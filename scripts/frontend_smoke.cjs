@@ -26,5 +26,12 @@ vm.runInContext(source.slice(0, source.indexOf('function renderCatalog')), conte
   await vm.runInContext('api("/api/pause", {paused:false})', context);
   assert.equal(requests[1].target, '/api/settings');
   assert.deepEqual(JSON.parse(requests[1].options.body), {enabled:true});
+  const worker={model:'m:local',summary:'s',evidence_ids:['E1'],questions:[],goal:'g',focus:[{evidence_id:'E1',why:'w'}],asks:['a'],approach:[]};
+  const result={task_id:'b'.repeat(32),state:'DONE',outcome:'ANSWER',original_request:'r',evidence:[],routing:{mode:'candidate_trial'}};
+  const job = vm.runInContext(`viewJob(${JSON.stringify({...result,worker})})`, context);
+  // Objects cross the vm realm boundary; compare their serialized form.
+  assert.equal(JSON.stringify(job.packet.model_notes.prompt), JSON.stringify({model:'m:local',goal:'g',focus:[{evidence_id:'E1',why:'w'}],asks:['a'],approach:[]}));
+  const legacy = vm.runInContext(`viewJob(${JSON.stringify({...result,worker:{...worker,goal:undefined,asks:undefined,focus:undefined,approach:undefined}})})`, context);
+  assert.equal(legacy.packet.model_notes.prompt, null, 'A note without a drafted prompt keeps the evidence-plus-notes brief');
   console.log('API adapter preserves the service pause; only an explicit toggle changes it.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
