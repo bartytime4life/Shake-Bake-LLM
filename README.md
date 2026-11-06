@@ -26,7 +26,7 @@ The [documentation guide](docs/README.md) separates current instructions from da
 
 The [whole-workflow UX plan](docs/UX-WORKFLOW.md) connects first setup, shared job/policy state, local preparation, evidence review, handoff and recovery. It records current code-level gaps and planned implementation slices; browser/user-flow qualification remains pending.
 
-The [focused workbench fixes](docs/workbench-fixes-2026-11-05.md) confirm Local AI changes before allowing new work, protect the selected brief from delayed responses, add connection retry, and improve mobile history and keyboard source scrolling. Status messages stay beside the task controls without covering them. Wider accessibility and real-model qualification remain open.
+The [focused workbench fixes](docs/workbench-fixes-2026-11-05.md) confirm Local AI changes before allowing new work, protect the selected brief from delayed responses, add connection retry, and improve mobile history and keyboard source scrolling. [Startup restoration](docs/startup-brief-recovery-2026-11-05.md) also respects newer results and leaves task controls and polling available while old evidence loads. Status messages stay beside the task controls without covering them. Wider accessibility and real-model qualification remain open.
 
 The [request-recovery follow-up](docs/request-recovery-2026-11-05.md) bounds stalled browser requests, checks session state after an uncertain task start and restores connection status during active-job polling. If a start response is lost, check Recent briefs before starting again; the app does not automatically repeat the task.
 
