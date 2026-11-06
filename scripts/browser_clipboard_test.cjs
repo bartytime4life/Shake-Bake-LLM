@@ -33,6 +33,33 @@ async function scenario(mode,run) {
 (async()=>{
   baseURL=await waitForServer(server);
   browser=await chromium.launch({headless:true,...(process.env.SB_CHROMIUM_EXECUTABLE?{executablePath:process.env.SB_CHROMIUM_EXECUTABLE}:{})});console.log('Chromium '+browser.version());
+  // Scenarios share a controller; exercise the empty session before any creates a brief.
+  await scenario('native',async page=>{
+    assert.equal(await page.locator('#open-assistant').isVisible(),false);
+    assert.equal(await page.locator('#download-text').isDisabled(),true);
+    const external=[];page.on('request',request=>{const url=new URL(request.url());if(['http:','https:'].includes(url.protocol)&&url.origin!==new URL(baseURL).origin)external.push(request.url());});
+    const text=await prepare(page,'Find executable slice coverage. Synthetic handoff with exact source.');
+    for(const [value,url,name] of [['claude','https://claude.ai/','Claude'],['chatgpt','https://chatgpt.com/','ChatGPT']]){
+      await page.locator('#handoff-assistant').selectOption(value);
+      assert.equal(await page.locator('#open-assistant').getAttribute('href'),url);
+      assert.equal(await page.locator('#open-assistant').getAttribute('target'),'_blank');
+      assert.equal(await page.locator('#open-assistant').getAttribute('rel'),'noopener noreferrer');
+      assert.equal(await page.locator('#open-assistant').innerText(),`Open ${name}`);
+      assert.equal(await page.locator('#handoff-text').inputValue(),text);
+    }
+    await page.locator('#request').fill('This newer draft must not be exported.');
+    const downloading=page.waitForEvent('download');await page.locator('#download-text').click();const download=await downloading;
+    assert.match(download.suggestedFilename(),/^shake-bake-[a-f0-9]+\.txt$/);
+    assert.equal(await require('node:fs/promises').readFile(await download.path(),'utf8'),text);
+    await page.locator('#copy').click();await page.waitForFunction(()=>document.querySelector('#copy-status').textContent.includes('Browser reported copying'));
+    assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),text);
+    assert.match(await page.locator('#copy-status').innerText(),/Nothing has been sent/);
+    assert.match(text,/For the receiving assistant:/);assert.match(text,/not live access/);
+    await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true);
+    assert.equal(await page.locator('#copy').isEnabled(),true);
+    assert.deepEqual(external,[],'Choosing, copying and saving must not transmit source');
+  });
   await scenario('native',async page=>{
     const request='  Find the executable slice coverage guard. Preserve α and <script>untrusted()</script>.\n  ';
     // A native-host request can contain CRLF even though browser input normalizes it.
@@ -79,32 +106,6 @@ async function scenario(mode,run) {
     await page.locator('#select-handoff').click();
     assert.equal(await page.locator('#handoff-text').evaluate(el=>el.value.slice(el.selectionStart,el.selectionEnd)),text);
     assert.equal(await page.locator('#download').isEnabled(),true);
-  });
-  await scenario('native',async page=>{
-    assert.equal(await page.locator('#open-assistant').isVisible(),false);
-    assert.equal(await page.locator('#download-text').isDisabled(),true);
-    const external=[];page.on('request',request=>{const url=new URL(request.url());if(['http:','https:'].includes(url.protocol)&&url.origin!==new URL(baseURL).origin)external.push(request.url());});
-    const text=await prepare(page,'Find executable slice coverage. Synthetic handoff with exact source.');
-    for(const [value,url,name] of [['claude','https://claude.ai/','Claude'],['chatgpt','https://chatgpt.com/','ChatGPT']]){
-      await page.locator('#handoff-assistant').selectOption(value);
-      assert.equal(await page.locator('#open-assistant').getAttribute('href'),url);
-      assert.equal(await page.locator('#open-assistant').getAttribute('target'),'_blank');
-      assert.equal(await page.locator('#open-assistant').getAttribute('rel'),'noopener noreferrer');
-      assert.equal(await page.locator('#open-assistant').innerText(),`Open ${name}`);
-      assert.equal(await page.locator('#handoff-text').inputValue(),text);
-    }
-    await page.locator('#request').fill('This newer draft must not be exported.');
-    const downloading=page.waitForEvent('download');await page.locator('#download-text').click();const download=await downloading;
-    assert.match(download.suggestedFilename(),/^shake-bake-[a-f0-9]+\.txt$/);
-    assert.equal(await require('node:fs/promises').readFile(await download.path(),'utf8'),text);
-    await page.locator('#copy').click();await page.waitForFunction(()=>document.querySelector('#copy-status').textContent.includes('Browser reported copying'));
-    assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),text);
-    assert.match(await page.locator('#copy-status').innerText(),/Nothing has been sent/);
-    assert.match(text,/For the receiving assistant:/);assert.match(text,/not live access/);
-    await page.setViewportSize({width:390,height:844});
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true);
-    assert.equal(await page.locator('#copy').isEnabled(),true);
-    assert.deepEqual(external,[],'Choosing, copying and saving must not transmit source');
   });
   console.log(`${passed} isolated Chromium clipboard scenarios passed; personal-browser clipboard behavior remains separately qualified.`);
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();server.kill('SIGINT');});
