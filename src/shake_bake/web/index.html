@@ -27,43 +27,40 @@
   </main>
   <a class="skip" id="skip-workspace" href="#workspace">Skip to workspace</a>
   <div class="shell" id="workbench-shell">
-    <aside class="sidebar" aria-label="Workspace navigation">
-      <header class="brand"><span>Shake &amp; Bake</span><small>Local workbench</small></header>
-      <nav>
-        <button class="nav-button selected" id="workspace-nav" aria-pressed="true"><img src="icons/folder.svg" alt="">Workspace</button>
-        <button class="nav-button" id="history-nav" aria-controls="recent-section" aria-pressed="false"><img src="icons/clock.svg" alt="">Recent briefs</button>
-      </nav>
-      <section id="recent-section" aria-label="Recent briefs">
-        <h2 class="eyebrow">Recent briefs</h2>
-        <div id="recent-list" class="recent-list"><p class="muted small">Your completed briefs will appear here.</p></div>
-      </section>
-      <footer class="sidebar-footer"><span class="eyebrow">On your computer</span><p>Exact source. Visible gaps.<br>A clear next step.</p><span id="version" class="small muted"></span></footer>
-    </aside>
+    <header class="workbench-header">
+      <button type="button" class="brand" id="workspace-nav" aria-label="Shake &amp; Bake workspace">Shake &amp; Bake<span class="brand-tag">Local workbench</span></button>
+      <button type="button" class="text-button" id="history-nav" aria-controls="recent-section" aria-expanded="false"><img src="icons/clock.svg" alt="">Recent briefs</button>
+    </header>
+    <section id="recent-section" aria-labelledby="recent-heading" hidden>
+      <h2 id="recent-heading">Recent briefs</h2>
+      <div id="recent-list" class="recent-list"><p class="muted small">Completed briefs stay here during this session.</p></div>
+    </section>
     <main id="workspace" tabindex="-1">
-      <div class="topline"><span id="today" class="eyebrow"></span><div class="connection-controls"><span class="small muted" id="connection-status">Connecting to local session…</span><button type="button" id="retry-connection" class="secondary compact" hidden>Retry connection</button></div></div>
-      <h1>Turn local source into a clear brief.</h1>
-      <p class="workflow-intro muted">Prepare evidence here. Review it, then continue the work in Claude or ChatGPT.</p>
+      <div class="connection-controls"><span class="small muted" id="connection-status">Connecting to local session…</span><button type="button" id="retry-connection" class="secondary compact" hidden>Retry connection</button></div>
+      <h1>Prepare a brief for Claude or ChatGPT.</h1>
+      <p class="workflow-intro muted">Describe what you need. Shake &amp; Bake gathers relevant parts of your project into a brief you can paste into your AI chat.</p>
       <form id="task-form">
-        <div class="task-options">
-          <label class="project-label" for="project">Project</label>
-          <select id="project" name="project" aria-describedby="project-help" required></select>
-          <fieldset class="task-types" aria-describedby="project-help"><legend>Task type</legend>
-            <label><input type="radio" name="task-kind" value="code" checked><span>Code</span></label>
-            <label><input type="radio" name="task-kind" value="troubleshoot"><span>Troubleshoot</span></label>
-            <label><input type="radio" name="task-kind" value="documents"><span>Documents</span></label>
-            <label><input type="radio" name="task-kind" value="search"><span>Search</span></label>
-          </fieldset>
+        <label for="request" class="request-label">What do you need help with?</label>
+        <textarea id="request" name="request" rows="4" required maxlength="16384" spellcheck="false" placeholder="For example: Find where this project handles failed sign-ins and explain what happens."></textarea>
+        <div class="composer-context">
+          <div class="project-context"><label class="project-label" for="project">Project</label><select id="project" name="project" aria-describedby="project-help" required></select></div>
+          <p id="draft-status" class="small muted" role="status" aria-live="polite">Draft saving starts after the local session connects.</p>
         </div>
         <p id="project-help" class="small muted sr-only" role="status">Only projects approved in the owner's launch configuration are available.</p>
-        <label for="request" class="sr-only">Describe your task</label>
-        <textarea id="request" name="request" rows="4" required maxlength="16384" spellcheck="false" placeholder="Describe what you want your assistant to investigate…">Find the executable slice coverage guard. Can it accept fewer reported slices than detected? Provide exact evidence and gaps.</textarea>
-        <p id="draft-status" class="small muted" role="status" aria-live="polite">Draft saving starts after the local session connects.</p>
-        <div class="model-strip">
-          <label class="switch-label"><input type="checkbox" id="local-ai" disabled><span>Local AI</span></label>
-          <span id="mode-summary" class="muted">Exact evidence · Local AI off</span>
-          <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="icons/chevron-down.svg" alt=""></button>
-        </div>
-        <section id="model-details" class="details-surface" hidden aria-label="Model details">
+        <details id="task-options" class="task-options">
+          <summary>Options <span id="mode-summary" class="muted" hidden></span></summary>
+          <div class="options-content">
+            <fieldset class="task-types"><legend>Task type</legend>
+              <label><input type="radio" name="task-kind" value="code" checked><span>Code</span></label>
+              <label><input type="radio" name="task-kind" value="troubleshoot"><span>Troubleshoot</span></label>
+              <label><input type="radio" name="task-kind" value="documents"><span>Documents</span></label>
+              <label><input type="radio" name="task-kind" value="search"><span>Search</span></label>
+            </fieldset>
+            <div class="model-strip">
+              <label class="switch-label"><input type="checkbox" id="local-ai" disabled><span>Local AI <small class="muted">optional</small></span></label>
+              <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="icons/chevron-down.svg" alt=""></button>
+            </div>
+          <section id="model-details" class="details-surface" hidden aria-label="Model details">
           <div class="details-heading"><div><h2>Choose how local AI helps</h2><p id="model-help" class="muted small">Exact evidence remains available with Local AI off.</p></div><button type="button" id="refresh-models" class="secondary compact">Refresh installed models</button></div>
           <label for="ai-mode">Preparation mode</label>
           <select id="ai-mode"><option value="best">Best tested for this task</option><option value="trial">Try a candidate — unqualified</option></select>
@@ -74,7 +71,7 @@
           </div>
           <p class="small muted">Best tested uses only reviewed, comparable profiles for this pipeline. No qualifying profile keeps the brief evidence-only. No automatic downloads or provider fallback.</p>
           <details class="technical"><summary>Installation &amp; profile identity</summary><p class="small muted">Pipeline and saved model identity are qualification inputs, not hardware or accuracy certificates.</p><pre id="profile-identity"></pre></details>
-          <details class="technical readiness"><summary>This computer &amp; selected model</summary>
+          <details id="readiness-details" class="technical readiness"><summary>This computer &amp; selected model</summary>
             <p class="small muted">Read local capability data and, with Local AI on, the selected model's reported metadata. These checks send no project source and run no generation.</p>
             <div class="readiness-actions"><button type="button" id="check-computer" class="secondary compact">Check this computer</button><button type="button" id="check-model" class="secondary compact">Check selected model</button></div>
             <p id="readiness-status" class="small muted" role="status" aria-live="polite">No readiness check has run. Model fit and accuracy are unmeasured.</p>
@@ -83,48 +80,42 @@
           </details>
           <details class="technical"><summary>Published statistics &amp; local results</summary><div id="catalog"></div></details>
         </section>
-        <p id="local-ai-retention" class="small muted"></p>
-        <div class="action-row"><button type="submit" class="primary" id="prepare" disabled>Prepare for my assistant</button><button type="button" class="secondary stop" id="stop" disabled>Stop</button><span id="progress" class="small muted" aria-live="polite"></span></div>
+            <p id="local-ai-retention" class="small muted"></p>
+          </div>
+        </details>
+        <div class="action-row"><button type="submit" class="primary" id="prepare" disabled>Prepare brief <span aria-hidden="true">→</span></button><button type="button" class="secondary stop" id="stop" disabled hidden>Stop</button><span id="progress" class="small muted" aria-live="polite"></span></div>
         <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       </form>
-      <section class="brief-bar" id="brief-bar" aria-label="Pinned brief">
-        <img src="icons/map-pin.svg" alt="" class="pin">
-        <div class="brief-identity"><h2 id="brief-title" tabindex="-1">Your next brief starts here</h2><p class="small muted" id="brief-subtitle">Choose a project and prepare exact local evidence.</p></div>
-      </section>
-      <section class="assistant-handoff" aria-labelledby="handoff-heading">
-        <div class="handoff-heading"><div><p class="eyebrow">Your next step</p><h2 id="handoff-heading">Continue in your assistant</h2></div><span class="handoff-badge">Manual handoff</span></div>
-        <p id="handoff-summary" class="small muted">Prepare a brief above to get a ready-to-paste request with exact source and visible gaps.</p>
-        <ol class="handoff-steps">
-          <li><strong>Review the brief</strong><span>Check the source and gaps below. Only share content you intend to send.</span></li>
-          <li><strong>Copy it</strong><span>The brief includes your request, evidence, and instructions for the assistant.</span></li>
-          <li><strong>Paste and send</strong><span id="handoff-paste-help">Open ChatGPT, choose a chat, paste the brief, then send it.</span></li>
-        </ol>
+      <p id="result-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+      <section id="brief-result" class="brief-result" aria-label="Prepared brief" hidden>
+        <header class="brief-bar" id="brief-bar" aria-label="Pinned brief">
+          <div class="brief-identity"><h2 id="brief-title" tabindex="-1">Your brief is ready</h2><p class="small muted" id="brief-subtitle"></p></div>
+        </header>
+        <p id="handoff-summary" class="captured-request small muted"></p>
         <div class="handoff-actions">
-          <label for="handoff-assistant">Assistant<select id="handoff-assistant"><option value="chatgpt">ChatGPT</option><option value="claude">Claude</option></select></label>
           <button type="button" class="primary" id="copy" disabled><img src="icons/copy.svg" alt="">Copy brief</button>
-          <a id="open-assistant" class="secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-describedby="handoff-privacy" hidden>Open ChatGPT</a>
-          <button type="button" class="text-button" id="download-text" disabled>Save brief as .txt</button>
+          <p>Paste into <a id="open-claude" href="https://claude.ai/" target="_blank" rel="noopener noreferrer" aria-label="Open Claude in a new tab" aria-describedby="handoff-privacy">Claude</a> or <a id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-label="Open ChatGPT in a new tab" aria-describedby="handoff-privacy">ChatGPT</a>, then send.</p>
         </div>
-        <p id="handoff-privacy" class="small muted">Opening an assistant sends no brief. Paste it into the web or desktop app yourself. Nothing is sent automatically.</p>
+        <p id="handoff-privacy" class="small muted">Only share source you intend to send. Nothing is sent automatically.</p>
         <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+        <p id="worker-status" class="notice" hidden></p>
+        <section id="gaps-section" class="supplement gaps" hidden><h2>Gaps &amp; collection limits</h2><ul id="gaps"></ul><p id="collection-warning" class="small muted"></p></section>
+        <section id="notes-section" class="supplement" hidden><h2>Unverified model interpretations</h2><p class="muted small">These notes are separate from exact source. Citations are checked; correctness still needs review.</p><ul id="notes"></ul><h3>Uncertainties</h3><ul id="uncertainties"></ul></section>
         <details id="handoff-copy" class="handoff-copy" hidden>
-          <summary>Review or copy brief text</summary>
-          <p id="copy-help" class="small muted">This is the exact text that Copy brief and Save brief as .txt use. To copy manually, select all text and use your device’s Copy command. Review private source before sharing.</p>
-          <button type="button" id="select-handoff" class="secondary compact">Select all text</button>
+          <summary>Review &amp; export</summary>
+          <p id="copy-help" class="small muted">This is the exact text copied into your chat. You can also save it as a file or select the text to copy manually.</p>
+          <div class="export-actions"><button type="button" id="select-handoff" class="secondary compact">Select all text</button><button type="button" class="secondary compact" id="download-text" disabled>Save brief as .txt</button><button type="button" class="text-button" id="download" disabled>Download JSON record</button></div>
           <textarea id="handoff-text" aria-label="Exact handoff text" aria-describedby="copy-help" readonly spellcheck="false" rows="10"></textarea>
+          <div id="brief-details" class="original" hidden><h3>Captured request &amp; job identity</h3><p id="job-identity" class="small muted"></p><pre id="original-request"></pre><p class="small muted" id="route-reason"></p></div>
+          <section id="receipt-section" class="technical" hidden><h3>Usage receipt &amp; limitations</h3><pre id="receipt"></pre><ul id="limitations"></ul></section>
         </details>
-        <details class="handoff-more"><summary>Long brief or need the full record?</summary><p class="small muted">Save the brief as a text file and attach it in your assistant if file uploads are available. If it is too large, prepare a more focused request. JSON keeps the full technical record.</p><button type="button" class="secondary compact" id="download" disabled><img src="icons/download.svg" alt="">Download JSON</button></details>
+        <details id="evidence-section" class="evidence-section">
+          <summary>View source excerpts <span id="evidence-count" class="small muted"></span></summary>
+          <p class="small muted">Unmodified excerpts from the selected source files.</p><p id="scan-limits" class="small muted"></p>
+          <div id="evidence" class="evidence-grid"></div>
+        </details>
       </section>
-      <p id="worker-status" class="small" hidden></p>
-      <div id="brief-details" hidden><details class="original"><summary>Original request &amp; job identity</summary><p id="job-identity" class="small muted"></p><pre id="original-request"></pre><p class="small muted" id="route-reason"></p></details></div>
-      <section class="evidence-section" aria-labelledby="evidence-heading">
-        <div class="section-heading"><div><h2 id="evidence-heading">Exact evidence <span>(local source)</span></h2><p class="muted">Unmodified excerpts from the selected source files.</p></div><span id="evidence-count" class="small muted"></span></div>
-        <div id="evidence" class="evidence-grid"><div class="empty"><h3>A place for the source, not a guess.</h3><p class="muted">Prepare the synthetic demo to see exact lines, source identities and a copyable handoff. Your investigation stays open.</p></div></div>
-      </section>
-      <section id="gaps-section" class="supplement" hidden><h2>Gaps &amp; collection limits</h2><ul id="gaps"></ul><p id="scan-limits" class="small muted"></p></section>
-      <section id="notes-section" class="supplement" hidden><h2>Unverified model interpretations</h2><p class="muted small">These notes are separate from exact source. Citations are checked; correctness still needs review.</p><ul id="notes"></ul><h3>Uncertainties</h3><ul id="uncertainties"></ul></section>
-      <details id="receipt-section" class="technical" hidden><summary>Usage receipt &amp; limitations</summary><pre id="receipt"></pre><ul id="limitations"></ul></details>
-      <footer class="workspace-footer">Standalone local preparation · Your assistant makes the final judgment.</footer>
+      <footer class="workspace-footer"><span>Prepared on your computer.</span><span id="version" class="sr-only"></span></footer>
     </main>
   </div>
 </body>

@@ -12,6 +12,21 @@ const server=spawn(process.argv[2]||'python3',['-u','-c',
   'from shake_bake.gui import Controller, DEMO, WorkbenchServer\nc=Controller({"starter-demo":DEMO})\nc.call("settings", {"enabled":False})\ns=WorkbenchServer(("127.0.0.1",0),c)\nprint(s.server_port,flush=True)\ntry: s.serve_forever()\nexcept KeyboardInterrupt: pass\nfinally: s.server_close(); c.close()'],{env,stdio:['ignore','pipe','inherit']});
 let browser,baseURL,passed=0;
 const rendered=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+async function openOptions(page){
+  if(!await page.locator('#task-options').evaluate(el=>el.open))await page.locator('#task-options > summary').click();
+}
+async function chooseKind(page,kind){
+  await openOptions(page);await page.locator(`input[name="task-kind"][value="${kind}"]`).check();
+}
+async function setLocalAI(page,enabled){
+  await openOptions(page);await page.locator('#local-ai').setChecked(enabled);
+}
+async function openHistory(page){
+  if(!await page.locator('#recent-section').isVisible())await page.locator('#history-nav').click();
+}
+async function selectBrief(page,request){
+  await openHistory(page);await page.getByRole('button',{name:new RegExp(request)}).click();
+}
 async function prepare(page,request){
   await page.locator('#request').fill(request);await page.locator('#prepare').click();
   await page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,request);
@@ -23,11 +38,12 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   page.setDefaultTimeout(10000);
   if(preview)await context.addInitScript(value=>{window.__SB_RECORDED_PREVIEW__=value;},preview);
   const h={page,enabled:true,policyEnabled:true,failState:startupFailure,failSettings:false,loseSettings:false,
-    settingsWait:null,settingsSeen:deferred(),stateWait:null,stateSeen:deferred(),tasks:0,apiCalls:0,releases:[]};
+    settingsWait:null,settingsSeen:deferred(),stateWait:null,stateSeen:deferred(),tasks:0,apiCalls:0,releases:[],modelCalls:0,settingsCalls:0};
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await context.route('**/api/**',async route=>{
     h.apiCalls++;const url=new URL(route.request().url());
     if(url.pathname==='/api/tasks'&&route.request().method()==='POST')h.tasks++;
+    if(['/api/inventory','/api/model-check'].includes(url.pathname))h.modelCalls++;
     await route.fallback();
   });
   await context.route('**/api/state',async route=>{
@@ -41,7 +57,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     await route.fulfill(h.failOldState&&wait?{status:503,json:{error:'synthetic_old_failure'}}:{json:result});
   });
   await context.route('**/api/settings',async route=>{
-    h.apiCalls++;h.settingsSeen.resolve();
+    h.apiCalls++;h.settingsCalls++;h.settingsSeen.resolve();
     if(h.settingsWait)await h.settingsWait.promise;
     if(h.failSettings){await route.fulfill({status:503,json:{error:'synthetic_write_failure'}});return;}
     h.enabled=h.policyEnabled&&route.request().postDataJSON().enabled;
@@ -60,6 +76,87 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   baseURL=await waitForServer(server);
   browser=await chromium.launch({headless:true,...(process.env.SB_CHROMIUM_EXECUTABLE?{executablePath:process.env.SB_CHROMIUM_EXECUTABLE}:{})});
   console.log('Chromium '+browser.version());
+  // The shared controller must still be empty for the first-visit assertions.
+  await scenario('ordinary preparation needs no options or model setup',async h=>{
+    await h.page.setViewportSize({width:390,height:844});
+    assert.equal(await h.page.locator('#request').inputValue(),'');
+    assert.equal(await h.page.locator('#project').inputValue(),'starter-demo');
+    assert.equal(await h.page.locator('#task-options').evaluate(el=>el.open),false);
+    assert.equal(await h.page.locator('#local-ai').isChecked(),false);
+    assert.equal(await h.page.locator('#local-ai').isVisible(),false);
+    for(const id of ['stop','brief-result','recent-section'])assert.equal(await h.page.locator('#'+id).isVisible(),false,id);
+    const request='Find the executable slice coverage guard.';
+    await prepare(h.page,request);
+    assert.equal(h.tasks,1);assert.equal(h.settingsCalls,0);assert.equal(h.modelCalls,0);
+    assert.equal(await h.page.locator('#task-options').evaluate(el=>el.open),false);
+    assert.equal(await h.page.locator('#brief-result').isVisible(),true);
+    assert.equal(await h.page.locator('#copy').isVisible(),true);
+    assert.equal(await h.page.locator('#copy').isEnabled(),true);
+    assert.equal(await h.page.locator('#stop').isVisible(),false);
+    assert.equal(await h.page.locator('#handoff-copy').evaluate(el=>el.open),false);
+    assert.equal(await h.page.locator('#evidence-section').evaluate(el=>el.open),false);
+    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n')[3]),request);
+    assert.equal(await h.page.locator('#brief-title').evaluate(el=>document.activeElement===el),true);
+    assert.equal(await h.page.locator('#result-status').getAttribute('role'),'status');
+    assert.equal(await h.page.locator('#result-status').getAttribute('aria-live'),'polite');
+    assert.match(await h.page.locator('#result-status').textContent(),/brief is ready/i);
+    await h.page.keyboard.press('Tab');
+    assert.equal(await h.page.locator('#copy').evaluate(el=>document.activeElement===el),true);
+  },{setup:async h=>{h.enabled=false;}});
+  await scenario('completion announces the captured result without stealing focus from the next draft',async h=>{
+    const request='Find the executable slice coverage guard before writing the next draft.';
+    const held=h.defer(),seen=deferred();let once=true;
+    await h.page.route('**/api/tasks/*',async route=>{
+      const response=await route.fetch(),value=await response.json();
+      if(once&&value.state==='DONE'&&value.original_request===request){once=false;seen.resolve();await held.promise;}
+      await route.fulfill({json:value});
+    });
+    await h.page.locator('#request').fill(request);await h.page.locator('#prepare').click();await seen.promise;
+    assert.equal(await h.page.locator('#stop').isVisible(),true);
+    assert.equal(await h.page.locator('#result-status').textContent(),'');
+    const nextDraft='Keep typing this next request while the previous brief finishes.';
+    await h.page.locator('#request').fill(nextDraft);
+    const selection=await h.page.locator('#request').evaluate(el=>[el.selectionStart,el.selectionEnd]);
+    held.resolve();
+    await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,request);
+    await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('#request').evaluate(el=>document.activeElement===el),true);
+    assert.equal(await h.page.locator('#request').inputValue(),nextDraft);
+    assert.deepEqual(await h.page.locator('#request').evaluate(el=>[el.selectionStart,el.selectionEnd]),selection);
+    assert.match(await h.page.locator('#result-status').textContent(),/brief is ready/i);
+    assert.equal(await h.page.locator('#stop').isVisible(),false);
+    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n')[3]),request);
+  });
+  await scenario('a saved candidate trial reveals acknowledgement controls without starting work',async h=>{
+    assert.equal(await h.page.locator('#local-ai').isChecked(),true);
+    assert.equal(await h.page.locator('#ai-mode').inputValue(),'trial');
+    await h.page.locator('#request').fill('Find the executable slice coverage guard.');
+    if(await h.page.locator('#task-options').evaluate(el=>el.open))await h.page.locator('#task-options > summary').click();
+    await h.page.locator('#prepare').click();
+    assert.equal(h.tasks,0);assert.equal(h.modelCalls,0);assert.equal(h.settingsCalls,0);
+    assert.equal(await h.page.locator('#task-options').evaluate(el=>el.open),true);
+    assert.equal(await h.page.locator('#model-details').isVisible(),true);
+    assert.equal(await h.page.locator('#model-details-toggle').getAttribute('aria-expanded'),'true');
+    assert.equal(await h.page.locator('#trial-ack').isVisible(),true);
+    assert.equal(await h.page.locator('#trial-ack').isChecked(),false);
+    assert.match(await h.page.locator('#notice').innerText(),/acknowledge/);
+  },{setup:async h=>{
+    h.stateTransform=value=>{value.allow_candidate_trials=true;};
+    await h.page.addInitScript(()=>localStorage.setItem('shake-bake-preferences',JSON.stringify({ai_mode:'trial',model:'fixture:local',digest:'a'.repeat(64)})));
+  }});
+  await scenario('collection limits remain visible while source review is collapsed',async h=>{
+    await h.page.route('**/api/tasks/*',async route=>{
+      const response=await route.fetch(),value=await response.json();
+      if(value.state==='DONE'){value.cutoffs=['file_budget'];value.exclusions={permission_denied:1};}
+      await route.fulfill({json:value});
+    });
+    await prepare(h.page,'Find the executable slice coverage guard with synthetic collection limits.');
+    assert.equal(await h.page.locator('#evidence-section').evaluate(el=>el.open),false);
+    assert.equal(await h.page.locator('#gaps-section').isVisible(),true);
+    assert.equal(await h.page.locator('#collection-warning').isVisible(),true);
+    assert.match(await h.page.locator('#collection-warning').innerText(),/file_budget/);
+    assert.match(await h.page.locator('#collection-warning').innerText(),/permission_denied \(1\)/);
+  });
   await scenario('restored draft keeps its own project and task type',async h=>{
     assert.equal(await h.page.locator('#request').inputValue(),'Preserve this synthetic search draft.');
     assert.equal(await h.page.locator('#project').inputValue(),'starter-demo');
@@ -89,7 +186,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   await scenario('typing during initial connection survives restoration even when saving fails',async h=>{
     await h.stateSeen.promise;
     await h.page.locator('#request').fill('New text typed while the connection is pending.');
-    await h.page.locator('input[name="task-kind"][value="search"]').check();
+    await chooseKind(h.page,'search');
     assert.match(await h.page.locator('#draft-status').innerText(),/this page/);
     h.releases[0].resolve();await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
     assert.equal(await h.page.locator('#request').inputValue(),'New text typed while the connection is pending.');
@@ -107,6 +204,8 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.equal(await h.page.locator('#prepare').isDisabled(),true);
     assert.equal(await h.page.locator('input[name="task-kind"]:checked').count(),0);
     assert.match(await h.page.locator('#project-help').innerText(),/task type is unavailable/);
+    assert.equal(await h.page.locator('#task-options').evaluate(el=>el.open),true);
+    assert.equal(await h.page.getByText('Task type',{exact:true}).isVisible(),true);
     await h.page.locator('#task-form').dispatchEvent('submit');assert.equal(h.tasks,0);
     await h.page.locator('input[name="task-kind"][value="search"]').check();
     await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
@@ -119,7 +218,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     const pin=await h.page.locator('#handoff-text').inputValue();
     await h.page.evaluate(()=>{window.originalStorageSet=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='sb-workbench-draft')throw new DOMException('Synthetic full storage','QuotaExceededError');return window.originalStorageSet.call(this,key,value);};});
     const draft='  Exact synthetic draft: α <untrusted>\nKeep the final space. ';
-    await h.page.locator('#request').fill(draft);await h.page.locator('input[name="task-kind"][value="documents"]').check();
+    await h.page.locator('#request').fill(draft);await chooseKind(h.page,'documents');
     assert.match(await h.page.locator('#draft-status').innerText(),/could not be saved/);
     assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
     assert.equal(await h.page.locator('#copy').isEnabled(),true);
@@ -146,7 +245,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     });
     await h.page.reload();await seen.promise;
     const expected=next==='selection'?older:`Find coverage: new task after startup ${outcome}`;
-    if(next==='selection')await h.page.getByRole('button',{name:new RegExp(older)}).click();
+    if(next==='selection')await selectBrief(h.page,older);
     else{
       // A task-type change exposed the old startup race by enabling Prepare.
       // Hold the new acknowledgement until DONE so the pre-fix startup timer
@@ -160,7 +259,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
         }
         assert.equal(result.state,'DONE');await route.fulfill({response,json:started});
       });
-      await h.page.locator('input[name="task-kind"][value="search"]').check();await prepare(h.page,expected);
+      await chooseKind(h.page,'search');await prepare(h.page,expected);
     }
     await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,expected);
     const pin=await h.page.locator('#handoff-text').inputValue(),notice=await h.page.locator('#notice').innerText();
@@ -183,6 +282,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     });
     await h.page.reload();await seen.promise;
     assert.equal(await h.page.locator('#prepare').isEnabled(),true);
+    await openHistory(h.page);
     assert.equal(await h.page.getByRole('button',{name:new RegExp(older)}).count(),1);
     const request='Find coverage: finish new preparation while restoration waits.';
     await prepare(h.page,request);assert.ok(polls>=2,'New work must keep polling before the startup brief arrives');
@@ -201,7 +301,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     await prepare(h.page,'Find coverage before a stalled setting.');
     const captured=await h.page.locator('#handoff-text').inputValue();
     await h.page.locator('#request').fill('Keep this timeout recovery draft');
-    h.settingsWait=h.defer();await h.page.locator('#local-ai').uncheck();await h.settingsSeen.promise;
+    h.settingsWait=h.defer();await setLocalAI(h.page,false);await h.settingsSeen.promise;
     await h.page.clock.fastForward(16000);
     await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
     assert.equal(await h.page.locator('#local-ai').isChecked(),true);
@@ -232,7 +332,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
     await h.page.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Check Recent briefs'));
     assert.match(await h.page.locator('#notice').innerText(),/Check Recent briefs/);
-    await h.page.getByRole('button',{name:new RegExp(request)}).click();
+    await selectBrief(h.page,request);
     await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,request);
     assert.equal(h.tasks,1);
   });
@@ -271,7 +371,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.equal(await h.page.locator('#original-request').textContent(),'Find coverage after a polling outage.');
   });
   await scenario('pending Local AI change blocks task submission until confirmed',async h=>{
-    h.settingsWait=h.defer();await h.page.locator('#local-ai').uncheck();await h.settingsSeen.promise;
+    h.settingsWait=h.defer();await setLocalAI(h.page,false);await h.settingsSeen.promise;
     for(const id of ['prepare','local-ai','refresh-models','check-model'])assert.equal(await h.page.locator('#'+id).isDisabled(),true,id);
     assert.match(await h.page.locator('#progress').innerText(),/Confirming Local AI/);
     await h.page.locator('#task-form').dispatchEvent('submit');assert.equal(h.tasks,0);
@@ -279,20 +379,20 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.equal(await h.page.locator('#local-ai').isChecked(),false);
   });
   await scenario('failed setting restores the confirmed service value',async h=>{
-    h.failSettings=true;await h.page.locator('#local-ai').uncheck();
+    h.failSettings=true;await setLocalAI(h.page,false);
     await h.page.waitForFunction(()=>!document.querySelector('#local-ai').disabled);
     assert.equal(await h.page.locator('#local-ai').isChecked(),true);
     assert.match(await h.page.locator('#notice').innerText(),/not confirmed/);
   });
   await scenario('lost setting response reconciles a change the service actually applied',async h=>{
-    h.loseSettings=true;await h.page.locator('#local-ai').uncheck();
+    h.loseSettings=true;await setLocalAI(h.page,false);
     await h.page.waitForFunction(()=>!document.querySelector('#local-ai').disabled);
     assert.equal(await h.page.locator('#local-ai').isChecked(),false);
     assert.equal(await h.page.locator('#prepare').isEnabled(),true);
   });
   await scenario('policy refusal displays the effective disabled setting',async h=>{
-    await h.page.locator('#local-ai').uncheck();await h.page.waitForFunction(()=>!document.querySelector('#local-ai').disabled);
-    h.policyEnabled=false;await h.page.locator('#local-ai').check();
+    await setLocalAI(h.page,false);await h.page.waitForFunction(()=>!document.querySelector('#local-ai').disabled);
+    h.policyEnabled=false;await setLocalAI(h.page,true);
     await h.page.waitForFunction(()=>document.querySelector('#local-ai').disabled&&!document.querySelector('#prepare').disabled);
     assert.equal(await h.page.locator('#local-ai').isChecked(),false);
     assert.match(await h.page.locator('#notice').innerText(),/disabled in this launch configuration/);
@@ -300,7 +400,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   await scenario('unconfirmed setting and unavailable state block new work until retry',async h=>{
     await prepare(h.page,'Find coverage before a synthetic disconnect.');
     const captured=await h.page.locator('#handoff-text').inputValue();
-    h.failSettings=true;h.failState=true;await h.page.locator('#local-ai').uncheck();
+    h.failSettings=true;h.failState=true;await setLocalAI(h.page,false);
     await h.page.waitForFunction(()=>!document.querySelector('#retry-connection').hidden);
     assert.equal(await h.page.locator('#prepare').isDisabled(),true);
     assert.equal(await h.page.locator('#copy').isEnabled(),true);assert.equal(await h.page.locator('#download').isEnabled(),true);
@@ -319,7 +419,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   },{startupFailure:true});
   for(const failure of [false,true])await scenario(`late state ${failure?'failure':'success'} cannot undo a confirmed toggle`,async h=>{
     h.stateWait=h.defer();h.failOldState=failure;await h.stateSeen.promise;
-    const held=h.releases[0];await h.page.locator('#local-ai').uncheck();
+    const held=h.releases[0];await setLocalAI(h.page,false);
     await h.page.waitForFunction(()=>!document.querySelector('#local-ai').disabled);
     const response=h.page.waitForResponse(r=>r.url().endsWith('/api/state'));
     held.resolve();await (await response).finished();await rendered(h.page);
@@ -335,9 +435,9 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
       if(once){once=false;seen.resolve();await held.promise;await route.fulfill(outcome==='failure'?{status:400,json:{error:'unknown_or_expired_task'}}:{json:value});}
       else await route.fulfill({json:value});
     });
-    await h.page.getByRole('button',{name:new RegExp(first)}).click();await seen.promise;
+    await selectBrief(h.page,first);await seen.promise;
     const expected=next==='selection'?second:`Find coverage: latest task ${outcome}`;
-    if(next==='selection')await h.page.getByRole('button',{name:new RegExp(second)}).click();else await prepare(h.page,expected);
+    if(next==='selection')await selectBrief(h.page,second);else await prepare(h.page,expected);
     await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,expected);
     const response=h.page.waitForResponse(r=>/\/api\/tasks\//.test(r.url()));held.resolve();await (await response).finished();await rendered(h.page);
     assert.equal(await h.page.locator('#original-request').textContent(),expected);
@@ -347,12 +447,17 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   await scenario('phone history, keyboard source scrolling and feedback stay usable',async h=>{
     await h.page.setViewportSize({width:390,height:844});
     await prepare(h.page,'Find the executable slice coverage guard for keyboard review.');
-    await h.page.locator('#history-nav').click();await h.page.locator('#history-nav').click();
+    await h.page.locator('#history-nav').click();
     assert.equal(await h.page.locator('#recent-section').isVisible(),true);
+    assert.equal(await h.page.locator('#history-nav').getAttribute('aria-expanded'),'true');
+    await h.page.locator('#history-nav').click();
+    assert.equal(await h.page.locator('#recent-section').isVisible(),false);
+    await openHistory(h.page);
     await h.page.locator('#recent-list button').first().focus();await h.page.keyboard.press('Enter');
     await h.page.waitForFunction(()=>document.activeElement.id==='brief-title');
     assert.equal(await h.page.locator('#recent-section').isVisible(),false);
-    assert.equal(await h.page.locator('#workspace-nav').getAttribute('aria-pressed'),'true');
+    assert.equal(await h.page.locator('#history-nav').getAttribute('aria-expanded'),'false');
+    await h.page.locator('#evidence-section > summary').click();
     const source=h.page.locator('.source pre').first();await source.focus();await h.page.keyboard.press('ArrowRight');
     await h.page.waitForFunction(()=>document.querySelector('.source pre').scrollLeft>0);
     const notice=await h.page.locator('#notice').boundingBox(),action=await h.page.locator('.action-row').boundingBox();

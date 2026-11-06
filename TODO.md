@@ -18,6 +18,8 @@ The [page-file follow-up](docs/file-launch-recovery-2026-11-05.md) fixes missing
 
 The [guided assistant handoff](docs/assistant-handoff.md) now explains review, copy and paste into Claude or ChatGPT, with receiving-assistant instructions and a text-file alternative. It does not send automatically or establish host delivery.
 
+The November 6 [simplification follow-up](docs/assistant-handoff.md#simplification-follow-up-november-6-2026) responds to owner feedback that the workbench required too many decisions. The normal path is now request/project → Prepare brief → Copy brief, with Options, history and exports available on demand. Existing choices, exact captured results and recovery safeguards are preserved. This reduces visible controls; it does not establish representative user-task success or close UX-01/UI-01.
+
 ## Next qualification steps
 
 - [ ] **1. Complete actual-PC/model qualification (partial).** Startup, installed-package identity, hardware observations and pinned Qwen 3 8B metadata are now recorded privately; the local in-app-browser demo/readiness walkthrough passed the stated cases in `docs/pc-readiness-2026-11-05.md`. The shared daemon still reports cloud features enabled, so it received metadata-only requests. A separate cloud-disabled daemon completed ten Qwen 3 8B attempts with retained receipts. Persistent copy feedback, selectable text and JSON export passed the stated installed-browser checks; a final synthetic brief also passed exact native and manual clipboard readback. Earlier empty readbacks are retained; broader browser checks and natural model-change/failure scenarios remain open. Use `docs/PC-CHECKLIST.md`.

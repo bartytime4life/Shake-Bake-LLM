@@ -30,6 +30,7 @@ async function scenario(label,run){
   h.cleared=async()=>assert.doesNotMatch(await page.locator('#model-facts').innerText(),/Q4_SYNTHETIC|Reported digest|Checking selected/);
   try{
     await page.goto(baseURL);await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.'));
+    await page.locator('#task-options > summary').click();
     await page.locator('#model-details-toggle').click();await page.locator('#ai-mode').selectOption('trial');
     await page.getByText('This computer & selected model',{exact:true}).click();
     await h.refresh();await h.choose(A);await run(h);assert.deepEqual(errors,[]);passed++;console.log('PASS '+label);

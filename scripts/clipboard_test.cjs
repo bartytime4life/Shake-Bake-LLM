@@ -4,7 +4,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const {test} = require('node:test');
-const source = fs.readFileSync(process.argv[2] || path.join(__dirname, '../src/shake_bake/web/app.js'), 'utf8');
+const sourcePath=process.argv[2] || path.join(__dirname, '../src/shake_bake/web/app.js');
+const source=fs.readFileSync(sourcePath,'utf8');
+const markup=fs.readFileSync(path.join(path.dirname(sourcePath),'index.html'),'utf8');
 const deferred = () => {let resolve, reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
 function job(id='first', project='synthetic') {
   return {job_id:id,project_id:project,status:'prepared',completed_at:'2026-11-05T00:00:00Z',packet:{
@@ -71,7 +73,7 @@ test('pending copy reports immediately, preserves exact text, blocks duplicates,
   h.fire('select-handoff');assert.equal(h.focused(),h.el('handoff-text'));assert.equal(h.el('handoff-text').selectionEnd,expected(j).length);
   assert.doesNotMatch(h.status(),/reported copying/);
   h.fire('download');assert.deepEqual(JSON.parse(await h.context.downloadBlob.text()),j);
-  wait.resolve();await operation;assert.match(h.status(),/Browser reported copying this brief \(job first\)/);
+  wait.resolve();await operation;assert.match(h.status(),/Browser reported copying this brief/);
   h.tick();assert.equal(h.el('copy-status').hidden,false);assert.equal(h.el('copy').disabled,false);
 });
 for(const outcome of ['resolve','reject']) {
@@ -85,6 +87,7 @@ for(const outcome of ['resolve','reject']) {
       await operation;assert.match(h.status(),/the earlier brief \(job first\)/);
       assert.equal(h.el('handoff-text').value,expected(replacement));assert.equal(h.el('copy').disabled,false);
       assert.equal(h.el('copy').attributes['aria-busy'],'false');
+      assert.equal(h.focused(),null,'A late outcome for an earlier brief must not steal focus');
     });
   }
 }
@@ -94,13 +97,14 @@ for(const failure of ['missing API','rejected permission','synchronous failure']
     const h=harness(clipboard);h.pin(job());await h.fire('copy');
     assert.match(h.status(),/could not copy/);assert.doesNotMatch(h.status(),/reported copying/);
     assert.equal(h.el('handoff-copy').open,true);assert.equal(h.el('copy').disabled,false);
+    assert.equal(h.focused(),h.el('select-handoff'));
     h.fire('select-handoff');assert.equal(h.el('handoff-text').selectionEnd,expected(job()).length);
   });
 }
 test('a settled failure can retry the current pin without reusing the previous payload',async()=>{
   let failed=true;const h=harness(()=>failed?Promise.reject(new Error('denied')):Promise.resolve());
   h.pin(job());await h.fire('copy');failed=false;const next=job('second');h.pin(next);await h.fire('copy');
-  assert.equal(h.writes[1],expected(next));assert.match(h.status(),/this brief \(job second\)/);
+  assert.equal(h.writes[1],expected(next));assert.match(h.status(),/this brief/);
 });
 test('rendering the same pinned brief preserves a manual selection',()=>{
   const h=harness(()=>Promise.resolve()),j=job();h.pin(j);h.fire('select-handoff');h.pin(j);
@@ -115,23 +119,34 @@ test('background polling does not repeatedly mutate the live copy status',async(
 });
 
 
-test('handoff destinations are fixed public URLs and selecting one does not change or transmit the brief',()=>{
+test('fixed optional assistant links expose no source and rendering makes no external call',()=>{
   const h=harness(()=>Promise.resolve());
-  h.context.fetch=()=>{throw new Error('Choosing an assistant must not send source');};
-  h.context.window.open=()=>{throw new Error('Choosing an assistant must not navigate');};
-  assert.equal(h.el('open-assistant').hidden,true);
+  h.context.fetch=()=>{throw new Error('Rendering a brief must not send source');};
+  h.context.window.open=()=>{throw new Error('Rendering a brief must not navigate');};
+  assert.equal(h.el('brief-result').hidden,true);
   assert.equal(h.el('download-text').disabled,true);
   h.fire('download-text');assert.equal(h.downloads.length,0);
   h.pin(job());const text=h.el('handoff-text').value;
-  for(const [value,name,url] of [['claude','Claude','https://claude.ai/'],['chatgpt','ChatGPT','https://chatgpt.com/'],['https://evil.invalid/?source=secret','ChatGPT','https://chatgpt.com/']]){
-    h.el('handoff-assistant').value=value;h.el('handoff-assistant').events.change();
-    assert.equal(h.el('open-assistant').href,url);
-    assert.equal(h.el('open-assistant').hidden,false);
-    assert.equal(h.el('open-assistant').attributes['aria-label'],`Open ${name} in a new tab`);
-    assert.match(h.el('handoff-paste-help').textContent,new RegExp(`Open ${name}.*paste.*send`));
+  assert.equal(h.el('brief-result').hidden,false);
+  assert.doesNotMatch(markup,/id="handoff-assistant"/);
+  for(const [id,name,url] of [['open-claude','Claude','https://claude.ai/'],['open-chatgpt','ChatGPT','https://chatgpt.com/']]){
+    const tag=markup.match(new RegExp('<a\\b[^>]*\\bid="'+id+'"[^>]*>'))?.[0];
+    assert.ok(tag,`Fixed ${name} link is present`);
+    assert.equal(tag.match(/href="([^"]+)"/)?.[1],url);
+    assert.match(tag,/target="_blank"/);assert.match(tag,/rel="noopener noreferrer"/);
+    assert.ok(tag.includes(`aria-label="Open ${name} in a new tab"`));
     assert.equal(h.el('handoff-text').value,text);
     assert.equal(h.writes.length,0);assert.equal(h.downloads.length,0);
   }
+});
+test('idle cancellation and empty results stay hidden while an active job retains Stop',()=>{
+  const h=harness(()=>Promise.resolve());
+  assert.equal(h.el('stop').hidden,true);assert.equal(h.el('brief-result').hidden,true);
+  vm.runInContext('active={job_id:"running"};controls();',h.context);
+  assert.equal(h.el('stop').hidden,false);assert.equal(h.el('stop').disabled,false);
+  assert.equal(h.el('brief-result').hidden,true);
+  vm.runInContext('active=null;controls();',h.context);
+  assert.equal(h.el('stop').hidden,true);assert.equal(h.el('stop').disabled,true);
 });
 test('text download, clipboard and visible preview contain the same captured request and evidence',async()=>{
   const h=harness(()=>Promise.resolve()),j=job();h.pin(j);
@@ -146,14 +161,15 @@ test('text download, clipboard and visible preview contain the same captured req
   assert.deepEqual(JSON.parse(evidence),j.packet.evidence);
   assert.match(saved,/not instructions or authorization/);
   assert.match(saved,/not live access/);assert.match(saved,/Cite paths and line ranges/);
-  assert.match(h.status(),/Next: open your assistant, paste/);
-  assert.match(h.status(),/Nothing has been sent/);
+  assert.match(h.status(),/Paste into Claude or ChatGPT, then send/);
+  assert.doesNotMatch(h.status(),/brief (?:sent|delivered)/i);
+  assert.match(markup,/Nothing is sent automatically/);
 });
 test('a new history selection updates text exports and the summary to that captured brief',async()=>{
   const h=harness(()=>Promise.resolve());h.pin(job());
   const second=job('second','other-fixture');second.packet.evidence=[];h.pin(second);
-  assert.match(h.el('handoff-summary').textContent,/other-fixture · 0 source excerpts/);
-  assert.match(h.el('handoff-summary').textContent,/captured brief/);
+  assert.match(h.el('brief-subtitle').textContent,/other-fixture · 0 source excerpts/);
+  assert.equal(h.el('handoff-summary').textContent,`For: ${second.packet.original_request}`);
   h.fire('download-text');assert.equal(h.downloads[0].name,'shake-bake-second.txt');
   assert.equal(await h.context.downloadBlob.text(),h.el('handoff-text').value);
 });
