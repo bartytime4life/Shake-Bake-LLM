@@ -56,7 +56,7 @@ On Linux, from the extracted `shake-and-bake` folder:
 
 The launcher chooses an installed Python 3.11+ even when the system `python3` is older. New launches start with Local AI off until explicitly enabled; that choice is saved in private local state across restarts. See [saved preference boundaries](docs/local-ai-preferences.md). Starting a task never resumes a paused service.
 
-This opens the loopback-only browser interface at `http://127.0.0.1:8421`. The owner-selected graphite/amber interface includes a bundled inert demo, task choices, paired source excerpts, expandable model details, pinned request/job identity, copy/JSON export and a local-AI off switch. No model installation is needed for the evidence-only demo. Published benchmarks and owner-recorded local trials have separate labels.
+This opens the loopback-only browser interface at `http://127.0.0.1:8421`. Describe the task, choose an approved project and select **Prepare brief**. The graphite/amber workbench keeps task type and optional Local AI controls under **Options**; no model installation or setting change is needed for the evidence-only demo. Recent briefs, captured source, model details and exports remain available on demand. Published benchmarks and owner-recorded local trials have separate labels.
 
 Opening `src/shake_bake/web/index.html` directly shows a launch guide. Use the running local address to prepare evidence; opening the page file does not start the service. See [file-opening recovery and check boundaries](docs/file-launch-recovery-2026-11-05.md).
 
@@ -66,7 +66,7 @@ The offline preview is a **recorded demo inspector**, with synthetic source and 
 
 ### Continue in Claude or ChatGPT
 
-After preparing, review the source and use **Continue in your assistant**: choose Claude or ChatGPT, select **Copy brief**, then open the assistant and paste/send the text. The brief includes your original request, exact evidence, gaps and instructions for the assistant. **Save brief as .txt** and selectable text provide alternatives; JSON is under **Long brief or need the full record?** Opening an assistant sends nothing automatically. See [the handoff guide and check boundaries](docs/assistant-handoff.md).
+After preparing, review the source and select **Copy brief**, then paste/send it in Claude or ChatGPT. The nearby links can open either assistant; choosing a destination in Shake & Bake is unnecessary. The brief includes your original request, exact evidence, gaps and instructions for the assistant. **Review & export** provides selectable text, **Save brief as .txt** and JSON export. Nothing is sent automatically. See [the handoff guide and check boundaries](docs/assistant-handoff.md).
 
 Start with evidence-only or **Best tested**; the shipped candidate profiles do not qualify for automatic model use. To enable an explicit diagnostic candidate trial on inert source:
 
@@ -74,9 +74,9 @@ Start with evidence-only or **Best tested**; the shipped candidate profiles do n
 ./scripts/run-workbench --allow-candidate-trials
 ```
 
-In Model details, refresh installed models, choose **Try a candidate — unqualified**, select a pinned installed model and acknowledge the trial. No download or daemon start occurs. Model selection preferences persist in this browser; the shared service saves the Local AI choice. Jobs and captured results remain session-only. The owner launch flag and enabled routing policy are required. Candidate runs never promote profiles.
+Under **Options → Model details**, refresh installed models, choose **Try a candidate — unqualified**, select a pinned installed model and acknowledge the trial. No download or daemon start occurs. Model selection preferences persist in this browser; the shared service saves the Local AI choice. Jobs and captured results remain session-only. The owner launch flag and enabled routing policy are required. Candidate runs never promote profiles.
 
-In Model details, expand **This computer & selected model** for explicit readiness checks. Computer observations need no Ollama call; the selected-model check needs Local AI on and reads metadata only. Unknown GPU memory, actual model fit and task accuracy stay unknown. Worker notes now retain runtime/settings and receive actual scan cutoffs. A runtime change discards notes while preserving source. See [readiness and screening results](docs/validation-0.4.0.dev6.md).
+Under **Options → Model details**, expand **This computer & selected model** for explicit readiness checks. Computer observations need no Ollama call; the selected-model check needs Local AI on and reads metadata only. Unknown GPU memory, actual model fit and task accuracy stay unknown. Worker notes now retain runtime/settings and receive actual scan cutoffs. A runtime change discards notes while preserving source. See [readiness and screening results](docs/validation-0.4.0.dev6.md).
 
 ## Prepare a real model trial
 

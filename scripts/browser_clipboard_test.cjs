@@ -35,30 +35,36 @@ async function scenario(mode,run) {
   browser=await chromium.launch({headless:true,...(process.env.SB_CHROMIUM_EXECUTABLE?{executablePath:process.env.SB_CHROMIUM_EXECUTABLE}:{})});console.log('Chromium '+browser.version());
   // Scenarios share a controller; exercise the empty session before any creates a brief.
   await scenario('native',async page=>{
-    assert.equal(await page.locator('#open-assistant').isVisible(),false);
+    assert.equal(await page.locator('#brief-result').isVisible(),false);
+    assert.equal(await page.locator('#open-claude').isVisible(),false);
+    assert.equal(await page.locator('#open-chatgpt').isVisible(),false);
     assert.equal(await page.locator('#download-text').isDisabled(),true);
     const external=[];page.on('request',request=>{const url=new URL(request.url());if(['http:','https:'].includes(url.protocol)&&url.origin!==new URL(baseURL).origin)external.push(request.url());});
     const text=await prepare(page,'Find executable slice coverage. Synthetic handoff with exact source.');
-    for(const [value,url,name] of [['claude','https://claude.ai/','Claude'],['chatgpt','https://chatgpt.com/','ChatGPT']]){
-      await page.locator('#handoff-assistant').selectOption(value);
-      assert.equal(await page.locator('#open-assistant').getAttribute('href'),url);
-      assert.equal(await page.locator('#open-assistant').getAttribute('target'),'_blank');
-      assert.equal(await page.locator('#open-assistant').getAttribute('rel'),'noopener noreferrer');
-      assert.equal(await page.locator('#open-assistant').innerText(),`Open ${name}`);
+    for(const [id,url,name] of [['open-claude','https://claude.ai/','Claude'],['open-chatgpt','https://chatgpt.com/','ChatGPT']]){
+      const link=page.locator('#'+id);
+      assert.equal(await link.isVisible(),true);
+      assert.equal(await link.getAttribute('href'),url);
+      assert.equal(await link.getAttribute('target'),'_blank');
+      assert.equal(await link.getAttribute('rel'),'noopener noreferrer');
+      assert.equal(await link.getAttribute('aria-label'),`Open ${name} in a new tab`);
       assert.equal(await page.locator('#handoff-text').inputValue(),text);
     }
+    assert.equal(await page.locator('#handoff-copy').evaluate(el=>el.open),false);
+    await page.locator('#handoff-copy > summary').click();
     await page.locator('#request').fill('This newer draft must not be exported.');
     const downloading=page.waitForEvent('download');await page.locator('#download-text').click();const download=await downloading;
     assert.match(download.suggestedFilename(),/^shake-bake-[a-f0-9]+\.txt$/);
     assert.equal(await require('node:fs/promises').readFile(await download.path(),'utf8'),text);
     await page.locator('#copy').click();await page.waitForFunction(()=>document.querySelector('#copy-status').textContent.includes('Browser reported copying'));
     assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),text);
-    assert.match(await page.locator('#copy-status').innerText(),/Nothing has been sent/);
+    assert.match(await page.locator('#copy-status').innerText(),/Paste into Claude or ChatGPT, then send/);
+    assert.match(await page.locator('#handoff-privacy').innerText(),/Nothing is sent automatically/);
     assert.match(text,/For the receiving assistant:/);assert.match(text,/not live access/);
     await page.setViewportSize({width:390,height:844});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true);
     assert.equal(await page.locator('#copy').isEnabled(),true);
-    assert.deepEqual(external,[],'Choosing, copying and saving must not transmit source');
+    assert.deepEqual(external,[],'Preparing, copying and saving must not transmit source');
   });
   await scenario('native',async page=>{
     const request='  Find the executable slice coverage guard. Preserve α and <script>untrusted()</script>.\n  ';
@@ -82,7 +88,7 @@ async function scenario(mode,run) {
     assert.deepEqual(selection,{readonly:true,selected:text,focused:true});
     await page.locator('#handoff-text').press('ControlOrMeta+c');assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),text);
     // A same-job render through history must not clear a manual text selection.
-    await page.locator('#recent-list button').first().click();
+    await page.locator('#history-nav').click();await page.locator('#recent-list button').first().click();
     assert.equal(await page.locator('#handoff-text').evaluate(el=>el.selectionEnd-el.selectionStart),text.length);
   });
   for(const outcome of ['resolve','reject'])await scenario(outcome,async page=>{
@@ -103,6 +109,9 @@ async function scenario(mode,run) {
   await scenario('missing',async page=>{
     const text=await prepare(page,'Find the executable slice coverage guard: manual fallback.');await page.locator('#copy').click();
     assert.match(await page.locator('#copy-status').innerText(),/could not copy/);
+    assert.equal(await page.locator('#handoff-copy').evaluate(el=>el.open),true);
+    assert.equal(await page.locator('#select-handoff').isVisible(),true);
+    assert.equal(await page.locator('#select-handoff').evaluate(el=>document.activeElement===el),true);
     await page.locator('#select-handoff').click();
     assert.equal(await page.locator('#handoff-text').evaluate(el=>el.value.slice(el.selectionStart,el.selectionEnd)),text);
     assert.equal(await page.locator('#download').isEnabled(),true);

@@ -2,19 +2,31 @@
 
 The workbench prepares a brief; the assistant continues the task after you share it.
 
-1. Choose an approved project, describe the task and select **Prepare for my assistant**. Review the exact excerpts and gaps.
-2. In **Continue in your assistant**, choose **Claude** or **ChatGPT**. Expand **Review or copy brief text** to inspect the text, then select **Copy brief**.
-3. Select **Open Claude** or **Open ChatGPT**, choose a chat, paste the brief into the message box, review it and send it. You can also paste into the assistant's desktop app.
+1. Choose an approved project, describe what you need and select **Prepare brief**. No settings or model installation are needed for the normal evidence-only path.
+2. Review the captured source and any gaps, then select **Copy brief**.
+3. Paste into your Claude or ChatGPT chat and send. The assistant links are shortcuts; an already-open chat or desktop app works too.
 
-If copying is unavailable, expand **Review or copy brief text**, select **Select all text**, then use your device's Copy command. **Save brief as .txt** saves the same text for attachment where uploads are available. Prepare a narrower request if a brief exceeds the destination's limits. **Long brief or need the full record?** contains the JSON export.
+**Review & export** contains the exact brief text and text-file/JSON exports. If copying is unavailable, it opens automatically: select **Select all text**, then use your device's Copy command. **Save brief as .txt** saves the same text for attachment where uploads are available. Prepare a narrower request if a brief exceeds the destination's limits.
+
+**Options** contains task type and optional Local AI controls. Existing choices are preserved. A new installation starts with Local AI off; no model is required to collect evidence. Advanced model trials still require the owner's launch permission and an explicit acknowledgement. If a saved task type is unavailable or a candidate trial needs attention, the relevant options are revealed.
 
 The brief includes the unchanged original request, exact source, gaps, unverified model notes and instructions for the receiving assistant. It asks for supported conclusions, path/line citations and explicit uncertainty. The source and request remain JSON-encoded to preserve their exact values, including line endings. Copy, text save and JSON export use the captured result, even while the task above is edited or another task is running.
 
-Choosing an assistant only changes a fixed public website link and the paste instructions. The selected destination is page-local and resets on reload. The link carries no source, request, task identifier or prompt query. It opens a separate tab without an opener or referrer. Nothing is sent automatically. Copy completion does not establish delivery, a final answer or changes to local files. A cloud chat receives only what the user pastes or attaches; it does not gain access to the inspected project. Connected native-host qualification remains separate.
+The Claude and ChatGPT links are fixed public website links. They carry no source, request, task identifier or prompt query, and open a separate tab without an opener or referrer. Nothing is sent automatically. Copy completion does not establish delivery, a final answer or changes to local files. A cloud chat receives only what the user pastes or attaches; it does not gain access to the inspected project. Connected native-host qualification remains separate.
 
 Official references checked November 5, 2026: [ChatGPT project context and pasted text](https://help.openai.com/en/articles/10169521-projects-in-chatgpt), [Claude file uploads](https://support.claude.com/en/articles/8241126-upload-files-to-claude). Available upload types, limits and account features belong to the destination service.
 
-## Scoped development evidence
+## Simplification follow-up, November 6, 2026
+
+Owner feedback found the visible settings, empty result panels and handoff tutorial made the simple task feel complicated. The follow-up centers the request and **Prepare brief**, moves technical choices into **Options**, and shows the compact copy result only after preparation. Recent briefs, source review and exports remain available on demand. Idle Stop is hidden. This changes presentation and recovery visibility, not collection, model policy or exact export content.
+
+The browser regressions cover the normal path without opening Options, recovery from an unavailable saved task type, candidate acknowledgement recovery, fixed assistant links, and the existing setting/history/clipboard races. Hosted execution is reported by CI separately from the checks below. Wider accessibility, actual assistant delivery and representative user-task qualification remain open.
+
+All 177 Python tests pass after updating the served-page heading assertion. An isolated synthetic in-app-browser walkthrough completed preparation with Options closed, then verified the ready-heading focus and next Tab to Copy at 390 pixels. Desktop, tablet and phone layouts were inspected; the phone flow had no horizontal overflow. Manual keyboard copy and the text-file download each matched the 4,131-character brief preview exactly. Completion also has a dedicated polite announcement; preserved focus during concurrent draft editing is covered by the browser regression awaiting hosted execution. Screenshots and the downloaded synthetic file remain outside Git. These checks did not submit a brief to an assistant or run a local model.
+
+Local non-browser checks for this follow-up pass: frontend API smoke, 30 readiness VM cases, 16 clipboard/handoff VM cases, 6 request-deadline cases, 3 file-launch cases and 4 server-startup cases. The clipboard checks retain exact request/source and delayed-result assertions, and add idle/active control visibility and manual-copy focus recovery. JavaScript syntax and whitespace checks pass. These checks do not exercise a real browser or OS clipboard.
+
+## Earlier scoped development evidence, November 5, 2026
 
 The current-screen walkthrough found two points of friction: completed results exposed only Copy brief/Download JSON, with no destination or paste step; the text export contained evidence but no clear instructions for the receiving assistant. The change adds a three-step handoff, a labeled assistant selector, a prominent copy action, a text-file alternative and receiving-assistant guidance using the existing workbench styling. Advanced JSON export remains available.
 
