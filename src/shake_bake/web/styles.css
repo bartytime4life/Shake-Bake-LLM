@@ -18,6 +18,7 @@ main:focus{outline:none}main:focus-visible{outline:2px solid var(--focus);outlin
 #model-identity{overflow-wrap:anywhere}.readiness-grid>section{min-width:0}
 #copy-status{margin:16px 0;line-height:1.7;overflow-wrap:anywhere;color:var(--amber)}.handoff-copy{margin:16px 0;font-size:.85rem}.handoff-copy summary{width:fit-content}.handoff-copy p{margin:14px 0 10px;max-width:80ch}.handoff-copy textarea{display:block;margin-top:14px;font:13px/1.65 ui-monospace,monospace;min-height:220px;white-space:pre-wrap;overflow-wrap:anywhere}
 .connection-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px;text-align:right;min-width:0}
+#draft-status{margin:9px 0 2px;overflow-wrap:anywhere}#project-help:not(.sr-only){color:var(--amber);overflow-wrap:anywhere}
 .source pre:focus-visible,#brief-title:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .source header strong{min-width:0}.source pre:focus-visible{background:#2c2d28}
 .switch-label input:disabled{cursor:default;opacity:.55}

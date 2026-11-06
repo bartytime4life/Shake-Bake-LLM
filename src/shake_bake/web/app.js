@@ -7,6 +7,8 @@ let csrf = '', state = null, active = null, pinned = null, models = [], timer = 
 let inventoryLoading = false, historySignature = '', serviceTimer = null, sessionSync = null;
 let copyState = null;
 let settingsPending = false, connected = null, stateRevision = 0, pinRevision = 0;
+let draftInitialized = false, draftProjectId = '';
+const draftTouched = new Set(), taskKinds = ['code','troubleshoot','documents','search'];
 function message(text, error = false) { $('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text; }
 const preview = window.__SB_RECORDED_PREVIEW__ || null;
 let nativeState = null, readinessRunning = false;
@@ -85,7 +87,7 @@ function renderCatalog() {
   for(const profile of nativeState.policy.profiles){if(!profile.evaluation)continue;const p=document.createElement('p');p.className='small muted';const e=profile.evaluation;p.textContent=`Owner record: ${profile.id} · ${profile.task_kind} · ${profile.status} · ${Math.round(e.accuracy*100)}% across ${e.case_count} cases (${e.dataset_id}). ${profile.reason||'Live identity is checked on use.'} This is an owner declaration, not an authenticated certificate.`;box.append(p);}
 }
 
-function taskKind() { return document.querySelector('input[name="task-kind"]:checked').value; }
+function taskKind() { return document.querySelector('input[name="task-kind"]:checked')?.value || null; }
 function selectedModel() { const option = $('model').selectedOptions[0]; return {model:option?.value || null,digest:option?.dataset.digest || null}; }
 function mode() { return $('local-ai').checked ? $('ai-mode').value : 'off'; }
 function modelView() {
@@ -99,11 +101,49 @@ function modelView() {
   readinessControls();
   $('model-help').textContent = state?.allow_candidate_trials ? 'Your selected candidate persists in this browser, including when Ollama is offline. Notes still require review.' : 'Candidate trials require the owner launch flag --allow-candidate-trials. Best tested uses reviewed profiles only.';
 }
-function saveDraft(){if(preview)return;try{localStorage.setItem('sb-workbench-draft',JSON.stringify({task:$('request').value,kind:taskKind(),project:$('project').value}));}catch{/* browser storage is optional */}}
+function draftStatus(text){if($('draft-status').textContent!==text)$('draft-status').textContent=text;}
+function validDraftProject(){return state?.projects?.includes($('project').value)===true;}
+function draftContext(){
+  const projectValid=validDraftProject(),kindValid=taskKinds.includes(taskKind());
+  $('project-help').classList.toggle('sr-only',projectValid&&kindValid);
+  $('project-help').textContent=!projectValid
+    ? `The saved project${draftProjectId?' “'+draftProjectId+'”':''} is unavailable. Choose an approved project for this draft.${kindValid?'':' Choose a task type too.'}`
+    : !kindValid?'The saved task type is unavailable. Choose a task type for this draft.':"Only projects approved in the owner's launch configuration are available.";
+}
+function saveDraft(){
+  if(preview)return;
+  // Initial connection must resolve the saved context before replacing it.
+  if(!draftInitialized){draftStatus('Draft kept in this page while the local session connects.');return;}
+  if(validDraftProject())draftProjectId=$('project').value;
+  try{
+    localStorage.setItem('sb-workbench-draft',JSON.stringify({task:$('request').value,kind:taskKind(),project:draftProjectId}));
+    draftStatus('Draft saved in this browser. Browser data clearing removes it; prepared briefs remain session-only.');
+  }catch{draftStatus('Draft could not be saved in this browser. Keep this page open or copy your task text before leaving.');}
+}
+function restoreDraft(prefs){
+  let draft=null,storageProblem=false;
+  if(!preview)try{
+    const raw=localStorage.getItem('sb-workbench-draft');
+    if(raw!==null){const value=JSON.parse(raw);if(value&&typeof value.task==='string'&&value.task.length<=16384)draft=value;else storageProblem=true;}
+  }catch{storageProblem=true;}
+  // The draft owns its project/type; separate preferences may describe another task.
+  // Preserve edits made while the first state request was pending, even without storage.
+  if(draft&&!draftTouched.has('task'))$('request').value=draft.task;
+  draftProjectId=draftTouched.has('project')?$('project').value:draft?(typeof draft.project==='string'?draft.project:''):prefs.project_id;
+  if(!state.projects.includes(draftProjectId)){
+    const choose=new Option('Choose a project for this draft','');choose.disabled=true;$('project').prepend(choose);$('project').value='';
+  }else $('project').value=draftProjectId;
+  const kind=draftTouched.has('kind')?taskKind():draft?draft.kind:prefs.task_kind;
+  document.querySelectorAll('input[name="task-kind"]').forEach(input=>{input.checked=input.value===kind;});
+  draftInitialized=true;draftContext();
+  if(preview)draftStatus('Recorded preview. Drafts are not saved.');
+  else if(draftTouched.size)saveDraft();
+  else draftStatus(storageProblem?'Saved draft could not be read. New edits will replace it if browser storage is available.':draft?'Draft saved in this browser. Browser data clearing removes it; prepared briefs remain session-only.':'Task drafts are saved in this browser as you edit. Prepared briefs remain session-only.');
+}
 function preferences() { return {project_id:$('project').value, task_kind:taskKind(), ai_mode:mode(), ...selectedModel()}; }
-async function savePreferences() { saveDraft();try { await api('/api/preferences', preferences()); } catch(error) { message(error.message, true); } }
+async function savePreferences() { saveDraft();if(!draftInitialized)return;try { await api('/api/preferences', preferences()); } catch(error) { message(error.message, true); } }
 function controls() {
-  $('prepare').disabled = !!active || !state || !connected || settingsPending || !!preview;
+  $('prepare').disabled = !!active || !state || !connected || settingsPending || !!preview || !validDraftProject() || !taskKinds.includes(taskKind());
   $('stop').disabled = !active?.job_id || !!preview;
   $('local-ai').disabled = !state || !connected || settingsPending || !!preview || !state.local_ai_allowed;
   $('local-ai').setAttribute('aria-busy',String(settingsPending));
@@ -182,8 +222,7 @@ async function refreshState(initial=false){
   if(initial){
     renderCatalog();
     $('project').replaceChildren();for(const id of state.projects){const option=new Option(id==='starter-demo'?'Synthetic demo':id,id);$('project').append(option);}
-    if(!preview)try{const draft=JSON.parse(localStorage.getItem('sb-workbench-draft')||'{}');if(typeof draft.task==='string'&&draft.task.length<=16384)$('request').value=draft.task;}catch{/* keep the inert default */}
-    const prefs=state.preferences; $('project').value=prefs.project_id; const radio=document.querySelector(`input[name="task-kind"][value="${prefs.task_kind}"]`);if(radio)radio.checked=true;
+    const prefs=state.preferences;restoreDraft(prefs);
     $('local-ai').checked=prefs.ai_mode!=='off'&&!state.local_ai_paused; $('ai-mode').value=prefs.ai_mode==='trial'?'trial':'best';
     if(prefs.model){const saved=new Option(`${prefs.model} — saved candidate`,prefs.model);saved.dataset.digest=prefs.digest;$('model').append(saved);$('model').value=prefs.model;}
     $('profile-identity').textContent=`Pipeline SHA-256: ${state.pipeline_sha256}\nNo hardware or accuracy certificate is implied.`;
@@ -199,6 +238,7 @@ async function poll(){
   }}catch(error){connectionFailed();if(error.code==='unknown_or_expired_task'){active=null;if(pinned)renderBrief(true);message('This task has expired from the local session. Your pinned brief remains available; prepare a new task for fresh evidence.',true);}else message(`Connection interrupted. ${error.message} Job status is unknown until reconnected.`,true);}finally{polling=false;controls();}
 }
 $('task-form').addEventListener('submit',async(event)=>{event.preventDefault();if(active||settingsPending||!connected||!state||preview)return;try{
+  if(!validDraftProject()||!taskKinds.includes(taskKind()))throw new Error('Choose an approved project and task type for this draft.');
   if(!$('request').value.trim())throw new Error('Describe the task first.');if(mode()==='trial'&&!state.allow_candidate_trials)throw new Error('Relaunch with --allow-candidate-trials to enable explicit trials.');if(mode()==='trial'&&(!$('trial-ack').checked||!selectedModel().model))throw new Error('Choose an installed candidate and acknowledge that its notes are unverified.');
   const params={...preferences(),request:$('request').value};++pinRevision;++stateRevision;active={pending:true};controls();if(pinned)renderBrief(true);message(pinned?'Preparing the current task. The earlier brief stays pinned to its original job.':'Preparing exact evidence for this task.');
   const job=await api('/api/start',params);active=job;await savePreferences();await poll();
@@ -213,7 +253,7 @@ $('task-form').addEventListener('submit',async(event)=>{event.preventDefault();i
   }else message(error.message,true);
   controls();
 }});
-$('request').addEventListener('input',saveDraft);
+$('request').addEventListener('input',()=>{draftTouched.add('task');saveDraft();});
 $('stop').addEventListener('click',async()=>{if(!active?.job_id)return;try{await api('/api/cancel',{project_id:active.project_id,job_id:active.job_id});await poll();}catch(error){message(error.message,true);}});
 $('local-ai').addEventListener('change',async()=>{
   if(settingsPending||!connected||!state||preview)return;
@@ -235,7 +275,9 @@ $('local-ai').addEventListener('change',async()=>{
   }
 });
 $('model-details-toggle').addEventListener('click',()=>{const open=$('model-details').hidden;$('model-details').hidden=!open;$('model-details-toggle').setAttribute('aria-expanded',String(open));});
-$('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{modelView();savePreferences();});$('project').addEventListener('change',savePreferences);document.querySelectorAll('input[name="task-kind"]').forEach(input=>input.addEventListener('change',savePreferences));
+$('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{modelView();savePreferences();});
+$('project').addEventListener('change',()=>{draftTouched.add('project');draftContext();savePreferences();controls();});
+document.querySelectorAll('input[name="task-kind"]').forEach(input=>input.addEventListener('change',()=>{draftTouched.add('kind');draftContext();savePreferences();controls();}));
 $('refresh-models').addEventListener('click',async()=>{
   if(inventoryLoading)return;
   if(settingsPending||preview)return;
