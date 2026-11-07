@@ -134,6 +134,31 @@ class WorkerAcceptance(unittest.TestCase):
         self.assertFalse(result.has_prompt)
         self.assertEqual(result.asks, ())
 
+    def test_datamarked_source_marks_only_the_worker_copy_and_strips_leaks(self):
+        from shake_bake import worker
+        note = {"goal": "Decide" + worker.DATAMARK + "coverage.", "focus": [{"evidence_id": "E1", "why": "slice" + worker.DATAMARK + "guard"}],
+                "asks": ["Does <= admit fewer?"], "approach": [], "summary": "E1 compares counts.", "evidence_ids": ["E1"], "questions": []}
+        with stub_server(content=json.dumps(note)) as (port, requests):
+            with patch.object(worker, "DATAMARK_SOURCE", True):
+                result = organize(self.packet, "fixture:local", port=port)
+        chat = next(body for path, body in requests if path == "/api/chat")
+        sent = json.loads(chat["messages"][1]["content"])
+        self.assertEqual(sent["evidence"][0]["text"], "#" + worker.DATAMARK + "slice" + worker.DATAMARK + "coverage\n")
+        self.assertEqual(sent["original_request"], self.packet.original_request)
+        self.assertIn("datamarked", chat["messages"][0]["content"])
+        self.assertLessEqual(len(chat["messages"][0]["content"].encode()), 4096)
+        self.assertEqual(self.packet.evidence[0].text, "# slice coverage\n")
+        self.assertEqual((result.goal, result.focus[0]["why"]), ("Decide coverage.", "slice guard"))
+        self.assertEqual(result.usage["datamark_leaks"], 2)
+        self.assertTrue(result.requested_configuration["datamark_source"])
+        with stub_server(content=json.dumps(note)) as (port, requests):
+            plain = organize(self.packet, "fixture:local", port=port)
+        chat = next(body for path, body in requests if path == "/api/chat")
+        self.assertEqual(json.loads(chat["messages"][1]["content"])["evidence"][0]["text"], "# slice coverage\n")
+        self.assertNotIn("datamarked", chat["messages"][0]["content"])
+        self.assertNotIn("datamark_leaks", plain.usage)
+        self.assertFalse(plain.requested_configuration["datamark_source"])
+
     def test_invalid_prompt_fields_are_refused(self):
         base = {"summary": "Claim", "evidence_ids": ["E1"], "questions": []}
         for extra, code in (({"focus": [{"evidence_id": "E9", "why": "x"}]}, "worker_invalid_evidence_reference"),

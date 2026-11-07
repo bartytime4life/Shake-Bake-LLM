@@ -14,6 +14,7 @@ from shake_bake import __version__
 from shake_bake.contracts import Refusal
 from shake_bake.collector import MAX_REQUEST_CHARS, _parts, _read
 from shake_bake.search import SearchLimits
+from shake_bake import worker as worker_module
 from shake_bake.worker import parse_json
 
 LAB = Path(__file__).resolve().parent / "task-lab"
@@ -160,6 +161,7 @@ def run_cases(*, model=None, port=11434, case_ids=None, expected_digest=None, ex
             "case_manifest_sha256": identity["manifest_sha256"],
             "grading_keys_sha256": identity["grading_keys_sha256"],
             "mode": "ollama_candidate" if model else "evidence_only_diagnostic",
+            "datamark_source": worker_module.DATAMARK_SOURCE,
             "cases": results, "mechanical_passes": sum(r["coverage"]["mechanical_pass"] and r["fixture_unchanged"] and r["dataset_unchanged"] for r in results),
             "case_count": len(results), "semantic_model_accuracy": None,
             "worker_errors": worker_errors,
@@ -176,7 +178,12 @@ def main(argv=None):
     parser.add_argument("--case", action="append", dest="case_ids")
     parser.add_argument("--dataset", type=Path, help="Owner-selected private dataset directory; see docs/held-out-evaluation.md")
     parser.add_argument("--output", type=Path, help="Optional receipt path outside the fixture roots")
+    parser.add_argument("--datamark", action="store_true", help="Experiment: datamark the worker's copy of excerpt text; recorded in the receipt")
     args = parser.parse_args(argv)
+    if args.datamark:
+        if not args.model:
+            parser.error("--datamark needs --model")
+        worker_module.DATAMARK_SOURCE = True
     try:
         dataset_root, _, _, _ = load_dataset(args.dataset)
         if args.output and dataset_root in (args.output.resolve(), *args.output.resolve().parents):
