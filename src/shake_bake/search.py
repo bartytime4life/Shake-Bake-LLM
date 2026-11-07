@@ -1,5 +1,6 @@
 """Deterministic, bounded lexical selection over a trusted local checkout."""
 
+from collections import Counter
 from dataclasses import asdict, dataclass
 import hashlib
 import os
@@ -13,6 +14,46 @@ from .contracts import Packet, Refusal, Selection
 EXTENSIONS = frozenset({".py", ".js", ".ts", ".tsx", ".jsx", ".rs", ".go", ".md", ".toml", ".yaml", ".yml", ".json", ".txt", ".c", ".h", ".cpp", ".java", ".sh", ".sql"})
 EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build", "vendor", "target", ".idea", ".vscode"})
 STOP_WORDS = frozenset("the and for this that with from into about find show code where how does what review please have source function files file inspect controlling check".split())
+# Primary selection stays at four windows; the controlling-context pass may add
+# definition windows, one usage window and one test window, in that order.
+PRIMARY_FILES = 4
+CONTEXT_WINDOWS = 4
+CONTEXT_USAGE_WINDOWS = 1
+CONTEXT_TEST_WINDOWS = 1
+CONTEXT_MAP_ENTRIES = 12
+DEFINITION_INDEX_ENTRIES = 16384
+WINDOW_LINES = 7
+assert PRIMARY_FILES + CONTEXT_WINDOWS + CONTEXT_USAGE_WINDOWS + CONTEXT_TEST_WINDOWS <= MAX_FILES
+IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z_0-9]{2,}")
+# Top-level definitions only: a leading-column assignment or a declaration keyword.
+DEFINITION_RE = re.compile(
+    r"^(?:\s*(?:(?:async\s+)?def|class|function|fn|pub\s+fn|struct|enum|interface|type|"
+    r"export\s+(?:default\s+)?(?:function|class|const|let|var)|const|let|var)\s+([A-Za-z_]\w*)"
+    r"|([A-Za-z_]\w*)\s*(?::[^=\n]+)?=(?!=))")
+KEYWORDS = frozenset(
+    "def class return import from if else elif for while in not and or is none true false self cls try except "
+    "finally with as lambda yield pass break continue raise assert global nonlocal async await function const let "
+    "var new this typeof instanceof export default null undefined switch case int str float bool len print dict "
+    "list set tuple range object super get items keys values append join split strip lower upper format".split())
+
+
+def _is_test_path(path: str) -> bool:
+    parts = path.casefold().split("/")
+    name = parts[-1].rsplit(".", 1)[0]
+    return any(part in ("test", "tests", "spec", "specs") for part in parts[:-1]) or \
+        name.startswith(("test_", "test")) or name.endswith(("_test", ".test", "_spec", ".spec", "tests"))
+
+
+def _identifiers(text: str) -> tuple[str, ...]:
+    return tuple(name for name in IDENTIFIER_RE.findall(text) if name.casefold() not in KEYWORDS)
+
+
+def _first_line(lines: list[str]) -> str:
+    for line in lines:
+        stripped = line.strip()
+        if stripped:
+            return stripped[:80]
+    return ""
 
 
 @dataclass(frozen=True)
@@ -22,12 +63,15 @@ class SearchLimits:
     max_depth: int = 8
     seconds: float = 5.0
     excerpt_bytes: int = 16_384
+    context_bytes: int = 2048
 
     def validate(self) -> None:
         for name, ceiling in (("max_files", 1000), ("max_entries", 10000), ("max_depth", 16), ("excerpt_bytes", 65536)):
             value = getattr(self, name)
             if type(value) is not int or not 1 <= value <= ceiling:
                 raise Refusal("invalid_search_limits")
+        if type(self.context_bytes) is not int or not 0 <= self.context_bytes <= 16384:
+            raise Refusal("invalid_search_limits")
         if type(self.seconds) not in (int, float) or not 0 < self.seconds <= 30:
             raise Refusal("invalid_search_limits")
 
@@ -44,6 +88,11 @@ class SearchResult:
     selected_excerpt_bytes: int
     exclusions: dict[str, int]
     cutoffs: tuple[str, ...]
+    # Why each controlling-context excerpt was added, keyed by its evidence id,
+    # and the matched files that were not excerpted. Both are software-produced
+    # scan facts, not interpretations.
+    context: tuple[dict, ...] = ()
+    context_map: tuple[dict, ...] = ()
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -66,8 +115,16 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
     cutoffs: set[str] = set()
     if len(all_terms) > len(terms):
         cutoffs.add("query_term_budget")
-    candidates: list[tuple[int, str, int, int, str, int, int]] = []
+    # (score, path, start_line, end_line, digest, size, rank, identifiers)
+    candidates: list[tuple[int, str, int, int, str, int, int, tuple[str, ...]]] = []
     examined = entries_seen = bytes_read = 0
+    digests: dict[str, str] = {}
+    sizes: dict[str, int] = {}
+    first_lines: dict[str, str] = {}
+    file_scores: dict[str, int] = {}
+    definitions: dict[str, list[tuple[str, int]]] = {}
+    definition_entries = 0
+    names_by_file: dict[str, frozenset[str]] = {}
 
     def skip(reason: str) -> None:
         excluded[reason] = excluded.get(reason, 0) + 1
@@ -80,7 +137,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
         return bool(cutoffs & {"time_budget", "file_budget"})
 
     def walk(fd: int, prefix: str, depth: int) -> None:
-        nonlocal examined, entries_seen, bytes_read
+        nonlocal examined, entries_seen, bytes_read, definition_entries
         if stopped():
             return
         entries = []
@@ -128,6 +185,23 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
                     skip("binary")
                     continue
                 lines = data.decode("utf-8").splitlines(keepends=True)
+                digests[path] = hashlib.sha256(data).hexdigest()
+                sizes[path] = len(data)
+                first_lines[path] = _first_line(lines)
+                if limits.context_bytes:
+                    for index, line in enumerate(lines):
+                        found = DEFINITION_RE.match(line)
+                        if not found:
+                            continue
+                        name = found.group(1) or found.group(2)
+                        if name.casefold() in KEYWORDS:
+                            continue
+                        if definition_entries >= DEFINITION_INDEX_ENTRIES:
+                            cutoffs.add("definition_index_budget")
+                            break
+                        definitions.setdefault(name, []).append((path, index))
+                        definition_entries += 1
+                    names_by_file[path] = Counter(_identifiers(data.decode("utf-8")))
                 matches = []
                 for index, line in enumerate(lines):
                     count = sum(term in line.casefold() for term in terms)
@@ -137,6 +211,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
                 if not matches and not path_score:
                     continue
                 score = 2 * path_score + sum(item[0] for item in matches)
+                file_scores[path] = score
                 if lines:
                     # Preserve distinct nearby evidence, including a distant branch in
                     # the same file. Never replace source with a generated summary.
@@ -149,10 +224,9 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
                             break
                     if any(not any(begin <= index < end for begin, end in windows) for _, index in matches):
                         cutoffs.add("window_budget")
-                    digest = hashlib.sha256(data).hexdigest()
                     for rank, (begin, end) in enumerate(windows):
-                        size = len("".join(lines[begin:end]).encode("utf-8"))
-                        candidates.append((score, path, begin + 1, end, digest, size, rank))
+                        text = "".join(lines[begin:end])
+                        candidates.append((score, path, begin + 1, end, digests[path], len(text.encode("utf-8")), rank, _identifiers(text)))
             except UnicodeDecodeError:
                 skip("non_utf8")
             except Refusal as refusal:
@@ -172,7 +246,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
     total = 0
     # Prefer one window from each file before additional windows from a file.
     for candidate in sorted(candidates, key=lambda item: (item[6], -item[0], item[1], item[2])):
-        if len(selected) >= MAX_FILES:
+        if len(selected) >= PRIMARY_FILES:
             cutoffs.add("selection_budget")
             break
         if total + candidate[5] > limits.excerpt_bytes:
@@ -180,10 +254,131 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
             continue
         selected.append(candidate)
         total += candidate[5]
+    selections = [Selection(c[1], c[2], c[3]) for c in selected]
+    expected = [c[4] for c in selected]
+    context: list[dict] = []
+    context_map: list[dict] = []
+    if selected and limits.context_bytes:
+        context_total = 0
+
+        def covered(path: str, index: int) -> bool:
+            return any(s.path == path and s.start_line - 1 <= index < s.end_line for s in selections)
+
+        def add_window(path: str, begin: int, end: int, reason: dict) -> bool:
+            nonlocal total, context_total
+            try:
+                data = _read(root, path)
+            except Refusal as refusal:
+                skip(refusal.code)
+                return False
+            if hashlib.sha256(data).hexdigest() != digests[path]:
+                raise Refusal("source_changed_after_search")
+            lines = data.decode("utf-8").splitlines(keepends=True)
+            end = min(end, len(lines))
+            # Stop before an excerpt already selected from this file; never duplicate lines.
+            for s in selections:
+                if s.path == path and begin < s.start_line - 1 < end:
+                    end = s.start_line - 1
+            if begin >= end:
+                return False
+            size = len("".join(lines[begin:end]).encode("utf-8"))
+            if total + size > limits.excerpt_bytes or context_total + size > limits.context_bytes:
+                cutoffs.add("context_budget")
+                return False
+            selections.append(Selection(path, begin + 1, end))
+            expected.append(digests[path])
+            context.append({"evidence_id": f"E{len(selections)}", **reason})
+            total += size
+            context_total += size
+            return True
+
+        # Identifiers the selected windows use but do not define, most used first.
+        mentions: dict[str, list[str]] = {}
+        for number, candidate in enumerate(selected, 1):
+            for name in dict.fromkeys(candidate[7]):
+                if name.casefold() in terms or name not in definitions:
+                    continue
+                if all(covered(path, index) for path, index in definitions[name]):
+                    continue
+                mentions.setdefault(name, []).append(f"E{number}")
+        ranked = sorted(mentions, key=lambda name: (-sum(c[7].count(name) for c in selected), name))
+        added = 0
+        for name in ranked:
+            if added >= CONTEXT_WINDOWS:
+                cutoffs.add("context_window_budget")
+                break
+            # Prefer a definition in the referencing file (a module constant), then path order.
+            home = selected[int(mentions[name][0][1:]) - 1][1]
+            for path, index in sorted(definitions[name], key=lambda place: (place[0] != home, place)):
+                if covered(path, index):
+                    continue
+                if add_window(path, index, index + WINDOW_LINES, {"kind": "definition", "name": name, "referenced_by": mentions[name]}):
+                    added += 1
+                break
+        # Names the selected windows define: one window where another non-test file uses each.
+        defined: dict[str, str] = {}
+        for name, places in definitions.items():
+            for number, candidate in enumerate(selected, 1):
+                if any(path == candidate[1] and candidate[2] - 1 <= index < candidate[3] for path, index in places):
+                    defined.setdefault(name, f"E{number}")
+        users: dict[str, list[str]] = {}
+        for path, names in names_by_file.items():
+            if path in {s.path for s in selections} or _is_test_path(path):
+                continue
+            hits = [name for name in defined if name in names]
+            if hits:
+                users[path] = hits
+        usages = 0
+        for path in sorted(users, key=lambda p: (-len(users[p]), -sum(names_by_file[p][n] for n in users[p]), p)):
+            if usages >= CONTEXT_USAGE_WINDOWS:
+                cutoffs.add("context_window_budget")
+                break
+            hits = sorted(users[path], key=lambda name: (defined[name], name))
+            try:
+                data = _read(root, path)
+            except Refusal as refusal:
+                skip(refusal.code)
+                continue
+            if hashlib.sha256(data).hexdigest() != digests[path]:
+                raise Refusal("source_changed_after_search")
+            lines = data.decode("utf-8").splitlines(keepends=True)
+            index = next((i for i, line in enumerate(lines) if hits[0] in line), 0)
+            if add_window(path, max(0, index - 3), index + 4, {"kind": "usage", "name": hits[0], "defined_in": defined[hits[0]]}):
+                usages += 1
+        # One test window naming the most selected identifiers.
+        wanted = Counter()
+        for candidate in selected:
+            wanted.update(set(candidate[7]))
+        wanted.update({item["name"]: 2 for item in context})
+        scored = []
+        for path, names in names_by_file.items():
+            if path in {s.path for s in selections} or not _is_test_path(path):
+                continue
+            overlap = [name for name in wanted if name in names]
+            if overlap:
+                scored.append((-sum(wanted[name] for name in overlap), path, overlap))
+        for _, path, overlap in sorted(scored)[:CONTEXT_TEST_WINDOWS]:
+            best = sorted(overlap, key=lambda name: (-wanted[name], name))
+            try:
+                data = _read(root, path)
+            except Refusal as refusal:
+                skip(refusal.code)
+                continue
+            if hashlib.sha256(data).hexdigest() != digests[path]:
+                raise Refusal("source_changed_after_search")
+            lines = data.decode("utf-8").splitlines(keepends=True)
+            index = next((i for i, line in enumerate(lines) if best[0] in line), 0)
+            add_window(path, max(0, index - 3), index + 4, {"kind": "test", "names": best[:5]})
+        # Matched files that were not excerpted: a map, not evidence.
+        chosen = {s.path for s in selections}
+        others = sorted((path for path in file_scores if path not in chosen), key=lambda p: (-file_scores[p], p))
+        if len(others) > CONTEXT_MAP_ENTRIES:
+            cutoffs.add("context_map_budget")
+        context_map = [{"path": path, "size_bytes": sizes[path], "first_line": first_lines[path]} for path in others[:CONTEXT_MAP_ENTRIES]]
     packet = None
-    if selected:
-        packet = build_packet(root, request, tuple(Selection(c[1], c[2], c[3]) for c in selected))
-        if any(record.file_sha256 != candidate[4] for record, candidate in zip(packet.evidence, selected)):
+    if selections:
+        packet = build_packet(root, request, tuple(selections))
+        if any(record.file_sha256 != digest for record, digest in zip(packet.evidence, expected)):
             raise Refusal("source_changed_after_search")
     return SearchResult(request, packet, terms, examined, entries_seen, bytes_read, len({c[1] for c in candidates}), total,
-                        dict(sorted(excluded.items())), tuple(sorted(cutoffs)))
+                        dict(sorted(excluded.items())), tuple(sorted(cutoffs)), tuple(context), tuple(context_map))

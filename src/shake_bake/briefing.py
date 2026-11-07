@@ -25,7 +25,24 @@ def collection_scope(search):
     return {"scope": "bounded_lexical_selected_files", "exhaustive": False,
             "files_examined": search.files_examined, "matching_files": search.matching_files,
             "source_bytes_read": search.source_bytes_read, "selected_excerpt_bytes": search.selected_excerpt_bytes,
-            "cutoffs": list(search.cutoffs), "exclusions": dict(search.exclusions)}
+            "cutoffs": list(search.cutoffs), "exclusions": dict(search.exclusions),
+            "context": [dict(item) for item in search.context]}
+
+
+def context_lines(search) -> dict[str, str]:
+    """Why each controlling-context excerpt exists, keyed by evidence id."""
+    lines = {}
+    for item in search.context:
+        kind, eid = item.get("kind"), item["evidence_id"]
+        if kind == "definition":
+            lines[eid] = f"{eid}: top-level definition of {item['name']}, referenced by " + ", ".join(item["referenced_by"]) + "."
+        elif kind == "usage":
+            lines[eid] = f"{eid}: a use of {item['name']}, which {item['defined_in']} defines."
+        elif kind == "test":
+            lines[eid] = f"{eid}: test file naming " + ", ".join(item["names"]) + "."
+        else:
+            lines[eid] = f"{eid}: software-selected context ({kind})."
+    return lines
 
 
 def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 11434, limits: SearchLimits | None = None, expected_digest: str | None = None, expected_runtime: str | None = None, task_kind: str | None = None) -> Brief:
@@ -93,10 +110,17 @@ def render(brief: Brief) -> str:
                 lines.extend(["", "Worker uncertainty:", _quote(question)])
         if brief.worker_error:
             lines.extend(["", f"Worker failed: {brief.worker_error}. Exact collected evidence is retained below."])
+        reasons = context_lines(search)
         for index, evidence in enumerate(packet.evidence, 1):
             lines.extend(["", f"## E{index}", "Path:", _quote(evidence.path),
-                          f"Lines: {evidence.start_line}-{evidence.end_line}", f"Full-file SHA-256: {evidence.file_sha256}",
-                          _quote(evidence.text)])
+                          f"Lines: {evidence.start_line}-{evidence.end_line}", f"Full-file SHA-256: {evidence.file_sha256}"])
+            if f"E{index}" in reasons:
+                lines.append("Controlling context (software-selected, not an interpretation): " + reasons[f"E{index}"])
+            lines.append(_quote(evidence.text))
+        if search.context_map:
+            lines.extend(["", "## Files also matched, not excerpted",
+                          "Path, size and first non-empty line; read these next if the excerpts above are not enough."])
+            lines.extend(f"- {item['path']} ({item['size_bytes']} bytes): {item['first_line']}" for item in search.context_map)
     lines.extend(["", "## Scan receipt", f"Files examined: {search.files_examined}; matching files: {search.matching_files}.",
                   f"Source bytes read: {search.source_bytes_read}; selected excerpt bytes: {search.selected_excerpt_bytes}.",
                   "Cutoffs: " + (", ".join(search.cutoffs) or "none reached"),

@@ -232,6 +232,8 @@ class HelperSession:
                 answer["matching_files"] = search["matching_files"]
                 answer["source_bytes_read"] = search["source_bytes_read"]
                 answer["selected_excerpt_bytes"] = search["selected_excerpt_bytes"]
+                answer["context"] = search.get("context", [])
+                answer["context_map"] = search.get("context_map", [])
             packet = search.get("packet")
             if packet:
                 answer["snapshot_id"] = packet["snapshot_id"]
