@@ -16,7 +16,9 @@ DENIED_PARTS = frozenset({".git", ".ssh", ".aws", ".gnupg", ".env", ".netrc", ".
 
 
 def _parts(path: str) -> tuple[str, ...]:
-    if not isinstance(path, str) or not path or "\\" in path or ":" in path or "\x00" in path:
+    # Control characters (newlines, tabs, escapes) could let a filename pose as brief
+    # structure or an instruction once rendered; such paths are not allowed at all.
+    if not isinstance(path, str) or not path or "\\" in path or ":" in path or any(ord(ch) < 0x20 or ord(ch) == 0x7f for ch in path):
         raise Refusal("path_not_allowed")
     parsed = PurePosixPath(path)
     parts = parsed.parts

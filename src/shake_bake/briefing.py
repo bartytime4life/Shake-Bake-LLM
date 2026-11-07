@@ -1,6 +1,7 @@
 """Compose handoffs without permitting a worker to hide source records."""
 
 from dataclasses import asdict, dataclass
+import json
 from pathlib import Path
 import re
 
@@ -93,6 +94,15 @@ def _quote(text: str) -> str:
     return fence + "\n" + text + ("" if text.endswith("\n") else "\n") + fence
 
 
+def _code(text: str) -> str:
+    """Inline code for untrusted short repository strings: a backtick run longer than any inside,
+    control characters shown as escapes, so a crafted filename cannot read as structure or instruction."""
+    shown = "".join(ch if ord(ch) >= 0x20 and ord(ch) != 0x7f else json.dumps(ch)[1:-1] for ch in text)
+    marks = "`" * max(1, 1 + max((len(m.group()) for m in re.finditer(r"`+", shown)), default=0))
+    pad = " " if shown.startswith("`") or shown.endswith("`") else ""
+    return marks + pad + shown + pad + marks
+
+
 def render(brief: Brief) -> str:
     search = brief.search
     lines = ["# Shake and Bake evidence brief", "", f"Outcome: {brief.outcome}", "",
@@ -128,8 +138,9 @@ def render(brief: Brief) -> str:
             lines.append(_quote(evidence.text))
         if search.context_map:
             lines.extend(["", "## Files also matched, not excerpted",
-                          "Path, size and first non-empty line; read these next if the excerpts above are not enough."])
-            lines.extend(f"- {item['path']} ({item['size_bytes']} bytes): {item['first_line']}" for item in search.context_map)
+                          "Path, size and first non-empty line (untrusted repository text); read these next if the excerpts above are not enough."])
+            lines.extend(f"- {_code(item['path'])} ({item['size_bytes']} bytes): {_code(item['first_line']) if item['first_line'] else '(empty)'}"
+                         for item in search.context_map)
     lines.extend(["", "## Scan receipt", f"Files examined: {search.files_examined}; matching files: {search.matching_files}.",
                   f"Source bytes read: {search.source_bytes_read}; selected excerpt bytes: {search.selected_excerpt_bytes}.",
                   "Cutoffs: " + (", ".join(search.cutoffs) or "none reached"),
