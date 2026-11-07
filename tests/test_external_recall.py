@@ -43,6 +43,8 @@ class ExternalRecallAcceptance(unittest.TestCase):
         self.assertAlmostEqual(case["recall_excerpted"], 2 / 3)
         self.assertGreaterEqual(case["recall_excerpted"], case["recall_primary"])
         self.assertGreaterEqual(case["recall_with_map"], case["recall_excerpted"])
+        self.assertGreaterEqual(case["recall_with_index"], case["recall_with_map"])
+        self.assertIn("mean_recall_with_index", report)
         self.assertEqual(report["cases"][1]["refused"], "case_root_not_allowed")
         self.assertEqual(report["cases_with_any_excerpted_hit"], 1.0)
         self.assertEqual(report["cases_hitting_file_budget"], 0)

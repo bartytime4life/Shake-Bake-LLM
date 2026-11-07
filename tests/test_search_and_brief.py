@@ -310,6 +310,44 @@ class RetrievalScoring(unittest.TestCase):
         self.assertIn("rare.py", paths)
         self.assertEqual(many.exclusions.get("low_signal_match"), 12)
 
+    def test_uncovered_matching_lines_are_indexed_with_numbers_and_short_text(self):
+        log = ["heartbeat ok\n"] * 900 + ["FAILED tests/test_retry.py::test_exhausted_at_limit\n"] + ["cache warm\n"] * 900 + ["FAILED tests/test_deadline.py::test_millisecond_deadline\n"]
+        (self.root / "ci.txt").write_text("".join(log), encoding="utf-8")
+        (self.root / "retry.py").write_text("def exhausted(attempt, limit):\n    return attempt > limit\n", encoding="utf-8")
+        (self.root / "deadline.py").write_text("def within_deadline(ms, seconds):\n    return ms < seconds\n", encoding="utf-8")
+        # Three more matching files take the remaining primary slots, so the log's second match stays uncovered.
+        for index in range(3):
+            (self.root / f"notes_{index}.md").write_text(f"# triage of failed tests, note {index}\n", encoding="utf-8")
+        result = prepare(self.root, "Triage the FAILED tests in ci.txt")
+        self.assertIn("ci.txt", [record.path for record in result.packet.evidence])
+        covered = {(record.path, line) for record in result.packet.evidence for line in range(record.start_line, record.end_line + 1)}
+        self.assertIn(("ci.txt", 901), covered)
+        entry = next(item for item in result.line_index if item["path"] == "ci.txt")
+        self.assertEqual((entry["total_lines"], entry["matched_lines"], entry["excerpted"]), (1802, 2, True))
+        self.assertEqual(entry["entries"], [{"line": 1802, "text": "FAILED tests/test_deadline.py::test_millisecond_deadline"}])
+        self.assertNotIn(("ci.txt", 1802), covered)
+        text = render(build_brief(self.root, "Triage the FAILED tests in ci.txt"))
+        self.assertIn("## Other matching lines, not excerpted", text)
+        self.assertIn("- `ci.txt`: 2 matching of 1802 lines\n  - line 1802: `FAILED tests/test_deadline.py::test_millisecond_deadline`", text)
+        self.assertLess(text.index("## Files also matched") if "## Files also matched" in text else text.index("## Other matching lines"), text.index("## Scan receipt"))
+
+    def test_line_index_is_bounded_and_skips_excluded_files(self):
+        from shake_bake.search import LINE_INDEX_BYTES, LINE_INDEX_LINES
+        # One rare-term hit keeps big.txt out of the distractor rule; its other 79 hits are widespread.
+        (self.root / "big.txt").write_text("policy guard ledger\n" + "".join(f"policy entry {index} " + "x" * 110 + "\n" for index in range(79)), encoding="utf-8")
+        (self.root / "guard.py").write_text("# policy guard\n", encoding="utf-8")
+        for index in range(10):
+            (self.root / f"noise_{index}.py").write_text("# policy note\n", encoding="utf-8")
+        result = prepare(self.root, "policy guard")
+        self.assertEqual(result.exclusions.get("low_signal_match"), 10)
+        self.assertNotIn("noise_0.py", {item["path"] for item in result.line_index})
+        big = next(item for item in result.line_index if item["path"] == "big.txt")
+        self.assertLessEqual(len(big["entries"]), LINE_INDEX_LINES)
+        self.assertLessEqual(sum(len(item["text"].encode()) + 8 for entry in result.line_index for item in entry["entries"]), LINE_INDEX_BYTES)
+        self.assertIn("line_index_budget", result.cutoffs)
+        self.assertTrue(all(len(item["text"]) <= 120 for item in big["entries"]))
+        self.assertEqual(big["entries"], sorted(big["entries"], key=lambda item: item["line"]))
+
     def test_crafted_filenames_cannot_pose_as_brief_structure(self):
         from shake_bake.briefing import _code
         # Five matching files: four become primary excerpts, the crafted one lands in the map.
