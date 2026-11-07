@@ -381,5 +381,50 @@ class RetrievalScoring(unittest.TestCase):
         self.assertEqual(first.packet.evidence[0].path, "long.py")
 
 
+class TermSelection(unittest.TestCase):
+    """Request words are chosen by signal, not by position; URL and template words never match."""
+
+    def test_identifiers_outrank_template_words_and_urls_are_dropped(self):
+        from shake_bake.search import MAX_TERMS, request_terms
+        request = ("`@st.cache_data` cannot handle UUID objects\n\n"
+                   "### Checklist\n- [x] I have searched the existing issues https://github.com/streamlit/streamlit/issues\n"
+                   "### Describe the bug\nThe hashing of uuid.UUID fails inside cache_data. System information: Streamlit 1.21, Python 3.11.\n"
+                   + " ".join(f"pad{chr(97 + index)}word again" for index in range(26)))
+        ranked, used = request_terms(request)
+        self.assertEqual(len(used), MAX_TERMS)
+        for word in ("cache_data", "uuid", "hashing"):
+            self.assertIn(word, used)
+        for word in ("https", "github", "com", "checklist", "searched", "existing", "issues", "system", "information", "describe", "bug", "again"):
+            self.assertNotIn(word, used)
+        self.assertLess(used.index("cache_data"), used.index("hashing"))
+        self.assertGreater(len(ranked), MAX_TERMS)
+        self.assertEqual(request_terms(request), (ranked, used))
+
+    def test_short_requests_keep_every_remaining_word_in_appearance_order(self):
+        from shake_bake.search import request_terms
+        ranked, used = request_terms("Why does admit allow two active jobs despite the documented limit?")
+        self.assertEqual(ranked, used)
+        self.assertEqual(used, ("admit", "allow", "active", "jobs", "despite", "documented", "limit"))
+
+    def test_url_only_and_template_only_requests_are_refused(self):
+        for request in ("https://github.com/owner/repo/issues/1", "Please describe the expected behavior and steps to reproduce."):
+            with self.subTest(request=request), self.assertRaisesRegex(Refusal, "search_terms_required"):
+                prepare(Path(tempfile.mkdtemp()), request)
+
+    def test_signal_terms_reach_the_file_that_positional_terms_missed(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(root))
+        (root / "lib").mkdir()
+        (root / "lib" / "hashing.py").write_text("def update_hash(hasher, obj):\n    if isinstance(obj, uuid.UUID):\n        return hasher.update(obj.bytes)\n", encoding="utf-8")
+        for index in range(20):
+            (root / f"page_{index}.md").write_text("# Checklist\nI have searched the existing issues. System information below.\n", encoding="utf-8")
+        request = ("Checklist: I have searched the existing issues. System information: version 1.21.\n" * 3
+                   + "Describe the bug: hashing of uuid.UUID objects fails in cache_data.\n")
+        result = prepare(root, request)
+        self.assertIn("lib/hashing.py", [record.path for record in result.packet.evidence])
+        self.assertNotIn("page_0.md", [record.path for record in result.packet.evidence])
+        self.assertTrue(set(result.terms) >= {"hashing", "uuid", "cache_data"})
+
+
 if __name__ == "__main__":
     unittest.main()
