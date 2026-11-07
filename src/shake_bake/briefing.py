@@ -26,7 +26,8 @@ def collection_scope(search):
             "files_examined": search.files_examined, "matching_files": search.matching_files,
             "source_bytes_read": search.source_bytes_read, "selected_excerpt_bytes": search.selected_excerpt_bytes,
             "cutoffs": list(search.cutoffs), "exclusions": dict(search.exclusions),
-            "context": [dict(item) for item in search.context]}
+            "context": [dict(item) for item in search.context],
+            "rerank": dict(search.rerank) if search.rerank else None}
 
 
 def context_lines(search) -> dict[str, str]:
@@ -45,8 +46,12 @@ def context_lines(search) -> dict[str, str]:
     return lines
 
 
-def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 11434, limits: SearchLimits | None = None, expected_digest: str | None = None, expected_runtime: str | None = None, task_kind: str | None = None) -> Brief:
-    search = prepare(root, task, limits)
+def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 11434, limits: SearchLimits | None = None, expected_digest: str | None = None, expected_runtime: str | None = None, task_kind: str | None = None, rerank_model: str | None = None, rerank_seconds: float = 20.0) -> Brief:
+    scorer = None
+    if rerank_model is not None:
+        from .rerank import EmbeddingScorer
+        scorer = EmbeddingScorer(rerank_model, port=port, seconds=rerank_seconds)
+    search = prepare(root, task, limits, scorer)
     if search.packet is None:
         return Brief("ABSTAIN", search, None, None)
     worker, error = None, None
@@ -129,6 +134,11 @@ def render(brief: Brief) -> str:
                   f"Source bytes read: {search.source_bytes_read}; selected excerpt bytes: {search.selected_excerpt_bytes}.",
                   "Cutoffs: " + (", ".join(search.cutoffs) or "none reached"),
                   "Exclusions: " + str(search.exclusions),
+                  *([("Rerank: local embedding model " + str(search.rerank.get("model")) + " refused (" + search.rerank["error"] + "); lexical order kept.")
+                     if "error" in search.rerank else
+                     (f"Rerank: local embedding model {search.rerank.get('model')} scored {search.rerank.get('pool')} of {search.rerank.get('candidates')} candidate windows; "
+                      f"order {'changed' if search.rerank.get('order_changed') else 'unchanged'}. A scan fact about ordering, not an interpretation; it added no window.")]
+                    if search.rerank else []),
                   "Cloud tokens and savings: not measured. No direct cloud-provider client is implemented.",
                   "When enabled, Ollama uses a loopback connection; its daemon must be trusted and configured with cloud features disabled."])
     if brief.worker:

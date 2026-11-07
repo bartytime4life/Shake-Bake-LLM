@@ -1,0 +1,70 @@
+"""Optional local embedding rerank of candidate windows.
+
+The scorer asks a loopback Ollama embedding model for vectors of the request
+and of each candidate window, and returns cosine similarities. It orders
+evidence that the lexical scan already found; it selects nothing new, cites
+nothing, and its result is a scan fact recorded in the receipt, not an
+interpretation. The same loopback, identity and budget rules as the worker
+apply, and a refusal here never hides evidence: the caller falls back to the
+lexical order and records the refusal code.
+"""
+
+import math
+import time
+
+from .contracts import Refusal
+from .worker import _post, canonical_model, local_model_metadata, local_runtime, validate_settings
+
+MAX_POOL = 24
+MAX_WINDOW_BYTES = 4096
+MAX_DIMENSIONS = 8192
+
+
+class EmbeddingScorer:
+    """Callable(request, texts) -> similarities; fills `record` after each call."""
+
+    def __init__(self, model: str, *, port: int = 11434, seconds: float = 20.0):
+        validate_settings(model, port, seconds)
+        self.model, self.port, self.seconds = model, port, seconds
+        self.record: dict = {"model": model, "kind": "local_embedding_rerank", "selects_nothing_new": True}
+
+    def __call__(self, request: str, texts: list[str]) -> list[float]:
+        if not texts or len(texts) > MAX_POOL:
+            raise Refusal("rerank_pool_not_allowed")
+        if any(len(text.encode("utf-8")) > MAX_WINDOW_BYTES for text in texts):
+            raise Refusal("rerank_window_too_large")
+        deadline = time.monotonic() + self.seconds
+        started = time.perf_counter()
+        local_model_metadata(self.model, self.port, deadline)
+        runtime = local_runtime(self.port, deadline)
+        result = _post("/api/embed", {"model": self.model, "input": [request, *texts], "keep_alive": 0, "truncate": False}, self.port, deadline)
+        if result.get("remote_host") or result.get("remote_model"):
+            raise Refusal("remote_embedding_response_refused")
+        if not isinstance(result.get("model"), str) or canonical_model(result["model"]) != canonical_model(self.model):
+            raise Refusal("embedding_model_mismatch")
+        vectors = result.get("embeddings")
+        if not isinstance(vectors, list) or len(vectors) != len(texts) + 1:
+            raise Refusal("embedding_count_mismatch")
+        dimensions = None
+        for vector in vectors:
+            if not isinstance(vector, list) or not vector or len(vector) > MAX_DIMENSIONS:
+                raise Refusal("embedding_invalid_vector")
+            if dimensions is None:
+                dimensions = len(vector)
+            if len(vector) != dimensions or not all(type(value) in (int, float) and math.isfinite(value) for value in vector):
+                raise Refusal("embedding_invalid_vector")
+        norms = [math.sqrt(sum(value * value for value in vector)) for vector in vectors]
+        if any(norm == 0 for norm in norms):
+            raise Refusal("embedding_invalid_vector")
+        query = vectors[0]
+        similarities = [sum(a * b for a, b in zip(query, vector)) / (norms[0] * norm) for vector, norm in zip(vectors[1:], norms[1:])]
+        usage = {}
+        for key in ("prompt_eval_count", "total_duration", "load_duration"):
+            value = result.get(key)
+            if value is not None:
+                if type(value) is not int or not 0 <= value <= 10**15:
+                    raise Refusal("embedding_invalid_usage")
+                usage[key] = value
+        self.record.update({"dimensions": dimensions, "windows_scored": len(texts), "observed_runtime_version": runtime,
+                            "local_server_reported_usage": usage, "elapsed_seconds": round(time.perf_counter() - started, 3)})
+        return similarities
