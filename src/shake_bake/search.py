@@ -15,6 +15,56 @@ from .contracts import Packet, Refusal, Selection
 EXTENSIONS = frozenset({".py", ".js", ".ts", ".tsx", ".jsx", ".rs", ".go", ".md", ".toml", ".yaml", ".yml", ".json", ".txt", ".c", ".h", ".cpp", ".java", ".sh", ".sql"})
 EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build", "vendor", "target", ".idea", ".vscode"})
 STOP_WORDS = frozenset("the and for this that with from into about find show code where how does what review please have source function files file inspect controlling check".split())
+# Words that carry little signal in a request: English function words and the
+# vocabulary of issue templates. They never become search terms. Deliberately
+# absent: test, tests, error, failed, log, logs, which name real things in code.
+TEMPLATE_WORDS = frozenset("""
+are but can cannot not you your when then than these those there here without within onto over under after before because
+should would could will just also only any all some more most much many very use used using uses get got gets set
+make makes made like want need needs try tried trying run ran running see seen did done doing has had having was were
+been being which who why its our their them they him her his she out off per via etc one two new old same other
+another still again every each first last next following above below issue issues bug bugs problem problems describe
+description expected behavior behaviour actual steps reproduce reproduction screenshots screenshot additional context
+environment operating system information version versions browser checklist searched existing example minimal
+reproducible please thanks thank hello note report reported link links snippet output input result results install
+installed installation pip conda traceback stack trace question questions feature request currently however anyone
+someone something anything nothing already always never maybe might must seems seem looks look think thought
+""".split()) | STOP_WORDS
+URL_RE = re.compile(r"(?:https?://|www\.)\S+")
+MAX_TERMS = 16
+
+
+def request_terms(request: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Rank the request's words by signal and return (all ranked, the MAX_TERMS used).
+
+    Signal is positional-independent: identifier shape (underscore, digits, inner capitals)
+    counts most, then presence in the first line, repetition and length. URL fragments and
+    template words are dropped. Ties keep first-appearance order, so the result is stable.
+    """
+    text = URL_RE.sub(" ", request)
+    first_line = text.strip().split("\n", 1)[0].casefold() if text.strip() else ""
+    title_words = set(re.findall(r"[a-z_][a-z_0-9]+", first_line))
+    first_index: dict[str, int] = {}
+    counts: Counter = Counter()
+    shaped: dict[str, int] = {}
+    for index, token in enumerate(re.findall(r"[A-Za-z_][A-Za-z_0-9]+", text)):
+        if len(token) < 3:
+            continue
+        key = token.casefold()
+        if key in TEMPLATE_WORDS:
+            continue
+        first_index.setdefault(key, index)
+        counts[key] += 1
+        # Code-shaped words: an underscore or an inner capital is strong; a digit is weak.
+        strength = 3 if "_" in token or re.search(r"[a-z][A-Z]", token) else (1 if any(ch.isdigit() for ch in token) else 0)
+        shaped[key] = max(shaped.get(key, 0), strength)
+
+    def signal(key: str) -> int:
+        # A one-line request scores every word alike, so its words keep appearance order.
+        return shaped[key] + (2 if key in title_words else 0) + (1 if counts[key] > 1 else 0)
+
+    ranked = tuple(sorted(first_index, key=lambda key: (-signal(key), first_index[key])))
+    return ranked, ranked[:MAX_TERMS]
 # Primary selection stays at four windows; the controlling-context pass may add
 # definition windows, one usage window and one test window, in that order.
 PRIMARY_FILES = 4
@@ -78,15 +128,17 @@ def _first_line(lines: list[str]) -> str:
 
 @dataclass(frozen=True)
 class SearchLimits:
-    max_files: int = 200
-    max_entries: int = 4000
+    # A 1,000-file walk took under half a second on the thirteen external repositories
+    # (November 7); the five-second deadline remains the hard stop.
+    max_files: int = 1000
+    max_entries: int = 20000
     max_depth: int = 8
     seconds: float = 5.0
     excerpt_bytes: int = 16_384
     context_bytes: int = 2048
 
     def validate(self) -> None:
-        for name, ceiling in (("max_files", 1000), ("max_entries", 10000), ("max_depth", 16), ("excerpt_bytes", 65536)):
+        for name, ceiling in (("max_files", 5000), ("max_entries", 100000), ("max_depth", 16), ("excerpt_bytes", 65536)):
             value = getattr(self, name)
             if type(value) is not int or not 1 <= value <= ceiling:
                 raise Refusal("invalid_search_limits")
@@ -129,9 +181,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
     limits.validate()
     if not isinstance(request, str) or not request.strip() or len(request) > MAX_REQUEST_CHARS:
         raise Refusal("invalid_request")
-    all_terms = tuple(dict.fromkeys(t.casefold() for t in re.findall(r"[A-Za-z_][A-Za-z_0-9]+", request)
-                                    if len(t) >= 3 and t.casefold() not in STOP_WORDS))
-    terms = all_terms[:16]
+    all_terms, terms = request_terms(request)
     if not terms:
         raise Refusal("search_terms_required")
     if os.name != "posix" or not hasattr(os, "O_NOFOLLOW") or os.open not in os.supports_dir_fd:
