@@ -1,0 +1,22 @@
+{
+  "kind": "historical_independent_recall_protocol_metadata",
+  "dataset": "JetBrains-Research/lca-bug-localization",
+  "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+  "dataset_file": "py/test-00000-of-00001.parquet",
+  "dataset_file_sha256": "96c06c997caa3dc63831302db2c19a1d8273384049dafdffe49f1bbcc133410f",
+  "dataset_license_declaration": "Apache-2.0; original source licenses and benchmark publication terms remain applicable",
+  "before_commit": "2a0acdf4a4e3e70ee2dd1ab116826fdc04506295",
+  "after_commit": "2222a67d4289a18abfb2305b9a62f5c9ab36c547",
+  "selection_seed": "shake-bake-independent-pilot-2026-11-07-v1:",
+  "selection": "First 12 test IDs ordered by sha256(seed + text_id), without replacements for unavailable inputs",
+  "selected_cases": 12,
+  "available_scored_cases": 7,
+  "omissions": {"snapshot_download_cap": 3, "archive_links_refused_by_materializer": 2},
+  "profiles": {
+    "default": {"max_files": 200, "max_entries": 4000, "max_depth": 8, "seconds": 5.0, "excerpt_bytes": 16384, "context_bytes": 2048},
+    "expanded": {"max_files": 1000, "max_entries": 10000, "max_depth": 16, "seconds": 30.0, "excerpt_bytes": 16384, "context_bytes": 2048}
+  },
+  "no_automatic_dataset_download": true,
+  "no_case_text_or_source_snapshots_in_repository": true,
+  "status": "Historical protocol metadata only; does not constitute new evaluation execution or independent verification of a future run"
+}
