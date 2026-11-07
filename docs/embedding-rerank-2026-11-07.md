@@ -1,7 +1,9 @@
 # Embedding rerank of candidate windows
 
-Status: mechanism built and tested, November 7, 2026, `0.4.0.dev14`; no model
-trial yet. This is candidate C4 from the [November 6 web research](research-2026-11-06.md):
+Status: mechanism built and tested in `0.4.0.dev14`; development trial run in
+`0.4.0.dev16` with `qwen3-embedding:0.6b` after the owner approved the pull
+(result below: mixed, the option stays off by default). This is candidate C4
+from the [November 6 web research](research-2026-11-06.md):
 the first use of the local model whose effect is checked mechanically (which
 windows end up in the brief) rather than read by a person. It is optional,
 explicitly enabled, and adds no window the lexical scan did not find.
@@ -45,32 +47,79 @@ recorded; the pool is capped at 24 with the cutoff disclosed; and the rendered
 brief carries the scan-fact line for both the success and the refusal. 201
 Python tests pass.
 
-## Why no trial is recorded here
+## Development trial with `qwen3-embedding:0.6b`
 
-The owner's Ollama serves no embedding model: `/api/embed` with the installed
-chat models returns "This server does not support embeddings". The project
-rule forbids automatic downloads, so the trial waits on an explicit pull. The
-smallest fit is `qwen3-embedding:0.6b` (about 640 MB, 1,024 dimensions, from
-the Ollama library). Once installed, the trial is three commands and needs no
-cloud:
+The owner's Ollama served no embedding model (the installed chat models return
+"This server does not support embeddings"), so the trial waited for an
+explicit pull, which the owner approved. `qwen3-embedding:0.6b` (639 MB, 1,024
+dimensions) was pulled on November 7 and three runs followed, all local, no
+cloud, with the `dev15` collector. Receipts are under
+`examples/receipts/embedding-rerank-2026-11-07/`.
 
-```bash
-python3.12 -B benchmarks/run_task_lab.py --evidence-only --rerank-model qwen3-embedding:0.6b --output /abs/out/tasklab-rerank.json
-python3.12 -B benchmarks/external_recall.py --cases /abs/cases.jsonl --repos /abs/repos --rerank-model qwen3-embedding:0.6b --output /abs/out/recall-rerank.json
-python3.12 -B -m shake_bake brief --root <fixture> --task "<task>" --rerank-model qwen3-embedding:0.6b
-```
+**Two defects surfaced and were fixed first.** A full pool of 24 vectors is
+about 320 KB of JSON and exceeded the worker transport's 256 KB response cap,
+so every large-pool rerank had quietly fallen back to lexical order with
+`worker_response_too_large` recorded; the scorer now embeds in batches of
+eight under one deadline and records `embed_calls`. A window over 4,096 bytes
+had refused the whole rerank; since the copy only orders, it is now cut for
+scoring and counted as `truncated_windows`, with the exact excerpt untouched.
+The first self-commit run hit both; the numbers below are from the rerun.
 
-What it will measure: Task Lab required-span coverage (must stay 10/10),
-decisive-file coverage on the four comparison fixtures, and file recall on the
-self-commit cases against the lexical-only receipts already retained under
-`examples/receipts/retrieval-scoring-2026-11-07/`, plus per-case embedding
-time. A gain on those is development evidence for the candidate; qualification
-still needs a reserved cohort, and the rerank never promotes a model.
+**Task Lab, evidence only.** 10/10 required spans with the rerank. Pools were
+two to four windows; the order changed in four cases (repo-tour, runtime-mode,
+unknown-hardware, coverage-budget). Each case spent about 1.5 seconds in the
+embed call.
+
+**Four comparison fixtures, decisive files excerpted, lexical → rerank:**
+
+| Case | Decisive files | Order | Embed |
+| --- | ---: | --- | ---: |
+| dispatch-path | 6/6 → 6/6 | changed (submit before the test) | 3.1 s, 2 calls |
+| publish-reorder | 6/7 → 7/7 | `docs/contract.md` promoted into the primary four | 3.1 s, 2 calls |
+| two-log-failures | 6/6 → 6/6 | changed (README first) | 1.6 s |
+| deployment-unknowns | 5/6 → 5/6 | `receipts/readiness.json` promoted, `app/transport.py` demoted out of the four | 1.6 s |
+
+The one clear gain is the prose contract in the publish case, which the
+lexical order left in the map. The rerank also tends to lift README-style
+prose toward the top, which matches the request's wording rather than its
+code.
+
+**Twelve self-commit cases** (the collector authors' own commits, mostly
+documentation; direction only):
+
+| Measure | Lexical | Rerank |
+| --- | ---: | ---: |
+| Mean recall, four primary excerpts | 12.9% | 13.8% |
+| Mean recall, all excerpts | 18.6% | 18.6% |
+| Mean recall, excerpts plus map | 38.3% | 41.6% |
+| Cases with any changed file in the primary four | 9/12 | 8/12 |
+| Cases with any changed file in excerpts | 9/12 | 11/12 |
+| Per-case excerpted hits | – | up 4, down 7, same 1 |
+| Embedding time per case | – | 6.8 to 7.3 s |
+
+More cases reach at least one changed file, while cases that were already
+well served lose hits: the rerank spreads coverage rather than deepening it.
+The time cost is the larger finding. The scorer sends `keep_alive: 0` like the
+worker, so Ollama unloads the 0.6B model after every call and reloads it for
+the next, which is most of the 1.5 seconds per call; a repository-sized pool
+needs two to four calls.
+
+**Decision.** The option stays off by default and is not wired into the
+workbench. The mechanism works and is now measurable; the ordering it
+produces is not yet a clear improvement on this material, and the per-case
+cost is seconds, not milliseconds. Two bounded follow-ups would make a second
+trial fair: a short keep-alive scoped to one preparation so the batches share
+one model load, and combining similarity with the lexical score instead of
+replacing it, so a weak prose match cannot displace a strong identifier match.
+Either is a new candidate to measure, not a tune on these exposed cases.
 
 ## What this does not establish
 
-- Any effect on selection quality; no embedding model has run.
+- Selection quality on unseen cases; the Task Lab and fixtures are exposed and
+  the self-commit cases are the authors' own, mostly documentation commits.
 - Behavior with the local worker enabled on top of the rerank; the two are
   independent stages and were not run together.
 - Workbench integration; the GUI and MCP paths call `build_brief` without a
   rerank model.
+- Anything about other embedding models or dimensions; one 0.6B model at
+  1,024 dimensions was run, with the model unloaded between calls.

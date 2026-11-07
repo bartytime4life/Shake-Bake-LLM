@@ -67,7 +67,7 @@ def run(cases: list[dict], limits: SearchLimits, scorer=None) -> dict:
             continue
         row["seconds"] = round(time.perf_counter() - started, 3)
         if result.rerank is not None:
-            row["rerank"] = {key: result.rerank.get(key) for key in ("model", "pool", "candidates", "order_changed", "error", "elapsed_seconds") if key in result.rerank}
+            row["rerank"] = {key: result.rerank.get(key) for key in ("model", "pool", "candidates", "order_changed", "error", "elapsed_seconds", "embed_calls", "truncated_windows") if key in result.rerank}
         evidence = list(result.packet.evidence) if result.packet else []
         primary = {record.path for record in evidence[:PRIMARY_FILES]}
         excerpted = {record.path for record in evidence}

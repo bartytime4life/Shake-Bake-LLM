@@ -10,7 +10,7 @@ import unittest
 
 from shake_bake.briefing import build_brief, render
 from shake_bake.contracts import Refusal
-from shake_bake.rerank import MAX_POOL, EmbeddingScorer
+from shake_bake.rerank import BATCH, MAX_POOL, EmbeddingScorer
 from shake_bake.search import SearchLimits, prepare
 
 
@@ -112,8 +112,12 @@ class RerankAcceptance(unittest.TestCase):
             (self.root / f"p{index:02d}.py").write_text(f"# backend pool {index}\n", encoding="utf-8")
         with embed_server() as (port, requests):
             result = prepare(self.root, self.task, None, EmbeddingScorer("fixture:embed", port=port))
-        embed = next(body for path, body in requests if path == "/api/embed")
-        self.assertEqual(len(embed["input"]) - 1, MAX_POOL)
+        embeds = [body for path, body in requests if path == "/api/embed"]
+        self.assertEqual(sum(len(body["input"]) for body in embeds) - 1, MAX_POOL)
+        self.assertEqual(len(embeds), -(-(MAX_POOL + 1) // BATCH))
+        self.assertTrue(all(len(body["input"]) <= BATCH for body in embeds))
+        self.assertEqual(embeds[0]["input"][0], self.task)
+        self.assertEqual(result.rerank["embed_calls"], len(embeds))
         self.assertIn("rerank_pool_budget", result.cutoffs)
         self.assertEqual(result.rerank["pool"], MAX_POOL)
 
@@ -128,8 +132,14 @@ class RerankAcceptance(unittest.TestCase):
         self.assertIn("Rerank: local embedding model fixture:embed refused (local_model_metadata_required); lexical order kept.", refused)
         with self.assertRaises(Refusal):
             EmbeddingScorer("fixture:embed", port=port)("request", [])
-        with self.assertRaises(Refusal):
-            EmbeddingScorer("fixture:embed", port=port)("request", ["x" * 5000])
+        # An oversized window is cut for scoring only, counted in the record; the excerpt itself is never changed.
+        with embed_server() as (port, requests):
+            scorer = EmbeddingScorer("fixture:embed", port=port)
+            similarities = scorer("request", ["x" * 5000, "PARCEL_BACKEND"])
+        sent = next(body for path, body in requests if path == "/api/embed")["input"]
+        self.assertEqual(len(sent[1].encode()), 4096)
+        self.assertEqual(scorer.record["truncated_windows"], 1)
+        self.assertEqual(len(similarities), 2)
 
 
 if __name__ == "__main__":
