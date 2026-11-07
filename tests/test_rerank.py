@@ -94,6 +94,10 @@ class RerankAcceptance(unittest.TestCase):
         self.assertEqual(result.rerank["local_server_reported_usage"], {"prompt_eval_count": 7, "total_duration": 5})
         self.assertTrue(result.rerank["selects_nothing_new"])
         self.assertEqual(result.rerank["similarities"].count(1.0), 1)
+        self.assertEqual(result.rerank["blend"], 0.5)
+        self.assertEqual(len(result.rerank["blended"]), result.rerank["pool"])
+        self.assertEqual(result.rerank["keep_alive_between_batches_seconds"], 0)
+        self.assertEqual(embed["keep_alive"], 0)
         for record in result.packet.evidence:
             self.assertEqual(record.text, "".join((self.root / record.path).read_text(encoding="utf-8").splitlines(keepends=True)[record.start_line - 1:record.end_line]))
 
@@ -118,6 +122,9 @@ class RerankAcceptance(unittest.TestCase):
         self.assertTrue(all(len(body["input"]) <= BATCH for body in embeds))
         self.assertEqual(embeds[0]["input"][0], self.task)
         self.assertEqual(result.rerank["embed_calls"], len(embeds))
+        # The model stays loaded only between this preparation's batches; the last batch asks for release.
+        self.assertEqual([body["keep_alive"] for body in embeds], [30] * (len(embeds) - 1) + [0])
+        self.assertEqual(result.rerank["keep_alive_between_batches_seconds"], 30)
         self.assertIn("rerank_pool_budget", result.cutoffs)
         self.assertEqual(result.rerank["pool"], MAX_POOL)
 

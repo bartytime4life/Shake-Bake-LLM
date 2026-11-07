@@ -42,6 +42,8 @@ LINE_INDEX_FILES = 6
 LINE_INDEX_LINES = 12
 LINE_INDEX_BYTES = 2048
 LINE_INDEX_TEXT = 120
+# Weight of pool-normalized embedding similarity against the pool-normalized lexical score.
+RERANK_BLEND = 0.5
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z_0-9]{2,}")
 # Top-level definitions only: a leading-column assignment or a declaration keyword.
 DEFINITION_RE = re.compile(
@@ -314,11 +316,17 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
             similarities = scorer(request, [item[8] for item in pool])
             if len(similarities) != len(pool) or not all(type(value) in (int, float) and -1.0001 <= value <= 1.0001 for value in similarities):
                 raise Refusal("rerank_invalid_similarities")
-            # Keep the one-window-per-file-first rule; within it, similarity decides and the lexical key breaks ties.
-            reordered = [item for _, item in sorted(zip(similarities, pool), key=lambda pair: (pair[1][6], -pair[0], lexical_key(pair[1])))]
-            rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates),
+            # Blend: half the pool-normalized similarity, half the pool-normalized lexical score, so a
+            # weak prose match cannot displace a strong identifier match. One-window-per-file-first
+            # still holds; the lexical key breaks ties.
+            low, high = min(similarities), max(similarities)
+            top = max(item[0] for item in pool) or 1.0
+            blended = [RERANK_BLEND * ((value - low) / (high - low) if high > low else 1.0) + (1 - RERANK_BLEND) * (item[0] / top)
+                       for value, item in zip(similarities, pool)]
+            reordered = [item for _, item in sorted(zip(blended, pool), key=lambda pair: (pair[1][6], -pair[0], lexical_key(pair[1])))]
+            rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates), "blend": RERANK_BLEND,
                              "order_changed": [c[1:4] for c in reordered] != [c[1:4] for c in pool],
-                             "similarities": [round(value, 4) for value in similarities]}
+                             "similarities": [round(value, 4) for value in similarities], "blended": [round(value, 4) for value in blended]}
             ordered = reordered + rest
         except Refusal as refusal:
             rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates), "error": refusal.code}
