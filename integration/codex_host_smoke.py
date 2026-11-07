@@ -177,7 +177,7 @@ def validate_active_cancel_trace(events, answer):
 
 
 def require_runner_gate_environment():
-    """Refuse signal-based injection when procfs cannot identify our process IDs."""
+    """Refuse injection when procfs cannot identify our IDs and owned children."""
     require(sys.platform == "linux" and hasattr(os, "pidfd_open") and
             hasattr(signal, "pidfd_send_signal"), "linux_pidfd_required")
     try:
@@ -187,6 +187,16 @@ def require_runner_gate_environment():
         raise ValueError("runner_procfs_unavailable") from None
     require(task_directory, "runner_procfs_unavailable")
     require(proc_pid == str(os.getpid()), "runner_procfs_pid_namespace_mismatch")
+    # The watcher enumerates these files for every service thread. Matching
+    # process IDs alone is insufficient in restricted procfs mounts, where
+    # task directories can exist while their children files are hidden.
+    own_children = Path(f"/proc/self/task/{os.getpid()}/children")
+    try:
+        visible = tuple(Path("/proc/self/task").glob("*/children"))
+        require(own_children in visible, "runner_procfs_children_unavailable")
+        own_children.read_text()  # An empty file is valid: no children yet.
+    except OSError:
+        raise ValueError("runner_procfs_children_unavailable") from None
 
 
 class RunnerGate:

@@ -65,6 +65,37 @@ class ExternalRecallAcceptance(unittest.TestCase):
         self.assertIn("file_budget", receipt["cases"][0]["cutoffs"])
         self.assertEqual(len(receipt["cases_sha256"]), 64)
 
+    def test_controlling_context_does_not_fill_unused_primary_slots(self):
+        repo = self.base / "repos" / "context_only"
+        repo.mkdir()
+        (repo / "main.py").write_text("needle = resolve_setting()\n", encoding="utf-8")
+        (repo / "helper.py").write_text("def resolve_setting():\n    return 'local'\n", encoding="utf-8")
+        cases = [{"id": "synthetic-context", "root": repo, "request": "needle", "changed_files": ["helper.py"]}]
+        report = recall.run(cases, SearchLimits())
+        case = report["cases"][0]
+        self.assertEqual(case["hits_excerpted"], 1)
+        self.assertEqual(case["hits_primary"], 0)
+        self.assertEqual(case["recall_primary"], 0.0)
+        self.assertEqual(case["primary_excerpts"], 1)
+        self.assertEqual(case["controlling_context_excerpts"], 1)
+        self.assertEqual(case["excerpts"], 2)
+        cases[0]["changed_files"] = ["main.py", "helper.py"]
+        both = recall.run(cases, SearchLimits())["cases"][0]
+        self.assertEqual(both["hits_primary"], 1)
+        self.assertEqual(both["recall_primary"], 0.5)
+        self.assertEqual(both["recall_excerpted"], 1.0)
+
+    def test_primary_excerpt_counts_are_zero_when_nothing_matches(self):
+        repo = self.base / "repos" / "no_match"
+        repo.mkdir()
+        (repo / "ordinary.py").write_text("ordinary = 1\n", encoding="utf-8")
+        report = recall.run([{"id": "synthetic-no-match", "root": repo, "request": "needle", "changed_files": ["ordinary.py"]}], SearchLimits())
+        case = report["cases"][0]
+        self.assertEqual(case["primary_excerpts"], 0)
+        self.assertEqual(case["controlling_context_excerpts"], 0)
+        self.assertEqual(case["hits_primary"], 0)
+        self.assertEqual(case["hits_excerpted"], 0)
+
     def test_case_roots_inside_the_checkout_and_invalid_rows_are_refused(self):
         inside = self.base / "inside.jsonl"
         inside.write_text(json.dumps({"id": "self", "root": str(ROOT), "request": "search", "changed_files": ["a.py"]}) + "\n", encoding="utf-8")

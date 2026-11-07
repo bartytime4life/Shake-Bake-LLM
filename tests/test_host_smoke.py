@@ -21,13 +21,14 @@ spec.loader.exec_module(smoke)
 
 
 @contextlib.contextmanager
-def runner_environment(proc_stat="123 (synthetic) S", *, task_directory=True):
+def runner_environment(proc_stat="123 (synthetic) S", *, task_directory=True, children_visible=True):
     with patch.object(smoke.sys, "platform", "linux"), \
          patch.object(smoke.os, "getpid", return_value=123), \
          patch.object(smoke.os, "pidfd_open", create=True) as opened, \
          patch.object(smoke.signal, "pidfd_send_signal", create=True) as signalled, \
          patch.object(smoke.Path, "read_text", return_value=proc_stat) as read, \
-         patch.object(smoke.Path, "is_dir", return_value=task_directory):
+         patch.object(smoke.Path, "is_dir", return_value=task_directory), \
+         patch.object(smoke.Path, "glob", return_value=[Path("/proc/self/task/123/children")] if children_visible else []):
         yield opened, signalled, read
 
 
@@ -80,8 +81,9 @@ def cancellation_fixture():
 class HostSmokeTraceAcceptance(unittest.TestCase):
     def test_runner_environment_check_is_read_only_when_process_ids_match(self):
         with runner_environment() as (opened, signalled, read):
+            read.side_effect = ["123 (synthetic) S", ""]
             smoke.require_runner_gate_environment()
-            read.assert_called_once()
+            self.assertEqual(read.call_count, 2)
             opened.assert_not_called()
             signalled.assert_not_called()
 
@@ -112,6 +114,30 @@ class HostSmokeTraceAcceptance(unittest.TestCase):
     def test_missing_procfs_task_directory_refuses_before_signalling(self):
         with runner_environment(task_directory=False) as (opened, signalled, _):
             with self.assertRaisesRegex(ValueError, "runner_procfs_unavailable"):
+                smoke.RunnerGate(123)
+            opened.assert_not_called()
+            signalled.assert_not_called()
+
+    def test_missing_children_visibility_refuses_before_handles_host_or_output(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             runner_environment(children_visible=False) as (opened, signalled, _), \
+             patch.object(smoke.subprocess, "Popen") as started, \
+             patch.object(smoke.shutil, "which") as host_lookup:
+            output = Path(directory) / "uncreated"
+            with self.assertRaisesRegex(ValueError, "runner_procfs_children_unavailable"):
+                smoke.RunnerGate(123)
+            with self.assertRaisesRegex(ValueError, "runner_procfs_children_unavailable"):
+                smoke.run(output, scenario="active-cancel")
+            self.assertFalse(output.exists())
+            opened.assert_not_called()
+            signalled.assert_not_called()
+            started.assert_not_called()
+            host_lookup.assert_not_called()
+
+    def test_unreadable_children_refuses_before_signalling(self):
+        with runner_environment() as (opened, signalled, read):
+            read.side_effect = ["123 (synthetic) S", PermissionError("synthetic children restriction")]
+            with self.assertRaisesRegex(ValueError, "runner_procfs_children_unavailable"):
                 smoke.RunnerGate(123)
             opened.assert_not_called()
             signalled.assert_not_called()

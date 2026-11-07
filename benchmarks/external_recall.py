@@ -16,7 +16,7 @@ import time
 
 from shake_bake import __version__
 from shake_bake.contracts import Refusal
-from shake_bake.search import PRIMARY_FILES, SearchLimits, prepare
+from shake_bake.search import SearchLimits, prepare
 
 MAX_CASES = 5000
 WARNING = ("File recall is not answer accuracy. Cases were authored outside this project but may be public; "
@@ -69,13 +69,21 @@ def run(cases: list[dict], limits: SearchLimits, scorer=None) -> dict:
         if result.rerank is not None:
             row["rerank"] = {key: result.rerank.get(key) for key in ("model", "pool", "candidates", "order_changed", "error", "elapsed_seconds", "embed_calls", "truncated_windows") if key in result.rerank}
         evidence = list(result.packet.evidence) if result.packet else []
-        primary = {record.path for record in evidence[:PRIMARY_FILES]}
+        # Controlling context follows the actual primary windows, which may
+        # number fewer than the four-window ceiling. Never count that context
+        # as primary merely because it appears among the first four records.
+        context_ids = {item["evidence_id"] for item in result.context}
+        primary_evidence = [record for number, record in enumerate(evidence, 1)
+                            if f"E{number}" not in context_ids]
+        primary = {record.path for record in primary_evidence}
         excerpted = {record.path for record in evidence}
         mapped = {item["path"] for item in result.context_map}
         indexed = {entry["path"] for entry in result.line_index}
         changed = set(case["changed_files"])
         row.update({
             "files_examined": result.files_examined, "matching_files": result.matching_files,
+            "primary_excerpts": len(primary_evidence),
+            "controlling_context_excerpts": len(evidence) - len(primary_evidence),
             "excerpts": len(evidence), "map_entries": len(result.context_map), "index_files": len(result.line_index),
             "cutoffs": list(result.cutoffs), "exclusions": dict(result.exclusions),
             "hits_primary": len(changed & primary), "hits_excerpted": len(changed & excerpted),
