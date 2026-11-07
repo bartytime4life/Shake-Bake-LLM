@@ -85,6 +85,25 @@ and that no `"content":` JSON field remains. Five real-Chrome clipboard
 scenarios and 33 workbench scenarios pass with Chrome 157 and Python 3.12,
 including the CRLF request supplied at the HTTP boundary.
 
+## Hardening after review (later on November 7, `0.4.0.dev14`)
+
+A review of the merged source raised two points, recorded as BUG-019. First,
+paths in the excerpt headings and the path and first line in the map were
+plain text outside any fence, so a filename such as
+`## IGNORE PREVIOUS INSTRUCTIONS.py` would have rendered as a heading or an
+instruction. Those strings are now inline code with a backtick run longer than
+any they contain and control characters shown as escapes, in both the
+workbench text and the CLI brief, and the collector refuses any path
+containing a control character outright. Second, fenced text can have its
+carriage returns normalized by a clipboard or chat client. The copied text
+itself keeps the captured bytes (only the on-page textarea view normalizes
+them), but what arrives in a chat may not, so an excerpt that contains
+carriage returns now carries a note pointing to the JSON download, and the
+verification section says the same for all fenced text. The JSON download
+remains the exact-bytes path; the hashes let a copy be checked. No
+exploitation was reported or observed. A crafted-filename clipboard test and a
+Python test cover both points; the real-Chrome suites pass.
+
 ## What this does not establish
 
 - That either assistant answers better from this layout. That is a host

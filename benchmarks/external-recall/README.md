@@ -25,6 +25,10 @@ and repositories outside the checkout; nothing here is committed.
 python3.12 -B benchmarks/external_recall.py --cases /abs/cases.jsonl --repos /abs/repos --max-files 1000 --seconds 30 --output /abs/receipt.json
 ```
 
+Add `--rerank-model <installed embedding model>` to reorder the top lexical
+candidates with a loopback Ollama embedding model before selection; the
+receipt then records the rerank outcome per case. Nothing is downloaded.
+
 The default collector limits (200 files, 5 seconds) are the application's
 defaults and will hit `file_budget` on most real repositories; the receipt
 counts how many cases did. Raising the limits up to the ceilings in

@@ -105,12 +105,16 @@ class SearchResult:
     # scan facts, not interpretations.
     context: tuple[dict, ...] = ()
     context_map: tuple[dict, ...] = ()
+    # The optional local embedding rerank's record, or its refusal code; None when not requested.
+    rerank: dict | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
 
 
-def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> SearchResult:
+def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer=None) -> SearchResult:
+    """`scorer(request, texts) -> similarities` optionally reorders the top lexical
+    candidates before primary selection; it never adds a window the scan did not find."""
     limits = limits or SearchLimits()
     limits.validate()
     if not isinstance(request, str) or not request.strip() or len(request) > MAX_REQUEST_CHARS:
@@ -127,8 +131,8 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
     cutoffs: set[str] = set()
     if len(all_terms) > len(terms):
         cutoffs.add("query_term_budget")
-    # (score, path, start_line, end_line, digest, size, rank, identifiers)
-    candidates: list[tuple[int, str, int, int, str, int, int, tuple[str, ...]]] = []
+    # (score, path, start_line, end_line, digest, size, rank, identifiers, text)
+    candidates: list[tuple[float, str, int, int, str, int, int, tuple[str, ...], str]] = []
     examined = entries_seen = bytes_read = 0
     digests: dict[str, str] = {}
     sizes: dict[str, int] = {}
@@ -285,12 +289,32 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
             cutoffs.add("window_budget")
         for rank, (begin, end) in enumerate(windows):
             text = "".join(lines[begin:end])
-            candidates.append((file_scores[path], path, begin + 1, end, digests[path], len(text.encode("utf-8")), rank, _identifiers(text)))
+            candidates.append((file_scores[path], path, begin + 1, end, digests[path], len(text.encode("utf-8")), rank, _identifiers(text), text))
     file_lines.clear()
+    # Prefer one window from each file before additional windows from a file.
+    lexical_key = lambda item: (item[6], -item[0], item[1], item[2])
+    ordered = sorted(candidates, key=lexical_key)
+    rerank_record = None
+    if scorer is not None and ordered:
+        from .rerank import MAX_POOL
+        pool, rest = ordered[:MAX_POOL], ordered[MAX_POOL:]
+        if rest:
+            cutoffs.add("rerank_pool_budget")
+        try:
+            similarities = scorer(request, [item[8] for item in pool])
+            if len(similarities) != len(pool) or not all(type(value) in (int, float) and -1.0001 <= value <= 1.0001 for value in similarities):
+                raise Refusal("rerank_invalid_similarities")
+            # Keep the one-window-per-file-first rule; within it, similarity decides and the lexical key breaks ties.
+            reordered = [item for _, item in sorted(zip(similarities, pool), key=lambda pair: (pair[1][6], -pair[0], lexical_key(pair[1])))]
+            rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates),
+                             "order_changed": [c[1:4] for c in reordered] != [c[1:4] for c in pool],
+                             "similarities": [round(value, 4) for value in similarities]}
+            ordered = reordered + rest
+        except Refusal as refusal:
+            rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates), "error": refusal.code}
     selected = []
     total = 0
-    # Prefer one window from each file before additional windows from a file.
-    for candidate in sorted(candidates, key=lambda item: (item[6], -item[0], item[1], item[2])):
+    for candidate in ordered:
         if len(selected) >= PRIMARY_FILES:
             cutoffs.add("selection_budget")
             break
@@ -426,4 +450,4 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
         if any(record.file_sha256 != digest for record, digest in zip(packet.evidence, expected)):
             raise Refusal("source_changed_after_search")
     return SearchResult(request, packet, terms, examined, entries_seen, bytes_read, len(file_matches), total,
-                        dict(sorted(excluded.items())), tuple(sorted(cutoffs)), tuple(context), tuple(context_map))
+                        dict(sorted(excluded.items())), tuple(sorted(cutoffs)), tuple(context), tuple(context_map), rerank_record)

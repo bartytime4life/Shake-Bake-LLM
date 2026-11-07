@@ -48,7 +48,7 @@ def load_cases(path: Path, repos: Path | None) -> list[dict]:
     return rows
 
 
-def run(cases: list[dict], limits: SearchLimits) -> dict:
+def run(cases: list[dict], limits: SearchLimits, scorer=None) -> dict:
     repository = Path(__file__).resolve().parents[1]
     results = []
     for case in cases:
@@ -60,12 +60,14 @@ def run(cases: list[dict], limits: SearchLimits) -> dict:
             continue
         started = time.perf_counter()
         try:
-            result = prepare(root, case["request"], limits)
+            result = prepare(root, case["request"], limits, scorer)
         except Refusal as refusal:
             row["refused"] = refusal.code
             results.append(row)
             continue
         row["seconds"] = round(time.perf_counter() - started, 3)
+        if result.rerank is not None:
+            row["rerank"] = {key: result.rerank.get(key) for key in ("model", "pool", "candidates", "order_changed", "error", "elapsed_seconds") if key in result.rerank}
         evidence = list(result.packet.evidence) if result.packet else []
         primary = {record.path for record in evidence[:PRIMARY_FILES]}
         excerpted = {record.path for record in evidence}
@@ -113,13 +115,20 @@ def main(argv=None) -> int:
     parser.add_argument("--context-bytes", type=int, default=SearchLimits().context_bytes)
     parser.add_argument("--limit", type=int, help="Score only the first N cases")
     parser.add_argument("--output", type=Path, help="Receipt path outside the checkout")
+    parser.add_argument("--rerank-model", help="Explicit installed local embedding model that reorders candidate windows; no automatic downloads")
+    parser.add_argument("--ollama-port", type=int, default=11434)
     args = parser.parse_args(argv)
     limits = SearchLimits(max_files=args.max_files, max_entries=args.max_entries, seconds=args.seconds, context_bytes=args.context_bytes)
     limits.validate()
     cases = load_cases(args.cases, args.repos)
     if args.limit:
         cases = cases[:args.limit]
-    report = run(cases, limits)
+    scorer = None
+    if args.rerank_model:
+        from shake_bake.rerank import EmbeddingScorer
+        scorer = EmbeddingScorer(args.rerank_model, port=args.ollama_port)
+    report = run(cases, limits, scorer)
+    report["rerank_model"] = args.rerank_model
     report["cases_sha256"] = hashlib.sha256(args.cases.read_bytes()).hexdigest()
     text = json.dumps(report, indent=1, sort_keys=True)
     if args.output:
