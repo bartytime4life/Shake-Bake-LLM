@@ -1,0 +1,160 @@
+{
+ "dataset": "JetBrains-Research/lca-bug-localization",
+ "dataset_sha": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+ "dataset_license": "apache-2.0",
+ "config": "py",
+ "split": "dev",
+ "split_rows_total": 4339,
+ "selection_rule": "first 300 rows in dataset order; repo license in a permissive set (MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0); 50..1500 non-test files; at most 10 changed files; one case per repository; stop at 24 (13 distinct repositories found)",
+ "checkout": "git init; git fetch --depth 1 https://github.com/<owner>/<name>.git <base_sha>; git checkout FETCH_HEAD; outside the checkout",
+ "request": "issue_title + blank line + issue_body, exactly as the dataset gives them, cut at 16000 characters",
+ "cases": [
+  {
+   "id": "thealgorithms/python/295/289",
+   "repo": "thealgorithms/python",
+   "base_sha": "dbfc220264e514cbc94320b6e4769acfaea85fad",
+   "repo_license": "MIT License",
+   "changed_files": [
+    "Project Euler/Problem 01/sol2.py"
+   ],
+   "repo_files_without_tests_count": 195,
+   "issue_url": "https://github.com/TheAlgorithms/Python/issues/289"
+  },
+  {
+   "id": "keras-team/keras/18352/15282",
+   "repo": "keras-team/keras",
+   "base_sha": "31fb21f68fc270606e93ccf0af3ac088561b1769",
+   "repo_license": "Apache License 2.0",
+   "changed_files": [
+    "keras/applications/mobilenet_v3.py"
+   ],
+   "repo_files_without_tests_count": 677,
+   "issue_url": "https://github.com/keras-team/keras/issues/15282"
+  },
+  {
+   "id": "textualize/rich/2212/2197",
+   "repo": "textualize/rich",
+   "base_sha": "0ed9309a0e298ed91b21498caa021a37cac15591",
+   "repo_license": "MIT License",
+   "changed_files": [
+    "rich/__init__.py"
+   ],
+   "repo_files_without_tests_count": 122,
+   "issue_url": "https://github.com/Textualize/rich/issues/2197"
+  },
+  {
+   "id": "mitmproxy/mitmproxy/4334/4312",
+   "repo": "mitmproxy/mitmproxy",
+   "base_sha": "d8eda8daf9a0975ed50018104604e41e897283c7",
+   "repo_license": "MIT License",
+   "changed_files": [
+    "mitmproxy/addons/modifyheaders.py"
+   ],
+   "repo_files_without_tests_count": 307,
+   "issue_url": "https://github.com/mitmproxy/mitmproxy/issues/4312"
+  },
+  {
+   "id": "hpcaitech/colossalai/3621/3620",
+   "repo": "hpcaitech/colossalai",
+   "base_sha": "d7bf284706ef256c38d3aad53142b07cfc0fc10e",
+   "repo_license": "Apache License 2.0",
+   "changed_files": [
+    "applications/Chat/examples/train_prompts.py"
+   ],
+   "repo_files_without_tests_count": 880,
+   "issue_url": "https://github.com/hpcaitech/ColossalAI/issues/3620"
+  },
+  {
+   "id": "ccxt/ccxt/18301/18192",
+   "repo": "ccxt/ccxt",
+   "base_sha": "801fc5551b3aef1fa98e4d69f7dd5e82e26194a4",
+   "repo_license": "MIT License",
+   "changed_files": [
+    "python/ccxt/pro/__init__.py"
+   ],
+   "repo_files_without_tests_count": 686,
+   "issue_url": "https://github.com/ccxt/ccxt/issues/18192"
+  },
+  {
+   "id": "microsoft/deepspeed/4084/4083",
+   "repo": "microsoft/deepspeed",
+   "base_sha": "975bcbc0bdec3df7830f95f54906d904aa8add78",
+   "repo_license": "Apache License 2.0",
+   "changed_files": [
+    "deepspeed/runtime/engine.py",
+    "deepspeed/runtime/zero/stage_1_and_2.py"
+   ],
+   "repo_files_without_tests_count": 317,
+   "issue_url": "https://github.com/microsoft/DeepSpeed/issues/4083"
+  },
+  {
+   "id": "explosion/spacy/1751/1750",
+   "repo": "explosion/spacy",
+   "base_sha": "8afe7674653e5d087f2e721c6617a5d48596d1a8",
+   "repo_license": "MIT License",
+   "changed_files": [
+    "spacy/lang/hi/examples.py"
+   ],
+   "repo_files_without_tests_count": 211,
+   "issue_url": "https://github.com/explosion/spaCy/issues/1750"
+  },
+  {
+   "id": "streamlit/streamlit/6459/6440",
+   "repo": "streamlit/streamlit",
+   "base_sha": "76bba47f71eeeca22c52d4e599387bb416da15ca",
+   "repo_license": "Apache License 2.0",
+   "changed_files": [
+    "lib/tests/streamlit/runtime/caching/hashing_test.py",
+    "lib/streamlit/runtime/caching/hashing.py"
+   ],
+   "repo_files_without_tests_count": 362,
+   "issue_url": "https://github.com/streamlit/streamlit/issues/6440"
+  },
+  {
+   "id": "huggingface/pytorch-image-models/1351/1348",
+   "repo": "huggingface/pytorch-image-models",
+   "base_sha": "324a4e58b6b0365d16dcf8f93739be8f74cd7d37",
+   "repo_license": "Apache License 2.0",
+   "changed_files": [
+    "timm/models/hub.py"
+   ],
+   "repo_files_without_tests_count": 200,
+   "issue_url": "https://github.com/huggingface/pytorch-image-models/issues/1348"
+  },
+  {
+   "id": "lightning-ai/lightning/18112/18016",
+   "repo": "lightning-ai/lightning",
+   "base_sha": "dab373de548b352a69c8ea7251937fb4663038dc",
+   "repo_license": "Apache License 2.0",
+   "changed_files": [
+    "src/lightning/fabric/strategies/deepspeed.py",
+    "src/lightning/pytorch/strategies/deepspeed.py"
+   ],
+   "repo_files_without_tests_count": 618,
+   "issue_url": "https://github.com/Lightning-AI/lightning/issues/18016"
+  },
+  {
+   "id": "google/jax/12444/12385",
+   "repo": "google/jax",
+   "base_sha": "48b89560e58fcacb02e558e6a069c36bfb49ecd6",
+   "repo_license": "Apache License 2.0",
+   "changed_files": [
+    "tests/checkify_test.py",
+    "jax/_src/lax/control_flow/conditionals.py"
+   ],
+   "repo_files_without_tests_count": 312,
+   "issue_url": "https://github.com/google/jax/issues/12385"
+  },
+  {
+   "id": "pypa/pipenv/2091/2078",
+   "repo": "pypa/pipenv",
+   "base_sha": "9fc45b140c3690eeb6699b4d9cec9670bf61c5c3",
+   "repo_license": "MIT License",
+   "changed_files": [
+    "pipenv/core.py"
+   ],
+   "repo_files_without_tests_count": 893,
+   "issue_url": "https://github.com/pypa/pipenv/issues/2078"
+  }
+ ]
+}
