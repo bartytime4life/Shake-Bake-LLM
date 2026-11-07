@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from shake_bake.contracts import Refusal
 from shake_bake.search import SearchLimits
@@ -54,13 +55,15 @@ class ExternalRecallAcceptance(unittest.TestCase):
         output = self.base / "receipt.json"
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
-            code = recall.main(["--cases", str(self.cases), "--repos", str(self.base / "repos"), "--limit", "1", "--max-files", "3", "--output", str(output)])
+            code = recall.main(["--cases", str(self.cases), "--repos", str(self.base / "repos"), "--limit", "1", "--max-files", "3", "--max-depth", "3", "--excerpt-bytes", "4096", "--output", str(output)])
         self.assertEqual(code, 0)
         summary = json.loads(stdout.getvalue())
         receipt = json.loads(output.read_text(encoding="utf-8"))
         self.assertEqual(summary["case_count"], 1)
         self.assertNotIn("cases", summary)
         self.assertEqual(receipt["limits"]["max_files"], 3)
+        self.assertEqual(receipt["limits"]["max_depth"], 3)
+        self.assertEqual(receipt["limits"]["excerpt_bytes"], 4096)
         self.assertEqual(receipt["cases_hitting_file_budget"], 1)
         self.assertIn("file_budget", receipt["cases"][0]["cutoffs"])
         self.assertEqual(len(receipt["cases_sha256"]), 64)
@@ -107,6 +110,61 @@ class ExternalRecallAcceptance(unittest.TestCase):
             recall.load_cases(bad, self.base / "repos")
         with self.assertRaisesRegex(Refusal, "case_root_requires_repos_dir"):
             recall.load_cases(self.cases, None)
+
+    def test_receipt_binds_selected_subset_sources_and_runtime(self):
+        outputs = []
+        for limit in (1, 2):
+            output = self.base / f"limit-{limit}.json"
+            with contextlib.redirect_stdout(io.StringIO()):
+                recall.main(["--cases", str(self.cases), "--repos", str(self.base / "repos"), "--limit", str(limit), "--output", str(output)])
+            outputs.append(json.loads(output.read_text()))
+        self.assertEqual(outputs[0]["cases_sha256"], outputs[1]["cases_sha256"])
+        self.assertNotEqual(outputs[0]["selection_sha256"], outputs[1]["selection_sha256"])
+        self.assertEqual(outputs[0]["selected_case_ids"], ["parcel#1"])
+        self.assertEqual(outputs[0]["receipt_schema"], 2)
+        self.assertEqual(len(outputs[0]["source_identity"]["collector_sources_sha256"]["search.py"]), 64)
+        self.assertIn("python", outputs[0])
+        self.assertFalse(outputs[0]["corpus_content_immutability_verified"])
+
+    def test_changed_case_input_is_refused_without_writing_receipt(self):
+        output = self.base / "changed.json"
+        original = recall.run
+        def mutate(*args, **kwargs):
+            result = original(*args, **kwargs)
+            self.cases.write_text("changed after collection\n")
+            return result
+        with patch.object(recall, "run", side_effect=mutate), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(Refusal, "evaluation_cases_changed"):
+                recall.main(["--cases", str(self.cases), "--repos", str(self.base / "repos"), "--output", str(output)])
+        self.assertFalse(output.exists())
+
+    def test_changed_collector_identity_is_refused_without_writing_receipt(self):
+        output = self.base / "changed-code.json"
+        with patch.object(recall, "source_identity", side_effect=[{"code": "before"}, {"code": "after"}]), \
+             contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(Refusal, "evaluation_code_changed"):
+                recall.main(["--cases", str(self.cases), "--repos", str(self.base / "repos"), "--output", str(output)])
+        self.assertFalse(output.exists())
+
+    def test_existing_receipts_and_source_outputs_are_refused_before_collection(self):
+        output = self.base / "existing.json"
+        output.write_text("preserved receipt")
+        protected = self.base / "repos" / "parcel" / "new-receipt.json"
+        with patch.object(recall, "run", side_effect=AssertionError("collection started")):
+            for path, code in ((output, "receipt_output_exists"), (protected, "receipt_output_inside_source")):
+                with self.assertRaisesRegex(Refusal, code):
+                    recall.main(["--cases", str(self.cases), "--repos", str(self.base / "repos"), "--output", str(path)])
+        self.assertEqual(output.read_text(), "preserved receipt")
+        self.assertFalse(protected.exists())
+
+    def test_duplicate_ids_and_nonpositive_selection_limits_are_refused(self):
+        raw = self.cases.read_text().splitlines()[0]
+        self.cases.write_text(raw + "\n" + raw + "\n")
+        with self.assertRaisesRegex(Refusal, "duplicate_or_empty_case_id"):
+            recall.load_cases(self.cases, self.base / "repos")
+        for limit in ("0", "-1"):
+            with self.assertRaisesRegex(Refusal, "invalid_case_limit"):
+                recall.main(["--cases", str(self.cases), "--limit", limit])
 
 
 if __name__ == "__main__":
