@@ -19,6 +19,7 @@ MAX_POOL = 24
 MAX_WINDOW_BYTES = 4096
 MAX_DIMENSIONS = 8192
 BATCH = 8
+KEEP_ALIVE_BETWEEN_BATCHES_SECONDS = 30
 
 
 class EmbeddingScorer:
@@ -54,7 +55,11 @@ class EmbeddingScorer:
         calls = 0
         for start in range(0, len(inputs), BATCH):
             batch = inputs[start:start + BATCH]
-            result = _post("/api/embed", {"model": self.model, "input": batch, "keep_alive": 0, "truncate": False}, self.port, deadline)
+            # Keep the model loaded only between the batches of this one preparation (the
+            # worker's unload-after-use rule still holds: the final batch asks for release).
+            last = start + BATCH >= len(inputs)
+            result = _post("/api/embed", {"model": self.model, "input": batch, "keep_alive": 0 if last else KEEP_ALIVE_BETWEEN_BATCHES_SECONDS,
+                                          "truncate": False}, self.port, deadline)
             calls += 1
             if result.get("remote_host") or result.get("remote_model"):
                 raise Refusal("remote_embedding_response_refused")
@@ -83,6 +88,7 @@ class EmbeddingScorer:
             raise Refusal("embedding_invalid_vector")
         query = vectors[0]
         similarities = [sum(a * b for a, b in zip(query, vector)) / (norms[0] * norm) for vector, norm in zip(vectors[1:], norms[1:])]
-        self.record.update({"dimensions": dimensions, "windows_scored": len(texts), "truncated_windows": truncated, "embed_calls": calls, "observed_runtime_version": runtime,
+        self.record.update({"dimensions": dimensions, "windows_scored": len(texts), "truncated_windows": truncated, "embed_calls": calls,
+                            "keep_alive_between_batches_seconds": KEEP_ALIVE_BETWEEN_BATCHES_SECONDS if calls > 1 else 0, "observed_runtime_version": runtime,
                             "local_server_reported_usage": usage, "elapsed_seconds": round(time.perf_counter() - started, 3)})
         return similarities
