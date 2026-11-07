@@ -3,6 +3,7 @@
 from collections import Counter
 from dataclasses import asdict, dataclass
 import hashlib
+import math
 import os
 from pathlib import Path
 import re
@@ -24,6 +25,17 @@ CONTEXT_MAP_ENTRIES = 12
 DEFINITION_INDEX_ENTRIES = 16384
 WINDOW_LINES = 7
 assert PRIMARY_FILES + CONTEXT_WINDOWS + CONTEXT_USAGE_WINDOWS + CONTEXT_TEST_WINDOWS <= MAX_FILES
+# BM25-style file scoring over the examined files: rarer request terms weigh more
+# and repeated hits saturate. Length normalization is off (B = 0): the window is
+# the retrieval unit, and a short file is not more relevant for being short.
+BM25_K1 = 1.2
+BM25_B = 0.0
+# A file whose only hits are widespread terms (present in at least
+# DISTRACTOR_COMMON_DF examined files), scoring under a fifth of the best file,
+# is excluded as a distractor and counted in exclusions as low_signal_match.
+DISTRACTOR_MIN_FILES = 8
+DISTRACTOR_COMMON_DF = 8
+DISTRACTOR_RATIO = 0.2
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z_0-9]{2,}")
 # Top-level definitions only: a leading-column assignment or a declaration keyword.
 DEFINITION_RE = re.compile(
@@ -121,7 +133,13 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
     digests: dict[str, str] = {}
     sizes: dict[str, int] = {}
     first_lines: dict[str, str] = {}
-    file_scores: dict[str, int] = {}
+    file_scores: dict[str, float] = {}
+    # Per matching file: its lines and the (line index, matched terms) pairs; scored after the walk.
+    file_lines: dict[str, list[str]] = {}
+    file_matches: dict[str, list[tuple[int, frozenset[str]]]] = {}
+    path_terms: dict[str, frozenset[str]] = {}
+    document_frequency: Counter = Counter()
+    total_lines = 0
     definitions: dict[str, list[tuple[str, int]]] = {}
     definition_entries = 0
     names_by_file: dict[str, frozenset[str]] = {}
@@ -137,7 +155,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
         return bool(cutoffs & {"time_budget", "file_budget"})
 
     def walk(fd: int, prefix: str, depth: int) -> None:
-        nonlocal examined, entries_seen, bytes_read, definition_entries
+        nonlocal examined, entries_seen, bytes_read, definition_entries, total_lines
         if stopped():
             return
         entries = []
@@ -202,31 +220,20 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
                         definitions.setdefault(name, []).append((path, index))
                         definition_entries += 1
                     names_by_file[path] = Counter(_identifiers(data.decode("utf-8")))
+                total_lines += len(lines)
                 matches = []
                 for index, line in enumerate(lines):
-                    count = sum(term in line.casefold() for term in terms)
-                    if count:
-                        matches.append((count, index))
-                path_score = sum(term in path.casefold() for term in terms)
-                if not matches and not path_score:
+                    folded = line.casefold()
+                    hit = frozenset(term for term in terms if term in folded)
+                    if hit:
+                        matches.append((index, hit))
+                in_path = frozenset(term for term in terms if term in path.casefold())
+                if not matches and not in_path:
                     continue
-                score = 2 * path_score + sum(item[0] for item in matches)
-                file_scores[path] = score
-                if lines:
-                    # Preserve distinct nearby evidence, including a distant branch in
-                    # the same file. Never replace source with a generated summary.
-                    windows = []
-                    for _, best in sorted(matches or [(0, 0)], key=lambda item: (-item[0], item[1])):
-                        if any(begin <= best < end for begin, end in windows):
-                            continue
-                        windows.append((max(0, best - 3), min(len(lines), best + 4)))
-                        if len(windows) == 2:
-                            break
-                    if any(not any(begin <= index < end for begin, end in windows) for _, index in matches):
-                        cutoffs.add("window_budget")
-                    for rank, (begin, end) in enumerate(windows):
-                        text = "".join(lines[begin:end])
-                        candidates.append((score, path, begin + 1, end, digests[path], len(text.encode("utf-8")), rank, _identifiers(text)))
+                document_frequency.update(in_path.union(*(hit for _, hit in matches)))
+                file_lines[path] = lines
+                file_matches[path] = matches
+                path_terms[path] = in_path
             except UnicodeDecodeError:
                 skip("non_utf8")
             except Refusal as refusal:
@@ -242,6 +249,44 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
             os.close(root_fd)
     except OSError:
         raise Refusal("source_unavailable_or_not_allowed") from None
+    # Score matching files after the walk, when document frequencies are known.
+    examined_text = max(1, len(digests))
+    average_lines = total_lines / examined_text
+    idf = {term: math.log(1 + (examined_text - document_frequency[term] + 0.5) / (document_frequency[term] + 0.5))
+           for term in terms}
+    for path, matches in file_matches.items():
+        frequency = Counter(term for _, hit in matches for term in hit)
+        length = len(file_lines[path]) / average_lines if average_lines else 1.0
+        file_scores[path] = sum(idf[term] * count * (BM25_K1 + 1) / (count + BM25_K1 * (1 - BM25_B + BM25_B * length))
+                                for term, count in frequency.items()) + 2 * sum(idf[term] for term in path_terms[path])
+    best_score = max(file_scores.values(), default=0.0)
+    common = {term for term in terms if document_frequency[term] >= DISTRACTOR_COMMON_DF}
+    for path in sorted(file_matches):
+        matches = file_matches[path]
+        matched = path_terms[path].union(*(hit for _, hit in matches))
+        if examined_text >= DISTRACTOR_MIN_FILES and file_scores[path] < DISTRACTOR_RATIO * best_score and matched <= common:
+            skip("low_signal_match")
+            del file_scores[path]
+            continue
+        lines = file_lines[path]
+        if not lines:
+            continue
+        # Preserve distinct nearby evidence, including a distant branch in
+        # the same file. Never replace source with a generated summary.
+        windows = []
+        ranked_lines = sorted(matches, key=lambda item: (-sum(idf[term] for term in item[1]), item[0])) or [(0, frozenset())]
+        for best, _ in ranked_lines:
+            if any(begin <= best < end for begin, end in windows):
+                continue
+            windows.append((max(0, best - 3), min(len(lines), best + 4)))
+            if len(windows) == 2:
+                break
+        if any(not any(begin <= index < end for begin, end in windows) for index, _ in matches):
+            cutoffs.add("window_budget")
+        for rank, (begin, end) in enumerate(windows):
+            text = "".join(lines[begin:end])
+            candidates.append((file_scores[path], path, begin + 1, end, digests[path], len(text.encode("utf-8")), rank, _identifiers(text)))
+    file_lines.clear()
     selected = []
     total = 0
     # Prefer one window from each file before additional windows from a file.
@@ -380,5 +425,5 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> Sea
         packet = build_packet(root, request, tuple(selections))
         if any(record.file_sha256 != digest for record, digest in zip(packet.evidence, expected)):
             raise Refusal("source_changed_after_search")
-    return SearchResult(request, packet, terms, examined, entries_seen, bytes_read, len({c[1] for c in candidates}), total,
+    return SearchResult(request, packet, terms, examined, entries_seen, bytes_read, len(file_matches), total,
                         dict(sorted(excluded.items())), tuple(sorted(cutoffs)), tuple(context), tuple(context_map))
