@@ -265,5 +265,51 @@ class ControllingContext(unittest.TestCase):
         self.assertNotIn("link.py", paths)
 
 
+class RetrievalScoring(unittest.TestCase):
+    """BM25-style ranking and the disclosed distractor exclusion."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+
+    def test_rare_term_outranks_widespread_term(self):
+        for index in range(10):
+            (self.root / f"noise_{index}.py").write_text("# policy note\n", encoding="utf-8")
+        (self.root / "guard.py").write_text("# guard here\n", encoding="utf-8")
+        (self.root / "both.py").write_text("# policy guard\n", encoding="utf-8")
+        result = prepare(self.root, "policy guard")
+        paths = [record.path for record in result.packet.evidence]
+        self.assertEqual(set(paths[:2]), {"both.py", "guard.py"})
+        self.assertEqual(result.matching_files, 12)
+        self.assertEqual(result.exclusions.get("low_signal_match"), 10)
+        self.assertEqual(result.context_map, ())
+        self.assertNotIn("noise_0.py", paths)
+
+    def test_distractor_rule_needs_enough_files_and_only_widespread_terms(self):
+        for index in range(3):
+            (self.root / f"noise_{index}.py").write_text("# policy note\n", encoding="utf-8")
+        (self.root / "both.py").write_text("# policy guard\n", encoding="utf-8")
+        few = prepare(self.root, "policy guard")
+        self.assertNotIn("low_signal_match", few.exclusions)
+        self.assertEqual(len(few.packet.evidence), 4)
+        for index in range(3, 12):
+            (self.root / f"noise_{index}.py").write_text("# policy note\n", encoding="utf-8")
+        (self.root / "rare.py").write_text("# policy admission\n", encoding="utf-8")
+        many = prepare(self.root, "policy guard admission")
+        paths = {record.path for record in many.packet.evidence} | {item["path"] for item in many.context_map}
+        self.assertIn("rare.py", paths)
+        self.assertEqual(many.exclusions.get("low_signal_match"), 12)
+
+    def test_scores_are_deterministic_and_short_files_do_not_win_by_length(self):
+        (self.root / "long.py").write_text("# policy\n" + "# filler\n" * 40, encoding="utf-8")
+        (self.root / "short.py").write_text("# policy\n", encoding="utf-8")
+        first = prepare(self.root, "policy")
+        second = prepare(self.root, "policy")
+        self.assertEqual([(r.path, r.start_line, r.end_line) for r in first.packet.evidence],
+                         [(r.path, r.start_line, r.end_line) for r in second.packet.evidence])
+        self.assertEqual(first.packet.evidence[0].path, "long.py")
+
+
 if __name__ == "__main__":
     unittest.main()
