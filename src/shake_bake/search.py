@@ -36,6 +36,12 @@ BM25_B = 0.0
 DISTRACTOR_MIN_FILES = 8
 DISTRACTOR_COMMON_DF = 8
 DISTRACTOR_RATIO = 0.2
+# Matched lines the excerpts did not cover, listed as line number plus a short
+# text so the host need not grep a large file again. Scan facts, untrusted text.
+LINE_INDEX_FILES = 6
+LINE_INDEX_LINES = 12
+LINE_INDEX_BYTES = 2048
+LINE_INDEX_TEXT = 120
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z_0-9]{2,}")
 # Top-level definitions only: a leading-column assignment or a declaration keyword.
 DEFINITION_RE = re.compile(
@@ -105,6 +111,8 @@ class SearchResult:
     # scan facts, not interpretations.
     context: tuple[dict, ...] = ()
     context_map: tuple[dict, ...] = ()
+    # Matched lines in matched files that no excerpt covers: path, counts and short line texts.
+    line_index: tuple[dict, ...] = ()
     # The optional local embedding rerank's record, or its refusal code; None when not requested.
     rerank: dict | None = None
 
@@ -136,6 +144,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
     examined = entries_seen = bytes_read = 0
     digests: dict[str, str] = {}
     sizes: dict[str, int] = {}
+    line_counts: dict[str, int] = {}
     first_lines: dict[str, str] = {}
     file_scores: dict[str, float] = {}
     # Per matching file: its lines and the (line index, matched terms) pairs; scored after the walk.
@@ -209,6 +218,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
                 lines = data.decode("utf-8").splitlines(keepends=True)
                 digests[path] = hashlib.sha256(data).hexdigest()
                 sizes[path] = len(data)
+                line_counts[path] = len(lines)
                 first_lines[path] = _first_line(lines)
                 if limits.context_bytes:
                     for index, line in enumerate(lines):
@@ -230,11 +240,11 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
                     folded = line.casefold()
                     hit = frozenset(term for term in terms if term in folded)
                     if hit:
-                        matches.append((index, hit))
+                        matches.append((index, hit, line.strip()[:LINE_INDEX_TEXT]))
                 in_path = frozenset(term for term in terms if term in path.casefold())
                 if not matches and not in_path:
                     continue
-                document_frequency.update(in_path.union(*(hit for _, hit in matches)))
+                document_frequency.update(in_path.union(*(item[1] for item in matches)))
                 file_lines[path] = lines
                 file_matches[path] = matches
                 path_terms[path] = in_path
@@ -259,7 +269,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
     idf = {term: math.log(1 + (examined_text - document_frequency[term] + 0.5) / (document_frequency[term] + 0.5))
            for term in terms}
     for path, matches in file_matches.items():
-        frequency = Counter(term for _, hit in matches for term in hit)
+        frequency = Counter(term for item in matches for term in item[1])
         length = len(file_lines[path]) / average_lines if average_lines else 1.0
         file_scores[path] = sum(idf[term] * count * (BM25_K1 + 1) / (count + BM25_K1 * (1 - BM25_B + BM25_B * length))
                                 for term, count in frequency.items()) + 2 * sum(idf[term] for term in path_terms[path])
@@ -267,7 +277,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
     common = {term for term in terms if document_frequency[term] >= DISTRACTOR_COMMON_DF}
     for path in sorted(file_matches):
         matches = file_matches[path]
-        matched = path_terms[path].union(*(hit for _, hit in matches))
+        matched = path_terms[path].union(*(item[1] for item in matches))
         if examined_text >= DISTRACTOR_MIN_FILES and file_scores[path] < DISTRACTOR_RATIO * best_score and matched <= common:
             skip("low_signal_match")
             del file_scores[path]
@@ -278,14 +288,14 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         # Preserve distinct nearby evidence, including a distant branch in
         # the same file. Never replace source with a generated summary.
         windows = []
-        ranked_lines = sorted(matches, key=lambda item: (-sum(idf[term] for term in item[1]), item[0])) or [(0, frozenset())]
-        for best, _ in ranked_lines:
+        ranked_lines = sorted(matches, key=lambda item: (-sum(idf[term] for term in item[1]), item[0])) or [(0, frozenset(), "")]
+        for best, *_ in ranked_lines:
             if any(begin <= best < end for begin, end in windows):
                 continue
             windows.append((max(0, best - 3), min(len(lines), best + 4)))
             if len(windows) == 2:
                 break
-        if any(not any(begin <= index < end for begin, end in windows) for index, _ in matches):
+        if any(not any(begin <= index < end for begin, end in windows) for index, *_ in matches):
             cutoffs.add("window_budget")
         for rank, (begin, end) in enumerate(windows):
             text = "".join(lines[begin:end])
@@ -444,10 +454,37 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         if len(others) > CONTEXT_MAP_ENTRIES:
             cutoffs.add("context_map_budget")
         context_map = [{"path": path, "size_bytes": sizes[path], "first_line": first_lines[path]} for path in others[:CONTEXT_MAP_ENTRIES]]
+    # Matched lines no excerpt covers, most relevant files first, under byte and count bounds.
+    line_index: list[dict] = []
+    if selections:
+        chosen = {s.path for s in selections}
+        covered_lines = {(s.path, index) for s in selections for index in range(s.start_line - 1, s.end_line)}
+        index_bytes = 0
+        for path in sorted(file_scores, key=lambda p: (-file_scores[p], p)):
+            uncovered = [item for item in file_matches[path] if (path, item[0]) not in covered_lines]
+            if not uncovered:
+                continue
+            if len(line_index) >= LINE_INDEX_FILES:
+                cutoffs.add("line_index_budget")
+                break
+            ranked = sorted(uncovered, key=lambda item: (-sum(idf[term] for term in item[1]), item[0]))
+            entries = []
+            for index, _, text in ranked[:LINE_INDEX_LINES]:
+                size = len(text.encode("utf-8")) + 8
+                if index_bytes + size > LINE_INDEX_BYTES:
+                    cutoffs.add("line_index_budget")
+                    break
+                index_bytes += size
+                entries.append({"line": index + 1, "text": text})
+            if len(ranked) > len(entries):
+                cutoffs.add("line_index_budget")
+            if entries:
+                line_index.append({"path": path, "excerpted": path in chosen, "total_lines": line_counts[path],
+                                   "matched_lines": len(file_matches[path]), "entries": sorted(entries, key=lambda item: item["line"])})
     packet = None
     if selections:
         packet = build_packet(root, request, tuple(selections))
         if any(record.file_sha256 != digest for record, digest in zip(packet.evidence, expected)):
             raise Refusal("source_changed_after_search")
     return SearchResult(request, packet, terms, examined, entries_seen, bytes_read, len(file_matches), total,
-                        dict(sorted(excluded.items())), tuple(sorted(cutoffs)), tuple(context), tuple(context_map), rerank_record)
+                        dict(sorted(excluded.items())), tuple(sorted(cutoffs)), tuple(context), tuple(context_map), tuple(line_index), rerank_record)

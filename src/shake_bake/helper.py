@@ -234,6 +234,7 @@ class HelperSession:
                 answer["selected_excerpt_bytes"] = search["selected_excerpt_bytes"]
                 answer["context"] = search.get("context", [])
                 answer["context_map"] = search.get("context_map", [])
+                answer["line_index"] = search.get("line_index", [])
             packet = search.get("packet")
             if packet:
                 answer["snapshot_id"] = packet["snapshot_id"]

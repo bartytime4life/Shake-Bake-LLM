@@ -72,16 +72,19 @@ def run(cases: list[dict], limits: SearchLimits, scorer=None) -> dict:
         primary = {record.path for record in evidence[:PRIMARY_FILES]}
         excerpted = {record.path for record in evidence}
         mapped = {item["path"] for item in result.context_map}
+        indexed = {entry["path"] for entry in result.line_index}
         changed = set(case["changed_files"])
         row.update({
             "files_examined": result.files_examined, "matching_files": result.matching_files,
-            "excerpts": len(evidence), "map_entries": len(result.context_map), "cutoffs": list(result.cutoffs),
-            "exclusions": dict(result.exclusions),
+            "excerpts": len(evidence), "map_entries": len(result.context_map), "index_files": len(result.line_index),
+            "cutoffs": list(result.cutoffs), "exclusions": dict(result.exclusions),
             "hits_primary": len(changed & primary), "hits_excerpted": len(changed & excerpted),
             "hits_with_map": len(changed & (excerpted | mapped)),
+            "hits_with_index": len(changed & (excerpted | mapped | indexed)),
             "recall_primary": len(changed & primary) / len(changed),
             "recall_excerpted": len(changed & excerpted) / len(changed),
             "recall_with_map": len(changed & (excerpted | mapped)) / len(changed),
+            "recall_with_index": len(changed & (excerpted | mapped | indexed)) / len(changed),
         })
         results.append(row)
     scored = [row for row in results if "refused" not in row]
@@ -96,9 +99,9 @@ def run(cases: list[dict], limits: SearchLimits, scorer=None) -> dict:
         "kind": "external_file_recall", "helper_version": __version__, "limits": limits.__dict__,
         "case_count": len(results), "scored": len(scored), "refused": len(results) - len(scored),
         "mean_recall_primary": mean("recall_primary"), "mean_recall_excerpted": mean("recall_excerpted"),
-        "mean_recall_with_map": mean("recall_with_map"),
+        "mean_recall_with_map": mean("recall_with_map"), "mean_recall_with_index": mean("recall_with_index"),
         "cases_with_any_primary_hit": any_hit("hits_primary"), "cases_with_any_excerpted_hit": any_hit("hits_excerpted"),
-        "cases_with_any_hit_including_map": any_hit("hits_with_map"),
+        "cases_with_any_hit_including_map": any_hit("hits_with_map"), "cases_with_any_hit_including_index": any_hit("hits_with_index"),
         "cases_hitting_file_budget": sum(1 for row in scored if "file_budget" in row["cutoffs"]),
         "cases_hitting_time_budget": sum(1 for row in scored if "time_budget" in row["cutoffs"]),
         "cases": results, "warning": WARNING,

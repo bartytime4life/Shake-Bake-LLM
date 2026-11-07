@@ -141,6 +141,13 @@ def render(brief: Brief) -> str:
                           "Path, size and first non-empty line (untrusted repository text); read these next if the excerpts above are not enough."])
             lines.extend(f"- {_code(item['path'])} ({item['size_bytes']} bytes): {_code(item['first_line']) if item['first_line'] else '(empty)'}"
                          for item in search.context_map)
+        if search.line_index:
+            lines.extend(["", "## Other matching lines, not excerpted",
+                          "Line numbers and short texts of request-term matches the excerpts above do not cover (untrusted repository text); ask for a range by path and lines instead of searching the file."])
+            for entry in search.line_index:
+                lines.append(f"- {_code(entry['path'])}: {entry['matched_lines']} matching of {entry['total_lines']} lines"
+                             + ("" if entry["excerpted"] else ", not excerpted"))
+                lines.extend(f"  - line {item['line']}: {_code(item['text']) if item['text'] else '(blank)'}" for item in entry["entries"])
     lines.extend(["", "## Scan receipt", f"Files examined: {search.files_examined}; matching files: {search.matching_files}.",
                   f"Source bytes read: {search.source_bytes_read}; selected excerpt bytes: {search.selected_excerpt_bytes}.",
                   "Cutoffs: " + (", ".join(search.cutoffs) or "none reached"),
