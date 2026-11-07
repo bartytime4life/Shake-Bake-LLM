@@ -1,0 +1,352 @@
+{
+  "archive_caps": {
+    "actual_continuation_transfer_bytes": 86001366,
+    "actual_ready_regular_file_bytes": 79462840,
+    "expanded_total_bytes": 1073741824,
+    "link_extension_new_transfer_bytes": 0,
+    "new_compressed_total_bytes": 104857600,
+    "no_automatic_download": true,
+    "per_archive_bytes": 20971520
+  },
+  "cases": [
+    {
+      "archive_sha256": "ce08e7e3ced7dd13ebe3559dd5b43302cf33d02e83f151b789ac1a16e2b4c43e",
+      "base_sha": "94b16b674111ca5e1a03ddcb71dc0b53acc2f934",
+      "case_metadata": {
+        "base_sha": "94b16b674111ca5e1a03ddcb71dc0b53acc2f934",
+        "changed_files": [
+          "src/datasets/arrow_dataset.py",
+          "tests/test_arrow_dataset.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "huggingface/datasets/4828/4796",
+        "repository": "huggingface/datasets",
+        "root": "huggingface__datasets-94b16b674111ca5e1a03ddcb71dc0b53acc2f934",
+        "split": "test",
+        "tree_sha256": "1d9337ed0a0b03d2d3937721cd5580226ccc5c415e44f496e6a37c3a14a9989e"
+      },
+      "compressed_bytes": 2142417,
+      "expanded_bytes": 5629597,
+      "id": "huggingface/datasets/4828/4796",
+      "license_kind_verified": "Apache-2.0",
+      "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "license_url": "https://raw.githubusercontent.com/huggingface/datasets/94b16b674111ca5e1a03ddcb71dc0b53acc2f934/LICENSE",
+      "repo": "huggingface/datasets",
+      "request_sha256": "994e024adbeeef552f724cda5fc5fe873efbd2a7be65e197be0e2ca9643510f0",
+      "snapshot_url": "https://codeload.github.com/huggingface/datasets/tar.gz/94b16b674111ca5e1a03ddcb71dc0b53acc2f934",
+      "status": "ready",
+      "symbolic_link_count": 0,
+      "tree_sha256": "1d9337ed0a0b03d2d3937721cd5580226ccc5c415e44f496e6a37c3a14a9989e"
+    },
+    {
+      "base_sha": "86e7d56df231760ebbfc64c809a7755b70cd8e6e",
+      "id": "pulumi/pulumi/11541/11542",
+      "license_kind_verified": "Apache-2.0",
+      "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "license_url": "https://raw.githubusercontent.com/pulumi/pulumi/86e7d56df231760ebbfc64c809a7755b70cd8e6e/LICENSE",
+      "reason": "original_per_archive_download_cap_not_increased",
+      "repo": "pulumi/pulumi",
+      "status": "not_scored"
+    },
+    {
+      "archive_sha256": "584725c2c35b9b5aab3f6a12f2ba1bba21f2bb2df26f31a1400b756a3f3b3605",
+      "base_sha": "36d5e2fb3f30805b848b81273a02a60b5bbcffeb",
+      "case_metadata": {
+        "base_sha": "36d5e2fb3f30805b848b81273a02a60b5bbcffeb",
+        "changed_files": [
+          "keras/layers/convolutional/base_conv.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "keras-team/keras/15943/15942",
+        "repository": "keras-team/keras",
+        "root": "keras-team__keras-36d5e2fb3f30805b848b81273a02a60b5bbcffeb",
+        "split": "test",
+        "tree_sha256": "00bfc18c552a77fe2a909ee1fadfff2bcecf12bf0c6c1cd0b41254c74720a11e"
+      },
+      "compressed_bytes": 2030159,
+      "expanded_bytes": 13708148,
+      "id": "keras-team/keras/15943/15942",
+      "license_kind_verified": "Apache-2.0",
+      "license_sha256": "ebc07b279109d4bd5e58fe06f54e8f8aee8ba1024b77b222bc04214ae6f56348",
+      "license_url": "https://raw.githubusercontent.com/keras-team/keras/36d5e2fb3f30805b848b81273a02a60b5bbcffeb/LICENSE",
+      "repo": "keras-team/keras",
+      "request_sha256": "8213f758c9150da6a642a586ce69f29d84284709249a5ae14b5a38ae17d8d45a",
+      "snapshot_url": "https://codeload.github.com/keras-team/keras/tar.gz/36d5e2fb3f30805b848b81273a02a60b5bbcffeb",
+      "status": "ready",
+      "symbolic_link_count": 0,
+      "tree_sha256": "00bfc18c552a77fe2a909ee1fadfff2bcecf12bf0c6c1cd0b41254c74720a11e"
+    },
+    {
+      "base_sha": "2662e6b2923d0f5aad8abff1281d463036e7d3d0",
+      "id": "textualize/textual/1653/1634",
+      "license_kind_verified": "MIT",
+      "license_sha256": "94f290a762376dfdb7768e42070618b0abfd2a2799eab1b1c097816c3a39eb57",
+      "license_url": "https://raw.githubusercontent.com/textualize/textual/2662e6b2923d0f5aad8abff1281d463036e7d3d0/LICENSE",
+      "reason": "original_per_archive_download_cap_not_increased",
+      "repo": "textualize/textual",
+      "status": "not_scored"
+    },
+    {
+      "base_sha": "4a7465cbe6b767800f7abd8f57dd0b7462d335ca",
+      "id": "plotly/plotly.py/2208/2167",
+      "license_kind_verified": "MIT",
+      "license_sha256": "8be31ef43f091ec4449b1ef2e238d009672fc30555a5193331bd095a4fa836a6",
+      "license_url": "https://raw.githubusercontent.com/plotly/plotly.py/4a7465cbe6b767800f7abd8f57dd0b7462d335ca/LICENSE.txt",
+      "reason": "original_per_archive_download_cap_not_increased",
+      "repo": "plotly/plotly.py",
+      "status": "not_scored"
+    },
+    {
+      "archive_sha256": "6afd24d04d71a9aff5a2f9c4ba7bb05ef2edf90ab29363be9b80e0cebf2e6b82",
+      "base_sha": "4d111f6f850ab60567553a8b017c95c55a3c4dc0",
+      "case_metadata": {
+        "base_sha": "4d111f6f850ab60567553a8b017c95c55a3c4dc0",
+        "changed_files": [
+          "rasa/cli/x.py",
+          "rasa/core/run.py",
+          "rasa/core/utils.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "rasahq/rasa/4035/4015",
+        "repository": "rasahq/rasa",
+        "root": "rasahq__rasa-4d111f6f850ab60567553a8b017c95c55a3c4dc0",
+        "split": "test",
+        "tree_sha256": "af2ddc24c008f7dd7d88abcaa40795c4a775efaf6574a52f0407a872b32d0f9d"
+      },
+      "compressed_bytes": 2243897,
+      "expanded_bytes": 20978842,
+      "id": "rasahq/rasa/4035/4015",
+      "license_kind_verified": "Apache-2.0",
+      "license_sha256": "58a1190d46efdd4643180a3247733f902a874591f6add73960d920cdfca826b2",
+      "license_url": "https://raw.githubusercontent.com/rasahq/rasa/4d111f6f850ab60567553a8b017c95c55a3c4dc0/LICENSE.txt",
+      "repo": "rasahq/rasa",
+      "request_sha256": "9f434386dab9b643b124bd2573fc31a552094632db0057be7c1d5feb38df8d74",
+      "snapshot_url": "https://codeload.github.com/rasahq/rasa/tar.gz/4d111f6f850ab60567553a8b017c95c55a3c4dc0",
+      "status": "ready",
+      "symbolic_link_count": 0,
+      "tree_sha256": "af2ddc24c008f7dd7d88abcaa40795c4a775efaf6574a52f0407a872b32d0f9d"
+    },
+    {
+      "archive_sha256": "b8cb7e2246166245fab583364530e16561eb33ec28d7a5f27ab726f4d5c5dfd3",
+      "base_sha": "63605ee42e85d2e2e0beb1463cb1c18937724763",
+      "case_metadata": {
+        "base_sha": "63605ee42e85d2e2e0beb1463cb1c18937724763",
+        "changed_files": [
+          "openapi/generate_openapi.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "wekan/wekan/3889/3884",
+        "repository": "wekan/wekan",
+        "root": "wekan__wekan-63605ee42e85d2e2e0beb1463cb1c18937724763",
+        "split": "test",
+        "tree_sha256": "a1adcce3db28dcf4f66f7d193583a3518c995f31000c4d620a1f090b8e55b68e"
+      },
+      "compressed_bytes": 3276130,
+      "expanded_bytes": 10439290,
+      "id": "wekan/wekan/3889/3884",
+      "license_kind_verified": "MIT",
+      "license_sha256": "5a052f3dddf6ff7aef9dd09b4e80dbd75a689407a9f3fb6bb7afb38ec2ccf03a",
+      "license_url": "https://raw.githubusercontent.com/wekan/wekan/63605ee42e85d2e2e0beb1463cb1c18937724763/LICENSE",
+      "repo": "wekan/wekan",
+      "request_sha256": "2b761ff2ebe8918d7a13e09facccd614e9c478dc587575f2e6a15ca80b72f0b3",
+      "snapshot_url": "https://codeload.github.com/wekan/wekan/tar.gz/63605ee42e85d2e2e0beb1463cb1c18937724763",
+      "status": "ready",
+      "symbolic_link_count": 1,
+      "tree_sha256": "a1adcce3db28dcf4f66f7d193583a3518c995f31000c4d620a1f090b8e55b68e"
+    },
+    {
+      "archive_sha256": "8756c623ddf57ef66b57c0f1ba050b76c519a4e7ab7cba9563ca994dba01955d",
+      "base_sha": "85dfc5b880c61f5babdde6ab30bc022695139528",
+      "case_metadata": {
+        "base_sha": "85dfc5b880c61f5babdde6ab30bc022695139528",
+        "changed_files": [
+          "scripts/controlnet.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "mikubill/sd-webui-controlnet/321/307",
+        "repository": "mikubill/sd-webui-controlnet",
+        "root": "mikubill__sd-webui-controlnet-85dfc5b880c61f5babdde6ab30bc022695139528",
+        "split": "test",
+        "tree_sha256": "05d84f1285cfe0b281b72c5e4704530cdfeab3c9f779aef5176137e32a812061"
+      },
+      "compressed_bytes": 4826663,
+      "expanded_bytes": 6441473,
+      "id": "mikubill/sd-webui-controlnet/321/307",
+      "license_kind_verified": "MIT",
+      "license_sha256": "a09fc36772e9f355bd73b48b3ef45b23b8a00f6c0a37e187c9a9641571aa0a10",
+      "license_url": "https://raw.githubusercontent.com/mikubill/sd-webui-controlnet/85dfc5b880c61f5babdde6ab30bc022695139528/LICENSE",
+      "repo": "mikubill/sd-webui-controlnet",
+      "request_sha256": "bd6ed67b6366e031439ffb9a82e41205494f0b051be9846c1f64624e4b10b0f7",
+      "snapshot_url": "https://codeload.github.com/mikubill/sd-webui-controlnet/tar.gz/85dfc5b880c61f5babdde6ab30bc022695139528",
+      "status": "ready",
+      "symbolic_link_count": 0,
+      "tree_sha256": "05d84f1285cfe0b281b72c5e4704530cdfeab3c9f779aef5176137e32a812061"
+    },
+    {
+      "archive_sha256": "6aa83bc249378d30041f12585d59a1932e6897d99e56d7f78a277407a88bdacf",
+      "base_sha": "4d55e6dfbb6b3da5c731353bddbebf9423643104",
+      "case_metadata": {
+        "base_sha": "4d55e6dfbb6b3da5c731353bddbebf9423643104",
+        "changed_files": [
+          "beets/dbcore/types.py",
+          "beetsplug/acousticbrainz.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "beetbox/beets/3238/2790",
+        "repository": "beetbox/beets",
+        "root": "beetbox__beets-4d55e6dfbb6b3da5c731353bddbebf9423643104",
+        "split": "test",
+        "tree_sha256": "460a3a40dd864e739740149b5ab5d73ecfa07007c78ae3b2af4b4c4af151b90a"
+      },
+      "compressed_bytes": 1484728,
+      "expanded_bytes": 4414341,
+      "id": "beetbox/beets/3238/2790",
+      "license_kind_verified": "MIT",
+      "license_sha256": "69b9fa8fe9700714fc1f002aa6bfef097e5422372979195ab48956cd48e20aaf",
+      "license_url": "https://raw.githubusercontent.com/beetbox/beets/4d55e6dfbb6b3da5c731353bddbebf9423643104/LICENSE",
+      "repo": "beetbox/beets",
+      "request_sha256": "24e6691118bdfbc8ca46a2187647b23ee6c532a71f7acfbd2ad39bc690ba3370",
+      "snapshot_url": "https://codeload.github.com/beetbox/beets/tar.gz/4d55e6dfbb6b3da5c731353bddbebf9423643104",
+      "status": "ready",
+      "symbolic_link_count": 0,
+      "tree_sha256": "460a3a40dd864e739740149b5ab5d73ecfa07007c78ae3b2af4b4c4af151b90a"
+    },
+    {
+      "archive_sha256": "bf4513fdb5c36be3548cfb831717844e42f7fa4ae9625928ad690f6fc80dc96b",
+      "base_sha": "e71680212fac51bf5c2d13847d9967cb4d0feffa",
+      "case_metadata": {
+        "base_sha": "e71680212fac51bf5c2d13847d9967cb4d0feffa",
+        "changed_files": [
+          "jax/random.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "google/jax/1039/1033",
+        "repository": "google/jax",
+        "root": "google__jax-e71680212fac51bf5c2d13847d9967cb4d0feffa",
+        "split": "test",
+        "tree_sha256": "192badc6763f3087fc71c1b7d44a35a2156c5c9398584dbfc1e13c3237970898"
+      },
+      "compressed_bytes": 1054639,
+      "expanded_bytes": 2642624,
+      "id": "google/jax/1039/1033",
+      "license_kind_verified": "Apache-2.0",
+      "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "license_url": "https://raw.githubusercontent.com/google/jax/e71680212fac51bf5c2d13847d9967cb4d0feffa/LICENSE",
+      "repo": "google/jax",
+      "request_sha256": "d3d588763c51f945240d1041135bdda2dce4344cc5c0878cdfc422010b760e4e",
+      "snapshot_url": "https://codeload.github.com/google/jax/tar.gz/e71680212fac51bf5c2d13847d9967cb4d0feffa",
+      "status": "ready",
+      "symbolic_link_count": 0,
+      "tree_sha256": "192badc6763f3087fc71c1b7d44a35a2156c5c9398584dbfc1e13c3237970898"
+    },
+    {
+      "archive_sha256": "b54c3520bb4b51a58fe774c17b534f851fe172195e196d58e541708125190a32",
+      "base_sha": "fc7bbc43efc9adf923b58b43db6c979a3c17ac86",
+      "case_metadata": {
+        "base_sha": "fc7bbc43efc9adf923b58b43db6c979a3c17ac86",
+        "changed_files": [
+          "faker/providers/date_time/__init__.py",
+          "tests/providers/test_date_time.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "joke2k/faker/671/667",
+        "repository": "joke2k/faker",
+        "root": "joke2k__faker-fc7bbc43efc9adf923b58b43db6c979a3c17ac86",
+        "split": "test",
+        "tree_sha256": "5df8441bf50eaacae5a9f95a421c61ed383c8507a06139b02141fe0f0b90c1e1"
+      },
+      "compressed_bytes": 663442,
+      "expanded_bytes": 2507787,
+      "id": "joke2k/faker/671/667",
+      "license_kind_verified": "MIT",
+      "license_sha256": "b9784f048f74b43963d5b5706075da52eaa4edc74a37f3aae4edf3c556be7b89",
+      "license_url": "https://raw.githubusercontent.com/joke2k/faker/fc7bbc43efc9adf923b58b43db6c979a3c17ac86/LICENSE.txt",
+      "repo": "joke2k/faker",
+      "request_sha256": "0c750359153d0d1519427c00e778ffc39a5bf22e223c0986bbef9407768e8524",
+      "snapshot_url": "https://codeload.github.com/joke2k/faker/tar.gz/fc7bbc43efc9adf923b58b43db6c979a3c17ac86",
+      "status": "ready",
+      "symbolic_link_count": 0,
+      "tree_sha256": "5df8441bf50eaacae5a9f95a421c61ed383c8507a06139b02141fe0f0b90c1e1"
+    },
+    {
+      "archive_sha256": "f9487a5392ab28553ddaa4568d1d5f428154cf1a42b2759f862ece0c3d831e4e",
+      "base_sha": "e0280ff9495aa56e79db04f6e39bd268c9795ff1",
+      "case_metadata": {
+        "base_sha": "e0280ff9495aa56e79db04f6e39bd268c9795ff1",
+        "changed_files": [
+          "paddlespeech/cli/asr/infer.py",
+          "paddlespeech/s2t/transform/perturb.py",
+          "paddlespeech/s2t/transform/spectrogram.py",
+          "paddlespeech/vector/exps/ge2e/audio_processor.py"
+        ],
+        "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+        "id": "paddlepaddle/paddlespeech/1432/1426",
+        "repository": "paddlepaddle/paddlespeech",
+        "root": "paddlepaddle__paddlespeech-e0280ff9495aa56e79db04f6e39bd268c9795ff1",
+        "split": "test",
+        "tree_sha256": "2a44cd86db59975c004c0dbe4bd6dc6f5cf110d4d85dec2b1099ee4c76e3595e"
+      },
+      "compressed_bytes": 7394890,
+      "expanded_bytes": 12700738,
+      "id": "paddlepaddle/paddlespeech/1432/1426",
+      "license_kind_verified": "Apache-2.0",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "license_url": "https://raw.githubusercontent.com/paddlepaddle/paddlespeech/e0280ff9495aa56e79db04f6e39bd268c9795ff1/LICENSE",
+      "repo": "paddlepaddle/paddlespeech",
+      "request_sha256": "17bdf7abc85b0694ef940fa36c8fa6cdd0527d1f159ec424c68b2cc2af8c5baf",
+      "snapshot_url": "https://codeload.github.com/paddlepaddle/paddlespeech/tar.gz/e0280ff9495aa56e79db04f6e39bd268c9795ff1",
+      "status": "ready",
+      "symbolic_link_count": 11,
+      "tree_sha256": "2a44cd86db59975c004c0dbe4bd6dc6f5cf110d4d85dec2b1099ee4c76e3595e"
+    }
+  ],
+  "cases_sha256": "163842936c535f19715d92c062cc8611d392115ff6cf8c931a74acda7a1c1771",
+  "collectors": {
+    "after": "2222a67d4289a18abfb2305b9a62f5c9ab36c547",
+    "before": "2a0acdf4a4e3e70ee2dd1ab116826fdc04506295"
+  },
+  "corpus_identity_algorithm": "Sort regular [POSIX path, byte size, SHA-256] and symlink [POSIX path, symlink, target] rows by PurePosixPath(path); SHA-256 of JSON with separators comma/colon and default ensure_ascii=True. Omit directories, never follow links. No repository metadata or extra files may be added.",
+  "dataset": {
+    "bytes": 175518,
+    "card_url": "https://huggingface.co/datasets/JetBrains-Research/lca-bug-localization/blob/f2bb26a1c3320ccc1d7b02d2630077ff327a80f6/README.md",
+    "file": "py/test-00000-of-00001.parquet",
+    "license_declaration": "Apache-2.0",
+    "name": "JetBrains-Research/lca-bug-localization",
+    "paper_url": "https://arxiv.org/abs/2406.11612",
+    "publication_terms_url": "https://huggingface.co/spaces/JetBrains-Research/long-code-arena/blob/fd11dec2f9fea2a14d0e35c9543674797da0252d/src/tasks_content.py",
+    "revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+    "sha256": "96c06c997caa3dc63831302db2c19a1d8273384049dafdffe49f1bbcc133410f",
+    "terms_note": "Resulting research publications must be open access; original source licenses and notices remain applicable. The dev split includes test."
+  },
+  "date": "2026-11-07",
+  "kind": "independent_retrieval_audit_input_manifest",
+  "measurement_commit": "9361d028d836d561cd2d023ac33c2d9f8ec311ec",
+  "profiles": {
+    "default": {
+      "context_bytes": 2048,
+      "excerpt_bytes": 16384,
+      "max_depth": 8,
+      "max_entries": 4000,
+      "max_files": 200,
+      "seconds": 5.0
+    },
+    "expanded": {
+      "context_bytes": 2048,
+      "excerpt_bytes": 16384,
+      "max_depth": 16,
+      "max_entries": 10000,
+      "max_files": 1000,
+      "seconds": 30.0
+    }
+  },
+  "schema": 1,
+  "selection": {
+    "omitted": 3,
+    "replacement_cases": 0,
+    "rule": "first 12 distinct text_id values ordered by sha256(seed + text_id); no replacements for unavailable or oversized snapshots",
+    "scored": 9,
+    "seed": "shake-bake-independent-pilot-2026-11-07-v1:",
+    "selected": 12,
+    "untouched_other_python_test_cases": 38
+  }
+}

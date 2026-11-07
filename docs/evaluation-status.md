@@ -54,6 +54,25 @@ semantic correctness.
 | [Host-note diagnostic](host-note-diagnostic-2026-11-05.md) | Seventeen private runner checks, including two real process-cleanup regressions; twenty complete host answers; 9/10 evidence-only versus 8/10 with notes under separate AI review | Live helper/model orchestration, unseen accuracy, human qualification and whole-task benefit |
 | [Native retrieval comparison](native-preparation-2026-11-05.md) | Twenty-three runner checks, six grade-binding regressions, 313 exactly reproduced fixture files, sixteen complete corrected answers and a separately retained startup failure; 8/8 supported in each arm | More realistic tasks, controlled repeatable performance, correction work, billed/quota savings and human qualification. The AI grader saw keys during preflight and one answer exposed its arm in a link target. |
 
+## Independent retrieval evidence
+
+The [nine-case independent retrieval audit](independent-retrieval-2026-11-07.md)
+compares the frozen pre-PR #30 and PR #30 collectors on the same available
+Long Code Arena Python cases and budgets. Default mean primary recall rose
+5.56% to 16.67%; expanded rose 20.37% to 33.33%, while total expanded primary
+hits stayed 4/17, with two case gains and two losses. Expanded excerpts plus
+map rose 6/17 to 9/17. Three of twelve fixed-selected cases remain unscored
+under the archive cap. A relevant PaddleSpeech file was excluded by the
+low-signal rule; neither original arm delivered it. Disabling that rule in a
+later exposed-case diagnostic changed no gold-file hit counts.
+
+The original self-commit smoke remains development evidence. New schema-2
+receipts replay the same nine exposed cases and reproduce the audit's hit
+counts; they are not another independent cohort. The other 38 Python test
+cases remain reserved. This establishes bounded retrieval behavior, not a
+model qualification, improved host answers, fewer ChatGPT/Claude turns or
+cloud-cost savings. No installed application was changed by this audit.
+
 ## Shipped behavior and diagnostic boundaries
 
 The worker requests `think: false`, checks declared compatibility before source
