@@ -109,7 +109,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.equal(await h.page.locator('#stop').isVisible(),false);
     assert.equal(await h.page.locator('#handoff-copy').evaluate(el=>el.open),false);
     assert.equal(await h.page.locator('#evidence-section').evaluate(el=>el.open),false);
-    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n')[3]),request);
+    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n').find(line=>line.startsWith('Request (JSON string): ')).slice('Request (JSON string): '.length)),request);
     assert.equal(await h.page.locator('#brief-title').evaluate(el=>document.activeElement===el),true);
     assert.equal(await h.page.locator('#result-status').getAttribute('role'),'status');
     assert.equal(await h.page.locator('#result-status').getAttribute('aria-live'),'polite');
@@ -139,7 +139,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.deepEqual(await h.page.locator('#request').evaluate(el=>[el.selectionStart,el.selectionEnd]),selection);
     assert.match(await h.page.locator('#result-status').textContent(),/brief is ready/i);
     assert.equal(await h.page.locator('#stop').isVisible(),false);
-    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n')[3]),request);
+    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n').find(line=>line.startsWith('Request (JSON string): ')).slice('Request (JSON string): '.length)),request);
   });
   await scenario('a saved candidate trial reveals acknowledgement controls without starting work',async h=>{
     assert.equal(await h.page.locator('#local-ai').isChecked(),true);
