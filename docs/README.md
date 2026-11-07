@@ -26,6 +26,7 @@ Read these as successive experiments with separate identities and preserved fail
 - [Controlling-context collection](controlling-context-2026-11-06.md): bounded definition, usage, test and map additions after the primary windows; measured on the four exposed comparison fixtures, no host run.
 - [Web research: what can add value to the brief](research-2026-11-06.md): ten external findings read against the project's thesis, with nine bounded candidates ranked by what can be measured without a cloud run.
 - [Retrieval scoring and external recall](retrieval-scoring-2026-11-07.md): BM25-style file scoring, the disclosed distractor exclusion, and the external file-recall adapter, with Task Lab, fixture and self-commit smoke measurements.
+- [A brief Claude and ChatGPT can read directly](handoff-format-2026-11-07.md): the copied brief as Markdown with fenced excerpts, an answer format and verbatim values last; demo size before and after.
 - [Smaller-model screening](screening-2026-11-05.md) and [rejected 1.7B prompt](validation-0.4.0.dev8.md).
 - [Installed readiness](pc-readiness-2026-11-05.md), [readiness invalidation](readiness-invalidation-2026-11-05.md), and [copy recovery plus 8B baseline](copy-and-screening-2026-11-05.md).
 - [Workbench state and navigation fixes](workbench-fixes-2026-11-05.md) and [browser request recovery](request-recovery-2026-11-05.md), with scoped synthetic regression evidence.

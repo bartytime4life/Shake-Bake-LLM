@@ -130,6 +130,15 @@ class SearchAcceptance(unittest.TestCase):
         text = render(build_brief(self.root, self.task))
         self.assertIn("````\n# slice coverage", text)
 
+    def test_rendered_brief_asks_for_findings_gaps_and_next_files_before_the_source(self):
+        text = render(build_brief(self.root, self.task))
+        answer = text.index("## Answer with\n1. Findings, each citing the E-id and path:lines that support it.\n"
+                            "2. What is not established by this evidence, as a separate list.\n"
+                            "3. Which files you want pasted next, by path, if the excerpts and the map are not enough.")
+        self.assertLess(text.index("## Original request"), answer)
+        self.assertLess(answer, text.index("## E1"))
+        self.assertNotIn("## Answer with", render(build_brief(self.root, "zebraprinter")))
+
     def test_cli_runs_the_full_question_to_handoff_path(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):

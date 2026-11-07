@@ -110,6 +110,10 @@ def render(brief: Brief) -> str:
                 lines.extend(["", "Worker uncertainty:", _quote(question)])
         if brief.worker_error:
             lines.extend(["", f"Worker failed: {brief.worker_error}. Exact collected evidence is retained below."])
+        lines.extend(["", "## Answer with",
+                      "1. Findings, each citing the E-id and path:lines that support it.",
+                      "2. What is not established by this evidence, as a separate list.",
+                      "3. Which files you want pasted next, by path, if the excerpts and the map are not enough."])
         reasons = context_lines(search)
         for index, evidence in enumerate(packet.evidence, 1):
             lines.extend(["", f"## E{index}", "Path:", _quote(evidence.path),
