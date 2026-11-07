@@ -181,10 +181,12 @@ must be reported, never substituted; new large acquisition requires a shown
 operation and approval, with no automatic cap increase.
 
 Build only the nine already-exposed cases from the local pinned parquet:
+the audit-record checkout supplies the manifest, separately from the older
+measurement checkout pinned below.
 
 ```bash
 export RECALL_DATASET=/abs/local/test-00000-of-00001.parquet
-export RECALL_MANIFEST=/abs/measurement/benchmarks/external-recall/independent-2026-11-07/manifest.json
+export RECALL_MANIFEST=/abs/audit-record/benchmarks/external-recall/independent-2026-11-07/manifest.json
 export RECALL_CASES=/abs/evaluation/cases.jsonl
 python3.12 - <<'PY'
 import ast, hashlib, json, os
