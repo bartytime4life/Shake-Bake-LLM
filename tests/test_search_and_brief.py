@@ -173,5 +173,97 @@ class SearchAcceptance(unittest.TestCase):
         self.assertIn("window_budget", result.cutoffs)
 
 
+class ControllingContext(unittest.TestCase):
+    """Software-selected definitions, usages, a test and a map follow the primary windows."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        (self.root / "app").mkdir(); (self.root / "tests").mkdir()
+        # Only submit.py matches the request terms; everything else is reached by context.
+        (self.root / "app" / "submit.py").write_text(
+            "from app.settings import load_settings\n\ndef submit_job(payload, environ):\n    settings = load_settings(environ)\n"
+            "    return dispatch(settings, payload)\n", encoding="utf-8")
+        (self.root / "app" / "settings.py").write_text(
+            "import os\n\nDEFAULT_BACKEND = 'local'\n\ndef load_settings(environ):\n    return {'backend': environ.get('PARCEL_BACKEND', DEFAULT_BACKEND)}\n", encoding="utf-8")
+        (self.root / "app" / "worker.py").write_text("from app.submit import submit_job\n\ndef run(queue):\n    return [submit_job(p, {}) for p in queue]\n", encoding="utf-8")
+        (self.root / "app" / "mention.py").write_text("# submit_job is mentioned once here\n", encoding="utf-8")
+        (self.root / "tests" / "test_submit.py").write_text("from app.submit import submit_job\n\ndef test_submit_job_default():\n    assert submit_job({}, {})['backend'] == 'local'\n", encoding="utf-8")
+        self.task = "Trace the dispatch call"
+
+    def test_referenced_definition_usage_and_test_are_appended_with_reasons(self):
+        result = prepare(self.root, self.task)
+        evidence = result.packet.evidence
+        self.assertEqual([record.path for record in evidence], ["app/submit.py", "app/settings.py", "app/worker.py", "tests/test_submit.py"])
+        self.assertEqual(result.context, (
+            {"evidence_id": "E2", "kind": "definition", "name": "load_settings", "referenced_by": ["E1"]},
+            {"evidence_id": "E3", "kind": "usage", "name": "submit_job", "defined_in": "E1"},
+            {"evidence_id": "E4", "kind": "test", "names": ["submit_job"]}))
+        self.assertEqual(evidence[1].text, "def load_settings(environ):\n    return {'backend': environ.get('PARCEL_BACKEND', DEFAULT_BACKEND)}\n")
+        self.assertEqual(evidence[1].start_line, 5)
+        for record in evidence:
+            self.assertEqual(record.text, "".join((self.root / record.path).read_text(encoding="utf-8").splitlines(keepends=True)[record.start_line - 1:record.end_line]))
+        self.assertEqual(result.context_map, ())
+        self.assertEqual(result.selected_excerpt_bytes, sum(len(record.text.encode()) for record in evidence))
+
+    def test_context_never_duplicates_or_displaces_primary_lines(self):
+        (self.root / "app" / "submit.py").write_text(
+            "DEFAULT_BACKEND = 'local'\n# one\n# two\n# three\n\ndef submit_job(payload):\n    # dispatch call\n    return load_settings(payload, DEFAULT_BACKEND)\n", encoding="utf-8")
+        result = prepare(self.root, self.task)
+        primary = prepare(self.root, self.task, SearchLimits(context_bytes=0)).packet.evidence
+        self.assertEqual([(r.path, r.start_line, r.end_line) for r in result.packet.evidence[:len(primary)]], [(r.path, r.start_line, r.end_line) for r in primary])
+        seen = set()
+        for record in result.packet.evidence:
+            for line in range(record.start_line, record.end_line + 1):
+                self.assertNotIn((record.path, line), seen)
+                seen.add((record.path, line))
+        clipped = [record for record in result.packet.evidence[len(primary):] if record.path == "app/submit.py"]
+        self.assertEqual([(r.start_line, r.end_line, r.text) for r in clipped], [(1, 3, "DEFAULT_BACKEND = 'local'\n# one\n# two\n")])
+
+    def test_context_budget_is_disclosed_and_zero_disables_the_pass(self):
+        small = prepare(self.root, self.task, SearchLimits(context_bytes=40))
+        self.assertIn("context_budget", small.cutoffs)
+        self.assertLessEqual(sum(len(r.text.encode()) for r in small.packet.evidence[4:]), 40)
+        off = prepare(self.root, self.task, SearchLimits(context_bytes=0))
+        self.assertEqual(off.context, ())
+        self.assertEqual(off.context_map, ())
+        self.assertNotIn("context_budget", off.cutoffs)
+        with self.assertRaises(Refusal):
+            prepare(self.root, self.task, SearchLimits(context_bytes=-1))
+
+    def test_map_lists_matched_files_that_were_not_excerpted(self):
+        for index in range(6):
+            (self.root / f"extra_{index}.py").write_text(f"# dispatch helper {index}\n", encoding="utf-8")
+        result = prepare(self.root, self.task)
+        chosen = {record.path for record in result.packet.evidence}
+        self.assertTrue(result.context_map)
+        for item in result.context_map:
+            self.assertNotIn(item["path"], chosen)
+            self.assertEqual(set(item), {"path", "size_bytes", "first_line"})
+            self.assertEqual(item["size_bytes"], (self.root / item["path"]).stat().st_size)
+            self.assertEqual(item["first_line"], (self.root / item["path"]).read_text(encoding="utf-8").splitlines()[0].strip()[:80])
+
+    def test_rendered_brief_labels_context_and_lists_the_map(self):
+        for index in range(6):
+            (self.root / f"extra_{index}.py").write_text(f"# dispatch helper {index}\n", encoding="utf-8")
+        text = render(build_brief(self.root, self.task))
+        self.assertIn("Controlling context (software-selected, not an interpretation): E", text)
+        self.assertIn("top-level definition of load_settings, referenced by E1.", text)
+        self.assertIn("a use of submit_job, which E1 defines.", text)
+        self.assertIn("test file naming submit_job.", text)
+        self.assertIn("## Files also matched, not excerpted", text)
+        self.assertRegex(text, r"- extra_\d\.py \(\d+ bytes\): # dispatch helper \d")
+        self.assertLess(text.index("## Files also matched, not excerpted"), text.index("## Scan receipt"))
+
+    def test_secret_and_symlinked_files_stay_out_of_context(self):
+        (self.root / ".env").write_text("load_settings = 'SECRET'\nsubmit_job = 1\n", encoding="utf-8")
+        (self.root / "link.py").symlink_to(self.root / "app" / "settings.py")
+        result = prepare(self.root, self.task)
+        paths = {record.path for record in result.packet.evidence} | {item["path"] for item in result.context_map}
+        self.assertNotIn(".env", paths)
+        self.assertNotIn("link.py", paths)
+
+
 if __name__ == "__main__":
     unittest.main()

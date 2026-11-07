@@ -23,6 +23,7 @@ Read these as successive experiments with separate identities and preserved fail
 
 - [Handoff-prompt design and two-model runs](handoff-prompt-2026-11-06.md), where the local model drafts the assistant's prompt.
 - [Where host context tokens go at the start of a task](host-context-cost-2026-11-06.md): turn count and broad reads dominate; the brief is cheap but incomplete.
+- [Controlling-context collection](controlling-context-2026-11-06.md): bounded definition, usage, test and map additions after the primary windows; measured on the four exposed comparison fixtures, no host run.
 - [Smaller-model screening](screening-2026-11-05.md) and [rejected 1.7B prompt](validation-0.4.0.dev8.md).
 - [Installed readiness](pc-readiness-2026-11-05.md), [readiness invalidation](readiness-invalidation-2026-11-05.md), and [copy recovery plus 8B baseline](copy-and-screening-2026-11-05.md).
 - [Workbench state and navigation fixes](workbench-fixes-2026-11-05.md) and [browser request recovery](request-recovery-2026-11-05.md), with scoped synthetic regression evidence.
