@@ -52,7 +52,11 @@ the fixing pull request modified.
 
 ## Reading the receipt
 
-- `mean_recall_primary`: changed files among the four primary excerpts.
+- `mean_recall_primary`: changed files among the actual primary excerpts (at most four windows).
+  The collector's controlling-context E-ids distinguish added context from primary
+  windows even when fewer than four primary windows were selected.
+- `primary_excerpts` and `controlling_context_excerpts`: per-case window counts,
+  reported separately from file-level recall; multiple windows may share a file.
 - `mean_recall_excerpted`: changed files among all excerpts, including
   controlling context.
 - `mean_recall_with_map`: changed files among excerpts plus the path map.
