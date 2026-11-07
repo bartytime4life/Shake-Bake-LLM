@@ -40,13 +40,21 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   const h={page,enabled:true,policyEnabled:true,failState:startupFailure,failSettings:false,loseSettings:false,
     settingsWait:null,settingsSeen:deferred(),stateWait:null,stateSeen:deferred(),tasks:0,apiCalls:0,releases:[],modelCalls:0,settingsCalls:0};
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await context.route('**/api/**',async route=>{
+  // The page polls /api/state every few seconds. A poll still in flight when a
+  // finished scenario closes its context has its fetched response disposed; the
+  // route handler then rejects after the assertions already passed. Only such
+  // post-close failures are ignored; any error on an open page still fails the run.
+  const guarded=handler=>async route=>{
+    try{await handler(route);}
+    catch(error){if(page.isClosed()||/disposed|closed|Target.*closed/i.test(error?.message||''))return;throw error;}
+  };
+  await context.route('**/api/**',guarded(async route=>{
     h.apiCalls++;const url=new URL(route.request().url());
     if(url.pathname==='/api/tasks'&&route.request().method()==='POST')h.tasks++;
     if(['/api/inventory','/api/model-check'].includes(url.pathname))h.modelCalls++;
     await route.fallback();
-  });
-  await context.route('**/api/state',async route=>{
+  }));
+  await context.route('**/api/state',guarded(async route=>{
     h.apiCalls++;
     if(h.failState){await route.fulfill({status:503,body:''});return;}
     const response=await route.fetch(),value=await response.json();
@@ -55,22 +63,28 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     const wait=h.stateWait;h.stateWait=null;
     if(wait){h.stateSeen.resolve();await wait.promise;}
     await route.fulfill(h.failOldState&&wait?{status:503,json:{error:'synthetic_old_failure'}}:{json:result});
-  });
-  await context.route('**/api/settings',async route=>{
+  }));
+  await context.route('**/api/settings',guarded(async route=>{
     h.apiCalls++;h.settingsCalls++;h.settingsSeen.resolve();
     if(h.settingsWait)await h.settingsWait.promise;
     if(h.failSettings){await route.fulfill({status:503,json:{error:'synthetic_write_failure'}});return;}
     h.enabled=h.policyEnabled&&route.request().postDataJSON().enabled;
     if(h.loseSettings){await route.abort('failed');return;}
     await route.fulfill({json:{enabled:h.enabled}});
-  });
+  }));
   h.defer=()=>{const wait=deferred();h.releases.push(wait);return wait;};
   try{
     if(setup)await setup(h);
     await page.goto(baseURL);
     if(waitForStartup)await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.')||!document.querySelector('#notice').hidden);
     await run(h);assert.deepEqual(errors,[]);passed++;console.log('PASS '+label);
-  }finally{h.releases.forEach(wait=>wait.resolve());await context.close();}
+  }finally{
+    h.releases.forEach(wait=>wait.resolve());
+    // Detach every per-scenario route before closing so a poll already in the
+    // handler cannot reject with a disposed response after the scenario passed.
+    await page.unrouteAll({behavior:'ignoreErrors'});await context.unrouteAll({behavior:'ignoreErrors'});
+    await context.close();
+  }
 }
 (async()=>{
   baseURL=await waitForServer(server);

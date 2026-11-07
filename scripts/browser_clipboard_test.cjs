@@ -28,7 +28,7 @@ async function scenario(mode,run) {
   try{
     await page.goto(baseURL);await page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
     await run(page);assert.deepEqual(errors,[]);passed++;console.log('PASS '+mode);
-  }finally{await context.close();}
+  }finally{await page.unrouteAll({behavior:'ignoreErrors'});await context.close();}
 }
 (async()=>{
   baseURL=await waitForServer(server);
