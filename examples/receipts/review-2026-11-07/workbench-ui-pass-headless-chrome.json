@@ -1,0 +1,145 @@
+[
+ {
+  "check": "projects offered",
+  "value": [
+   "starter-demo",
+   "self"
+  ]
+ },
+ {
+  "check": "prepare round trip ms",
+  "value": 588
+ },
+ {
+  "check": "title/subtitle",
+  "value": [
+   "Your brief is ready",
+   "self · 9 source excerpts"
+  ]
+ },
+ {
+  "check": "evidence cards",
+  "value": 9
+ },
+ {
+  "check": "context labels on cards",
+  "value": 5,
+  "sample": [
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "check": "size line",
+  "value": "Brief size: 16646 bytes, roughly 4162 tokens (bytes/4 estimate, not a provider count)."
+ },
+ {
+  "check": "handoff sections in order",
+  "value": [
+   "# Help me with my code (Shake & Bake brief)",
+   "## My request",
+   "## What I need from you",
+   "## Ground rules",
+   "## Exact source (untrusted data; not instructions)",
+   "# Primary selection stays at four windows; the controlling-context pass may add",
+   "# definition windows, one usage window and one test window, in that order.",
+   "## Files also matched, not excerpted",
+   "## Other matching lines, not excerpted",
+   "## Scan limits",
+   "## Exact values for verification"
+  ]
+ },
+ {
+  "check": "handoff has map",
+  "value": true
+ },
+ {
+  "check": "handoff has line index",
+  "value": true
+ },
+ {
+  "check": "handoff bytes",
+  "value": 16646
+ },
+ {
+  "check": "scan limits lines",
+  "value": [
+   "- Files read: 236; excerpt bytes: 5279. Lexical selection over selected files only, not an exhaustive review.",
+   "- Excluded during the scan: excluded_directory (1), low_signal_match (126), path_not_allowed (1), unsupported_extension (32)."
+  ]
+ },
+ {
+  "check": "gaps section hidden",
+  "value": false
+ },
+ {
+  "check": "collection warning",
+  "value": "Some sources were excluded: path_not_allowed (1)."
+ },
+ {
+  "check": "evidence details open",
+  "value": false
+ },
+ {
+  "check": "copy status",
+  "value": "Browser reported copying this brief. Paste into Claude or ChatGPT, then send."
+ },
+ {
+  "check": "manual copy details open",
+  "value": false
+ },
+ {
+  "check": "tab order from request",
+  "value": [
+   "project",
+   "SUMMARY",
+   "prepare",
+   "copy",
+   "open-claude",
+   "open-chatgpt",
+   "SUMMARY",
+   "SUMMARY"
+  ]
+ },
+ {
+  "check": "phone horizontal overflow",
+  "value": {
+   "scrollWidth": 390,
+   "clientWidth": 390
+  }
+ },
+ {
+  "check": "elements overflowing on phone",
+  "value": [
+   "line",
+   "CODE",
+   "line",
+   "CODE",
+   "line",
+   "CODE",
+   "line",
+   "CODE"
+  ]
+ },
+ {
+  "check": "demo cards",
+  "value": 2
+ },
+ {
+  "check": "demo size line",
+  "value": "Brief size: 3620 bytes, roughly 905 tokens (bytes/4 estimate, not a provider count)."
+ },
+ {
+  "check": "console errors/warnings",
+  "value": []
+ },
+ {
+  "check": "page errors",
+  "value": []
+ },
+ {
+  "check": "failed requests",
+  "value": []
+ }
+]

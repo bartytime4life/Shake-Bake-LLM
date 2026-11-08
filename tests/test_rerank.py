@@ -15,9 +15,11 @@ from shake_bake.search import SearchLimits, prepare
 
 
 @contextmanager
-def embed_server(*, marker="PARCEL_BACKEND", remote=False, model_name=None, broken=None):
-    """Vectors point along [1, 0] when the text holds `marker`, else [0, 1]; the request is [1, 0]."""
+def embed_server(*, marker="PARCEL_BACKEND", remote=False, model_name=None, broken=None, dimensions=2):
+    """Vectors point along [1, 0] when the text holds `marker`, else [0, 1]; the request is [1, 0]; zero-padded to `dimensions`."""
     requests = []
+    state = {"request": None}
+    pad = [0.0] * (dimensions - 2)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -32,7 +34,10 @@ def embed_server(*, marker="PARCEL_BACKEND", remote=False, model_name=None, brok
                     result["remote_host"] = "https://example.invalid"
             else:
                 texts = payload["input"]
-                vectors = [[1.0, 0.0]] + [[1.0, 0.0] if marker in text else [0.0, 1.0] for text in texts[1:]]
+                # The scorer embeds the request alone first; remember it so it points along [1, 0] like a marker text.
+                if state["request"] is None:
+                    state["request"] = texts[0]
+                vectors = [([1.0, 0.0] if text == state["request"] or marker in text else [0.0, 1.0]) + pad for text in texts]
                 if broken == "count":
                     vectors = vectors[:-1]
                 if broken == "dimensions":
@@ -83,21 +88,23 @@ class RerankAcceptance(unittest.TestCase):
         self.assertEqual(result.packet.evidence[0].path, "z_settings.py")
         self.assertEqual(len(result.packet.evidence), len(lexical.packet.evidence))
         self.assertEqual({r.path for r in result.packet.evidence} - {"z_settings.py"} <= {r.path for r in lexical.packet.evidence}, True)
-        self.assertEqual([path for path, _ in requests], ["/api/show", "/api/version", "/api/embed"])
-        embed = next(body for path, body in requests if path == "/api/embed")
-        self.assertEqual(embed["input"][0], self.task)
-        self.assertEqual(embed["keep_alive"], 0)
-        self.assertEqual(len(embed["input"]) - 1, result.rerank["pool"])
+        # The request is embedded alone first (to learn the dimension count), then the pool in one batch.
+        self.assertEqual([path for path, _ in requests], ["/api/show", "/api/version", "/api/embed", "/api/embed"])
+        embeds = [body for path, body in requests if path == "/api/embed"]
+        embed = embeds[0]
+        self.assertEqual(embed["input"], [self.task])
+        self.assertEqual([body["keep_alive"] for body in embeds], [30, 0])
+        self.assertEqual(sum(len(body["input"]) for body in embeds) - 1, result.rerank["pool"])
         self.assertTrue(result.rerank["order_changed"])
         self.assertEqual(result.rerank["candidates"], 6)
         self.assertEqual(result.rerank["dimensions"], 2)
-        self.assertEqual(result.rerank["local_server_reported_usage"], {"prompt_eval_count": 7, "total_duration": 5})
+        self.assertEqual(result.rerank["local_server_reported_usage"], {"prompt_eval_count": 14, "total_duration": 10})
         self.assertTrue(result.rerank["selects_nothing_new"])
         self.assertEqual(result.rerank["similarities"].count(1.0), 1)
         self.assertEqual(result.rerank["blend"], 0.5)
         self.assertEqual(len(result.rerank["blended"]), result.rerank["pool"])
-        self.assertEqual(result.rerank["keep_alive_between_batches_seconds"], 0)
-        self.assertEqual(embed["keep_alive"], 0)
+        self.assertEqual(result.rerank["keep_alive_between_batches_seconds"], 30)
+        self.assertEqual(result.rerank["embed_calls"], 2)
         for record in result.packet.evidence:
             self.assertEqual(record.text, "".join((self.root / record.path).read_text(encoding="utf-8").splitlines(keepends=True)[record.start_line - 1:record.end_line]))
 
@@ -110,6 +117,28 @@ class RerankAcceptance(unittest.TestCase):
             self.assertEqual([(r.path, r.start_line) for r in result.packet.evidence], lexical)
             self.assertEqual(result.rerank["error"], code)
             self.assertNotIn("rerank_pool_budget", result.cutoffs)
+
+    def test_a_refused_call_does_not_inherit_the_previous_calls_record(self):
+        scorer = None
+        with embed_server() as (port, _):
+            scorer = EmbeddingScorer("fixture:embed", port=port)
+            prepare(self.root, self.task, None, scorer)
+        self.assertEqual(scorer.record["embed_calls"], 2)
+        with embed_server(broken="count") as (port2, _):
+            scorer.port = port2
+            result = prepare(self.root, self.task, None, scorer)
+        self.assertEqual(result.rerank["error"], "embedding_count_mismatch")
+        for key in ("dimensions", "embed_calls", "elapsed_seconds", "local_server_reported_usage"):
+            self.assertNotIn(key, result.rerank)
+
+    def test_batches_are_sized_from_the_first_reply(self):
+        with embed_server(dimensions=8000) as (port, requests):
+            result = prepare(self.root, self.task, None, EmbeddingScorer("fixture:embed", port=port))
+        embeds = [body for path, body in requests if path == "/api/embed"]
+        self.assertEqual(len(embeds[0]["input"]), 1)
+        self.assertTrue(all(len(body["input"]) == 1 for body in embeds))
+        self.assertEqual(result.rerank["embed_calls"], 7)
+        self.assertTrue(result.rerank["order_changed"])
 
     def test_pool_is_bounded_and_disclosed(self):
         for index in range(MAX_POOL + 3):
@@ -143,8 +172,9 @@ class RerankAcceptance(unittest.TestCase):
         with embed_server() as (port, requests):
             scorer = EmbeddingScorer("fixture:embed", port=port)
             similarities = scorer("request", ["x" * 5000, "PARCEL_BACKEND"])
-        sent = next(body for path, body in requests if path == "/api/embed")["input"]
-        self.assertEqual(len(sent[1].encode()), 4096)
+        embeds = [body for path, body in requests if path == "/api/embed"]
+        self.assertEqual(embeds[0]["input"], ["request"])
+        self.assertEqual(len(embeds[1]["input"][0].encode()), 4096)
         self.assertEqual(scorer.record["truncated_windows"], 1)
         self.assertEqual(len(similarities), 2)
 

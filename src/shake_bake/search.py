@@ -14,6 +14,7 @@ from .contracts import Packet, Refusal, Selection
 
 EXTENSIONS = frozenset({".py", ".js", ".ts", ".tsx", ".jsx", ".rs", ".go", ".md", ".toml", ".yaml", ".yml", ".json", ".txt", ".c", ".h", ".cpp", ".java", ".sh", ".sql"})
 EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build", "vendor", "target", ".idea", ".vscode"})
+PROSE_EXTENSIONS = frozenset({".md", ".txt"})
 STOP_WORDS = frozenset("the and for this that with from into about find show code where how does what review please have source function files file inspect controlling check".split())
 # Words that carry little signal in a request: English function words and the
 # vocabulary of issue templates. They never become search terms. Deliberately
@@ -94,6 +95,17 @@ LINE_INDEX_BYTES = 2048
 LINE_INDEX_TEXT = 120
 # Weight of pool-normalized embedding similarity against the pool-normalized lexical score.
 RERANK_BLEND = 0.5
+# A name defined in more than this many places is ambiguous and is not followed as context.
+AMBIGUOUS_DEFINITIONS = 2
+# Identifier names that are plain English or near-universal in code; following their
+# definition rarely helps and usually lands on an unrelated assignment.
+GENERIC_NAMES = frozenset("""
+name names context selected value values data result results item items index count path paths text lines
+line key keys config options args kwargs self cls state status type kind size total root request response
+error errors message messages info meta params param entry entries record records output input label labels
+""".split())
+# Cutoffs that mean the scan stopped before reading everything, as opposed to selection caps.
+SCAN_STOP_CUTOFFS = frozenset({"time_budget", "file_budget", "entry_budget", "depth_budget"})
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z_0-9]{2,}")
 # Top-level definitions only: a leading-column assignment or a declaration keyword.
 DEFINITION_RE = re.compile(
@@ -108,10 +120,12 @@ KEYWORDS = frozenset(
 
 
 def _is_test_path(path: str) -> bool:
+    """A test directory, or a stem that is `test`/`tests`/`spec` or carries one as a `_` or `.` suffix or prefix;
+    `contests.py` or `testament.py` are not tests."""
     parts = path.casefold().split("/")
     name = parts[-1].rsplit(".", 1)[0]
     return any(part in ("test", "tests", "spec", "specs") for part in parts[:-1]) or \
-        name.startswith(("test_", "test")) or name.endswith(("_test", ".test", "_spec", ".spec", "tests"))
+        bool(re.fullmatch(r"(tests?|specs?)(?:[_.].+)?|.+[_.](tests?|specs?)", name))
 
 
 def _identifiers(text: str) -> tuple[str, ...]:
@@ -129,7 +143,9 @@ def _first_line(lines: list[str]) -> str:
 @dataclass(frozen=True)
 class SearchLimits:
     # A 1,000-file walk took under half a second on the thirteen external repositories
-    # (November 7); the five-second deadline remains the hard stop.
+    # (November 7). `seconds` bounds the walk; the passes after it (scoring, controlling
+    # context, line index) are bounded by their own counts and bytes, and an optional
+    # rerank by its own deadline, so a preparation can take longer than `seconds`.
     max_files: int = 1000
     max_entries: int = 20000
     max_depth: int = 8
@@ -273,18 +289,21 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
                 line_counts[path] = len(lines)
                 first_lines[path] = _first_line(lines)
                 if limits.context_bytes:
-                    for index, line in enumerate(lines):
-                        found = DEFINITION_RE.match(line)
-                        if not found:
-                            continue
-                        name = found.group(1) or found.group(2)
-                        if name.casefold() in KEYWORDS:
-                            continue
-                        if definition_entries >= DEFINITION_INDEX_ENTRIES:
-                            cutoffs.add("definition_index_budget")
-                            break
-                        definitions.setdefault(name, []).append((path, index))
-                        definition_entries += 1
+                    # Prose files (Markdown, text) hold no definitions; "let the server start" is not one.
+                    # They still count as places where a name is used or tested.
+                    if Path(entry.name).suffix.casefold() not in PROSE_EXTENSIONS:
+                        for index, line in enumerate(lines):
+                            found = DEFINITION_RE.match(line)
+                            if not found:
+                                continue
+                            name = found.group(1) or found.group(2)
+                            if name.casefold() in KEYWORDS:
+                                continue
+                            if definition_entries >= DEFINITION_INDEX_ENTRIES:
+                                cutoffs.add("definition_index_budget")
+                                break
+                            definitions.setdefault(name, []).append((path, index))
+                            definition_entries += 1
                     names_by_file[path] = Counter(_identifiers(data.decode("utf-8")))
                 total_lines += len(lines)
                 matches = []
@@ -293,7 +312,11 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
                     hit = frozenset(term for term in terms if term in folded)
                     if hit:
                         matches.append((index, hit, line.strip()[:LINE_INDEX_TEXT]))
-                in_path = frozenset(term for term in terms if term in path.casefold())
+                # A request writes `MobileNetV3`; the file is `mobilenet_v3.py`. Match paths with
+                # separators removed as well as literally.
+                folded_path = path.casefold()
+                compact_path = folded_path.replace("_", "").replace("-", "")
+                in_path = frozenset(term for term in terms if term in folded_path or term.replace("_", "") in compact_path)
                 if not matches and not in_path:
                     continue
                 document_frequency.update(in_path.union(*(item[1] for item in matches)))
@@ -360,8 +383,6 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
     if scorer is not None and ordered:
         from .rerank import MAX_POOL
         pool, rest = ordered[:MAX_POOL], ordered[MAX_POOL:]
-        if rest:
-            cutoffs.add("rerank_pool_budget")
         try:
             similarities = scorer(request, [item[8] for item in pool])
             if len(similarities) != len(pool) or not all(type(value) in (int, float) and -1.0001 <= value <= 1.0001 for value in similarities):
@@ -377,6 +398,8 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
             rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates), "blend": RERANK_BLEND,
                              "order_changed": [c[1:4] for c in reordered] != [c[1:4] for c in pool],
                              "similarities": [round(value, 4) for value in similarities], "blended": [round(value, 4) for value in blended]}
+            if rest:
+                cutoffs.add("rerank_pool_budget")
             ordered = reordered + rest
         except Refusal as refusal:
             rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates), "error": refusal.code}
@@ -434,6 +457,10 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         for number, candidate in enumerate(selected, 1):
             for name in dict.fromkeys(candidate[7]):
                 if name.casefold() in terms or name not in definitions:
+                    continue
+                # Generic names (`name`, `files`, `context`) and names defined in several places
+                # are not controlling context; following one wastes a window on a guess.
+                if name.casefold() in TEMPLATE_WORDS or name.casefold() in GENERIC_NAMES or len(definitions[name]) > AMBIGUOUS_DEFINITIONS:
                     continue
                 if all(covered(path, index) for path, index in definitions[name]):
                     continue

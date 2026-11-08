@@ -69,7 +69,10 @@ def run(cases: list[dict], limits: SearchLimits, scorer=None) -> dict:
         if result.rerank is not None:
             row["rerank"] = {key: result.rerank.get(key) for key in ("model", "pool", "candidates", "order_changed", "error", "elapsed_seconds", "embed_calls", "truncated_windows") if key in result.rerank}
         evidence = list(result.packet.evidence) if result.packet else []
-        primary = {record.path for record in evidence[:PRIMARY_FILES]}
+        # Primary windows are the records before the controlling-context ones, which may be fewer than four.
+        primary_count = min(PRIMARY_FILES, len(evidence) - len(result.context))
+        primary = {record.path for record in evidence[:primary_count]}
+        row["primary_windows"] = primary_count
         excerpted = {record.path for record in evidence}
         mapped = {item["path"] for item in result.context_map}
         indexed = {entry["path"] for entry in result.line_index}

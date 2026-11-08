@@ -20,6 +20,9 @@ MAX_WINDOW_BYTES = 4096
 MAX_DIMENSIONS = 8192
 BATCH = 8
 KEEP_ALIVE_BETWEEN_BATCHES_SECONDS = 30
+# Batches are sized so one reply stays under the transport's 256 KB response cap.
+RESPONSE_BUDGET_BYTES = 200 * 1024
+BYTES_PER_DIMENSION = 13
 
 
 class EmbeddingScorer:
@@ -43,24 +46,34 @@ class EmbeddingScorer:
                 truncated += 1
                 text = encoded[:MAX_WINDOW_BYTES].decode("utf-8", errors="ignore")
             scored_texts.append(text)
+        # A fresh record per call: a refused call must not report the previous call's figures.
+        self.record = {"model": self.model, "kind": "local_embedding_rerank", "selects_nothing_new": True}
         deadline = time.monotonic() + self.seconds
         started = time.perf_counter()
         local_model_metadata(self.model, self.port, deadline)
         runtime = local_runtime(self.port, deadline)
-        # A 1,024-dimension vector is about 13 KB of JSON, so a full pool in one reply
-        # would exceed the transport's response cap; embed in small batches under one deadline.
+        # A vector is about 13 bytes of JSON per dimension, so a full pool in one reply would
+        # exceed the transport's response cap. The request is embedded alone first, which
+        # reveals the dimension count; the windows then go in batches sized to that count.
         inputs = [request.encode("utf-8")[:MAX_WINDOW_BYTES].decode("utf-8", errors="ignore"), *scored_texts]
         vectors: list[list[float]] = []
         usage: dict[str, int] = {}
         calls = 0
-        for start in range(0, len(inputs), BATCH):
-            batch = inputs[start:start + BATCH]
+        batch_size = 1
+        start = 0
+        while start < len(inputs):
+            batch = inputs[start:start + batch_size]
             # Keep the model loaded only between the batches of this one preparation (the
             # worker's unload-after-use rule still holds: the final batch asks for release).
-            last = start + BATCH >= len(inputs)
+            last = start + len(batch) >= len(inputs)
             result = _post("/api/embed", {"model": self.model, "input": batch, "keep_alive": 0 if last else KEEP_ALIVE_BETWEEN_BATCHES_SECONDS,
                                           "truncate": False}, self.port, deadline)
             calls += 1
+            start += len(batch)
+            if calls == 1:
+                first = result.get("embeddings")
+                if isinstance(first, list) and first and isinstance(first[0], list) and first[0]:
+                    batch_size = max(1, min(BATCH, RESPONSE_BUDGET_BYTES // (BYTES_PER_DIMENSION * len(first[0]))))
             if result.get("remote_host") or result.get("remote_model"):
                 raise Refusal("remote_embedding_response_refused")
             if not isinstance(result.get("model"), str) or canonical_model(result["model"]) != canonical_model(self.model):

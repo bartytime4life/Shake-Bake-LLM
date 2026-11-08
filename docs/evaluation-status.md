@@ -1,6 +1,6 @@
 # Current evaluation status
 
-Updated November 7, 2026 for `0.4.0.dev18`. No local model profile is qualified for
+Updated November 7, 2026 for `0.4.0.dev19`. No local model profile is qualified for
 automatic selection. The latest larger-budget experiment is rejected: both
 thinking-on candidates produced six supported handoffs out of ten, retained two
 critical unsupported claims and lost a previously supported concurrency answer

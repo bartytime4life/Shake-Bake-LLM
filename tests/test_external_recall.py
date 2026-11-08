@@ -45,6 +45,12 @@ class ExternalRecallAcceptance(unittest.TestCase):
         self.assertGreaterEqual(case["recall_with_map"], case["recall_excerpted"])
         self.assertGreaterEqual(case["recall_with_index"], case["recall_with_map"])
         self.assertIn("mean_recall_with_index", report)
+        # Primary counts only the windows before the controlling-context ones, which may be fewer than four.
+        self.assertLessEqual(case["primary_windows"], 4)
+        self.assertLessEqual(case["hits_primary"], case["hits_excerpted"])
+        from shake_bake.search import prepare
+        result = prepare(self.base / "repos" / "parcel", "submit_job ignores PARCEL_BACKEND override")
+        self.assertEqual(case["primary_windows"], min(4, len(result.packet.evidence) - len(result.context)))
         self.assertEqual(report["cases"][1]["refused"], "case_root_not_allowed")
         self.assertEqual(report["cases_with_any_excerpted_hit"], 1.0)
         self.assertEqual(report["cases_hitting_file_budget"], 0)

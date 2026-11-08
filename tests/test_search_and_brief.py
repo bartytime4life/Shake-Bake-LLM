@@ -348,6 +348,29 @@ class RetrievalScoring(unittest.TestCase):
         self.assertTrue(all(len(item["text"]) <= 120 for item in big["entries"]))
         self.assertEqual(big["entries"], sorted(big["entries"], key=lambda item: item["line"]))
 
+    def test_generic_and_ambiguous_names_are_not_followed_as_context(self):
+        # lib.py does not match the request; it is reached only as the definition of load_rules.
+        (self.root / "main.py").write_text("from lib import load_rules\n\ndef run(name, context):\n    # policy entry point\n    rules = load_rules(name)\n    return rules, context\n", encoding="utf-8")
+        (self.root / "lib.py").write_text("def load_rules(name):\n    return {'name': name}\n", encoding="utf-8")
+        for index in range(3):
+            (self.root / f"settings_{index}.py").write_text("name = 'x'\ncontext = {}\npolicy = None\n", encoding="utf-8")
+        result = prepare(self.root, "Trace the policy entry point")
+        names = {item["name"] for item in result.context if item["kind"] == "definition"}
+        self.assertIn("load_rules", names)
+        self.assertFalse(names & {"name", "context", "policy", "rules"}, names)
+
+    def test_test_paths_and_prose_definitions_are_classified_narrowly(self):
+        from shake_bake.search import _is_test_path
+        for path in ("tests/x.py", "spec/a.js", "test_submit.py", "submit_test.go", "submit.spec.ts", "test.py", "tests.py", "a/b/specs/c.kt"):
+            self.assertTrue(_is_test_path(path), path)
+        for path in ("contests.py", "protests.js", "attests.go", "testament.py", "testimonial.md", "app/latest.py", "spectrum.py"):
+            self.assertFalse(_is_test_path(path), path)
+        # A README sentence beginning with "let" or "type" is not a definition and must not become a context window.
+        (self.root / "README.md").write_text("let the server start before the policy check\ntype the command to run the policy guard\n", encoding="utf-8")
+        (self.root / "guard.py").write_text("# policy guard\nthe = 1\n", encoding="utf-8")
+        result = prepare(self.root, "policy guard")
+        self.assertFalse(any(item.get("kind") == "definition" and item.get("name") in ("the", "command") for item in result.context), result.context)
+
     def test_crafted_filenames_cannot_pose_as_brief_structure(self):
         from shake_bake.briefing import _code
         # Five matching files: four become primary excerpts, the crafted one lands in the map.
