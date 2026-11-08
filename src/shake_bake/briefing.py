@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 
 from .contracts import Refusal
-from .search import SearchLimits, SearchResult, prepare
+from .search import SCAN_STOP_CUTOFFS, SearchLimits, SearchResult, prepare
 from .worker import WorkerNote, organize
 
 
@@ -28,7 +28,9 @@ def collection_scope(search):
             "source_bytes_read": search.source_bytes_read, "selected_excerpt_bytes": search.selected_excerpt_bytes,
             "cutoffs": list(search.cutoffs), "exclusions": dict(search.exclusions),
             "context": [dict(item) for item in search.context],
-            "rerank": dict(search.rerank) if search.rerank else None}
+            # The worker gets the rerank outcome, not its telemetry; the full record stays in the receipt.
+            "rerank": {key: search.rerank[key] for key in ("model", "pool", "candidates", "order_changed", "error") if key in search.rerank}
+            if search.rerank else None}
 
 
 def context_lines(search) -> dict[str, str]:
@@ -169,7 +171,8 @@ def render(brief: Brief) -> str:
                 lines.extend(f"  - line {item['line']}: {_code(item['text']) if item['text'] else '(blank)'}" for item in entry["entries"])
     lines.extend(["", "## Scan receipt", f"Files examined: {search.files_examined}; matching files: {search.matching_files}.",
                   f"Source bytes read: {search.source_bytes_read}; selected excerpt bytes: {search.selected_excerpt_bytes}.",
-                  "Cutoffs: " + (", ".join(search.cutoffs) or "none reached"),
+                  "Scan stopped early: " + (", ".join(c for c in search.cutoffs if c in SCAN_STOP_CUTOFFS) or "no, the scan completed") + ".",
+                  "Selection caps applied: " + (", ".join(c for c in search.cutoffs if c not in SCAN_STOP_CUTOFFS) or "none") + ".",
                   "Exclusions: " + str(search.exclusions),
                   *_rerank_lines(search.rerank),
                   "Cloud tokens and savings: not measured. No direct cloud-provider client is implemented.",

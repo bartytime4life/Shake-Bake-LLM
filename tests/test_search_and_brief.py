@@ -348,6 +348,29 @@ class RetrievalScoring(unittest.TestCase):
         self.assertTrue(all(len(item["text"]) <= 120 for item in big["entries"]))
         self.assertEqual(big["entries"], sorted(big["entries"], key=lambda item: item["line"]))
 
+    def test_generic_and_ambiguous_names_are_not_followed_as_context(self):
+        # lib.py does not match the request; it is reached only as the definition of load_rules.
+        (self.root / "main.py").write_text("from lib import load_rules\n\ndef run(name, context):\n    # policy entry point\n    rules = load_rules(name)\n    return rules, context\n", encoding="utf-8")
+        (self.root / "lib.py").write_text("def load_rules(name):\n    return {'name': name}\n", encoding="utf-8")
+        for index in range(3):
+            (self.root / f"settings_{index}.py").write_text("name = 'x'\ncontext = {}\npolicy = None\n", encoding="utf-8")
+        result = prepare(self.root, "Trace the policy entry point")
+        names = {item["name"] for item in result.context if item["kind"] == "definition"}
+        self.assertIn("load_rules", names)
+        self.assertFalse(names & {"name", "context", "policy", "rules"}, names)
+
+    def test_test_paths_and_prose_definitions_are_classified_narrowly(self):
+        from shake_bake.search import _is_test_path
+        for path in ("tests/x.py", "spec/a.js", "test_submit.py", "submit_test.go", "submit.spec.ts", "test.py", "tests.py", "a/b/specs/c.kt"):
+            self.assertTrue(_is_test_path(path), path)
+        for path in ("contests.py", "protests.js", "attests.go", "testament.py", "testimonial.md", "app/latest.py", "spectrum.py"):
+            self.assertFalse(_is_test_path(path), path)
+        # A README sentence beginning with "let" or "type" is not a definition and must not become a context window.
+        (self.root / "README.md").write_text("let the server start before the policy check\ntype the command to run the policy guard\n", encoding="utf-8")
+        (self.root / "guard.py").write_text("# policy guard\nthe = 1\n", encoding="utf-8")
+        result = prepare(self.root, "policy guard")
+        self.assertFalse(any(item.get("kind") == "definition" and item.get("name") in ("the", "command") for item in result.context), result.context)
+
     def test_crafted_filenames_cannot_pose_as_brief_structure(self):
         from shake_bake.briefing import _code
         # Five matching files: four become primary excerpts, the crafted one lands in the map.
@@ -379,6 +402,51 @@ class RetrievalScoring(unittest.TestCase):
         self.assertEqual([(r.path, r.start_line, r.end_line) for r in first.packet.evidence],
                          [(r.path, r.start_line, r.end_line) for r in second.packet.evidence])
         self.assertEqual(first.packet.evidence[0].path, "long.py")
+
+
+class TermSelection(unittest.TestCase):
+    """Request words are chosen by signal, not by position; URL and template words never match."""
+
+    def test_identifiers_outrank_template_words_and_urls_are_dropped(self):
+        from shake_bake.search import MAX_TERMS, request_terms
+        request = ("`@st.cache_data` cannot handle UUID objects\n\n"
+                   "### Checklist\n- [x] I have searched the existing issues https://github.com/streamlit/streamlit/issues\n"
+                   "### Describe the bug\nThe hashing of uuid.UUID fails inside cache_data. System information: Streamlit 1.21, Python 3.11.\n"
+                   + " ".join(f"pad{chr(97 + index)}word again" for index in range(26)))
+        ranked, used = request_terms(request)
+        self.assertEqual(len(used), MAX_TERMS)
+        for word in ("cache_data", "uuid", "hashing"):
+            self.assertIn(word, used)
+        for word in ("https", "github", "com", "checklist", "searched", "existing", "issues", "system", "information", "describe", "bug", "again"):
+            self.assertNotIn(word, used)
+        self.assertLess(used.index("cache_data"), used.index("hashing"))
+        self.assertGreater(len(ranked), MAX_TERMS)
+        self.assertEqual(request_terms(request), (ranked, used))
+
+    def test_short_requests_keep_every_remaining_word_in_appearance_order(self):
+        from shake_bake.search import request_terms
+        ranked, used = request_terms("Why does admit allow two active jobs despite the documented limit?")
+        self.assertEqual(ranked, used)
+        self.assertEqual(used, ("admit", "allow", "active", "jobs", "despite", "documented", "limit"))
+
+    def test_url_only_and_template_only_requests_are_refused(self):
+        for request in ("https://github.com/owner/repo/issues/1", "Please describe the expected behavior and steps to reproduce."):
+            with self.subTest(request=request), self.assertRaisesRegex(Refusal, "search_terms_required"):
+                prepare(Path(tempfile.mkdtemp()), request)
+
+    def test_signal_terms_reach_the_file_that_positional_terms_missed(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(root))
+        (root / "lib").mkdir()
+        (root / "lib" / "hashing.py").write_text("def update_hash(hasher, obj):\n    if isinstance(obj, uuid.UUID):\n        return hasher.update(obj.bytes)\n", encoding="utf-8")
+        for index in range(20):
+            (root / f"page_{index}.md").write_text("# Checklist\nI have searched the existing issues. System information below.\n", encoding="utf-8")
+        request = ("Checklist: I have searched the existing issues. System information: version 1.21.\n" * 3
+                   + "Describe the bug: hashing of uuid.UUID objects fails in cache_data.\n")
+        result = prepare(root, request)
+        self.assertIn("lib/hashing.py", [record.path for record in result.packet.evidence])
+        self.assertNotIn("page_0.md", [record.path for record in result.packet.evidence])
+        self.assertTrue(set(result.terms) >= {"hashing", "uuid", "cache_data"})
 
 
 if __name__ == "__main__":

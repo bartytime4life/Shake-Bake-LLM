@@ -48,7 +48,7 @@ def create_server(helper):
 
     @server.tool(structured_output=True, annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
     def fetch_evidence(task_id: str, evidence_id: str) -> dict[str, Any]:
-        """Fetch a captured E1-E4 source excerpt, line range and hashes. It is the recorded snapshot, not a claim about current disk contents."""
+        """Fetch a captured source excerpt by its id (E1 onward, at most ten per task), with line range and hashes. It is the recorded snapshot, not a claim about current disk contents."""
         return guarded(helper.fetch_evidence, task_id, evidence_id)
 
     @server.tool(structured_output=True)

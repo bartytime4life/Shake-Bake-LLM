@@ -52,6 +52,20 @@ Each case maps to: `id` = repository and issue number, `root` = the checkout at
 the base commit, `request` = issue title and body, `changed_files` = the files
 the fixing pull request modified.
 
+The bundled repository archives are large (11 GB for the Python config), so
+the November 7 run fetched each case's base commit directly instead:
+
+```bash
+git init repos/<owner>__<name> && cd repos/<owner>__<name>
+git remote add origin https://github.com/<owner>/<name>.git
+git fetch --depth 1 origin <base_sha> && git checkout FETCH_HEAD
+```
+
+That run's selection rule, manifest and receipts are under
+`examples/receipts/external-recall-2026-11-07/`; the `dev` split it used is
+development material and those cases are now exposed. The `test` split
+(0.18 MB) stays unread until the collector change under test is frozen.
+
 ## Reading the receipt
 
 - `mean_recall_primary`: changed files among the actual primary excerpts (at most four windows).

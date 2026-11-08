@@ -111,6 +111,10 @@ class RerankAcceptance(unittest.TestCase):
         self.assertEqual(result.rerank["local_server_reported_usage"], {"prompt_eval_count": 7, "total_duration": 5})
         self.assertTrue(result.rerank["selects_nothing_new"])
         self.assertEqual(result.rerank["similarities"].count(1.0), 1)
+        # Half pool-normalized similarity, half pool-normalized lexical score; one batch, so no keep-alive.
+        self.assertEqual(result.rerank["blend"], 0.5)
+        self.assertEqual(len(result.rerank["blended"]), result.rerank["pool"])
+        self.assertEqual(result.rerank["keep_alive_between_batches_seconds"], 0)
         for record in result.packet.evidence:
             self.assertEqual(record.text, "".join((self.root / record.path).read_text(encoding="utf-8").splitlines(keepends=True)[record.start_line - 1:record.end_line]))
 
@@ -168,6 +172,9 @@ class RerankAcceptance(unittest.TestCase):
             scores = scorer("query", texts)
         embeds = [body for path, body in requests if path == "/api/embed"]
         self.assertEqual([len(body["input"]) for body in embeds], [8, 8, 8, 1])
+        # The model stays loaded only between this preparation's batches; the last batch asks for release.
+        self.assertEqual([body["keep_alive"] for body in embeds], [30, 30, 30, 0])
+        self.assertEqual(scorer.record["keep_alive_between_batches_seconds"], 30)
         self.assertEqual([i for i, score in enumerate(scores) if score > .99], [7, 15, 23])
         self.assertTrue(all(size < MAX_RESPONSE_BYTES for size in sizes))
         self.assertEqual(scorer.record["embed_calls"], 4)

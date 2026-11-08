@@ -2,7 +2,10 @@
 
 Status: mechanism built and tested in `0.4.0.dev14`; development trial run in
 `0.4.0.dev16` with `qwen3-embedding:0.6b` after the owner approved the pull
-(result below: mixed, the option stays off by default). This is candidate C4
+(result below: mixed); the two follow-ups it named, a preparation-scoped
+keep-alive and a lexical blend, ran in `0.4.0.dev17` (keep-alive cuts the cost
+to a third, the blend makes the ordering nearly neutral). The option stays off
+by default. This is candidate C4
 from the [November 6 web research](research-2026-11-06.md):
 the first use of the local model whose effect is checked mechanically (which
 windows end up in the brief) rather than read by a person. It is optional,
@@ -169,6 +172,36 @@ trial fair: a short keep-alive scoped to one preparation so the batches share
 one model load, and combining similarity with the lexical score instead of
 replacing it, so a weak prose match cannot displace a strong identifier match.
 Either is a new candidate to measure, not a tune on these exposed cases.
+
+## Follow-up trial: keep-alive between batches and a lexical blend (`0.4.0.dev17`)
+
+The two follow-ups were built and run on the same three sets with the same
+model. Receipts: the `*-blend-keepalive.json` files beside the first trial's.
+
+**Keep-alive.** Every batch but the last now asks Ollama to keep the model
+loaded for 30 seconds; the last asks for release, so the worker's
+unload-after-use rule still holds at the end of a preparation. Embedding time
+per self-commit case fell from 6.8–7.3 s to 1.9–2.1 s for four calls, and per
+fixture from 3.1 s to 1.5 s for two calls. Task Lab cases, which fit one call,
+stayed at about 1.5 s: that is one model load, which no scoping removes.
+
+**Blend.** The order inside the pool now uses half the pool-normalized
+similarity and half the pool-normalized lexical score instead of similarity
+alone. Task Lab stays 10/10 with the same four orders changed. On the fixtures
+the publish case returns to 6/7 (the prose contract is back in the map, not
+the primary four) and the other three are unchanged in coverage. On the
+self-commit cases the blend is close to neutral: primary recall 12.9% → 13.7%,
+excerpted 18.6% → 17.8%, map-inclusive 38.3% unchanged, cases with any
+excerpted hit 9/12 unchanged, and per-case excerpted hits up 1, down 2, same 9
+(against up 4, down 7 for similarity alone).
+
+**Reading.** The keep-alive is a plain win and stays. The blend removes most
+of the churn that similarity-only ordering caused, at the price of the one
+clear gain it had produced; neither ordering is yet a measured improvement
+over the lexical order on this material. The option therefore stays off by
+default, with the blend as its default form because a near-neutral ordering is
+the safer one to leave switchable. What would settle it is the external
+recall run on cases this project did not author, with both orderings.
 
 ## What this does not establish
 
