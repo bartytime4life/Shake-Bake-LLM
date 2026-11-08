@@ -14,7 +14,7 @@ import threading
 import time
 import uuid
 
-from .collector import MAX_REQUEST_CHARS, _parts
+from .collector import MAX_FILES, MAX_REQUEST_CHARS, _parts
 from .contracts import Refusal
 from .worker import parse_json, validate_settings
 
@@ -109,7 +109,7 @@ class HelperSession:
                     raise Refusal("invalid_runner_result")
                 packet = search.get("packet")
                 if packet:
-                    if packet.get("original_request") != job.request or not 1 <= len(packet["evidence"]) <= 4:
+                    if packet.get("original_request") != job.request or not 1 <= len(packet["evidence"]) <= MAX_FILES:
                         raise Refusal("invalid_runner_result")
                     for record in packet["evidence"]:
                         _parts(record["path"])
@@ -254,10 +254,10 @@ class HelperSession:
                 raise Refusal("task_not_ready")
             records = (job.result or {}).get("search", {}).get("packet", {}) or {}
             records = records.get("evidence", [])
-            if not isinstance(evidence_id, str) or not re.fullmatch(r"E[1-4]", evidence_id):
+            if not isinstance(evidence_id, str) or not re.fullmatch(r"E[1-9][0-9]?", evidence_id):
                 raise Refusal("unknown_evidence")
             index = int(evidence_id[1:]) - 1
-            if index >= len(records):
+            if index >= min(len(records), MAX_FILES):
                 raise Refusal("unknown_evidence")
             return self._copy({"evidence_id": evidence_id, "freshness": "captured_snapshot_not_live_revalidation", **records[index]})
 

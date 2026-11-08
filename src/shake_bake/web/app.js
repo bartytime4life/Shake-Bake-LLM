@@ -245,11 +245,15 @@ function renderBrief(previous = false) {
     const hash=document.createElement('div'); hash.className='hash'; hash.textContent=`SHA-256 ${item.file_sha256}`; article.append(header,pre,hash); grid.append(article);
   }
   if(!packet.evidence.length){ const empty=document.createElement('div'); empty.className='empty'; const p=document.createElement('p');p.textContent='No source was captured. Review the gaps and clarify the request.';empty.append(p);grid.append(empty); }
-  const discovery=packet.receipt.discovery; $('scan-limits').textContent=discovery?`Bounded lexical scan: ${discovery.files_read} files read. Cutoffs: ${discovery.cutoffs.join(', ')||'none reached'}. Exclusions: ${JSON.stringify(discovery.refusals)}. This is not an exhaustive review.`:'';
-  const cutoffs=discovery?.cutoffs||[],refusals=Object.entries(discovery?.refusals||{}).filter(([,value])=>typeof value==='number'?value>0:!!value);
-  $('gaps-section').hidden=!packet.gaps.length&&!cutoffs.length&&!refusals.length; $('gaps').replaceChildren();
-  $('collection-warning').textContent=[cutoffs.length?`Collection reached these limits: ${cutoffs.join(', ')}.`:'',refusals.length?`Some sources were excluded: ${refusals.map(([name,count])=>`${name} (${count})`).join(', ')}.`:''].filter(Boolean).join(' ');
-  $('collection-warning').hidden=!cutoffs.length&&!refusals.length;
+  // Scan stops (time, file, entry, depth budgets) mean part of the project was never read and deserve a
+  // warning; selection caps (window counts, context bytes, map and index sizes) are routine and stay quiet.
+  const discovery=packet.receipt.discovery,cutoffs=discovery?.cutoffs||[];
+  const stops=cutoffs.filter(c=>SCAN_STOP_CUTOFFS.has(c)),caps=cutoffs.filter(c=>!SCAN_STOP_CUTOFFS.has(c));
+  $('scan-limits').textContent=discovery?`Bounded lexical scan: ${discovery.files_read} files read. ${stops.length?`Stopped early: ${stops.join(', ')}.`:'The scan completed.'} ${caps.length?`Selection caps applied: ${caps.join(', ')}.`:''} Exclusions: ${JSON.stringify(discovery.refusals)}. This is not an exhaustive review.`:'';
+  const refusals=Object.entries(discovery?.refusals||{}).filter(([,value])=>typeof value==='number'?value>0:!!value).filter(([name])=>!ROUTINE_EXCLUSIONS.has(name));
+  $('gaps-section').hidden=!packet.gaps.length&&!stops.length&&!refusals.length; $('gaps').replaceChildren();
+  $('collection-warning').textContent=[stops.length?`The scan stopped before reading everything: ${stops.join(', ')}. Files beyond that point were not seen.`:'',refusals.length?`Some sources were excluded: ${refusals.map(([name,count])=>`${name} (${count})`).join(', ')}.`:''].filter(Boolean).join(' ');
+  $('collection-warning').hidden=!stops.length&&!refusals.length;
   for(const gap of packet.gaps){const li=document.createElement('li');li.textContent=`${gap.selection?.path?gap.selection.path+' — ':''}${gap.code}: ${gap.message}`;$('gaps').append(li);}
   const notes=packet.model_notes,prompt=notes?.prompt||null; $('notes-section').hidden=!notes; $('notes').replaceChildren();$('uncertainties').replaceChildren();
   if(notes){ for(const item of notes.notes){const li=document.createElement('li');li.textContent=`${item.text}\nEvidence: ${item.evidence_ids.map(id=>packet.evidence.find(e=>e.evidence_id===id)?.path||id).join(', ')}`;$('notes').append(li);} for(const text of notes.uncertainties){const li=document.createElement('li');li.textContent=text;$('uncertainties').append(li);} }
@@ -412,6 +416,10 @@ function indexLines(p){
 // A Markdown fence longer than any backtick run inside the text, so captured
 // source can never close the fence or be read as brief structure.
 const LANGUAGES={py:'python',js:'javascript',ts:'typescript',tsx:'tsx',jsx:'jsx',rs:'rust',go:'go',md:'markdown',toml:'toml',yaml:'yaml',yml:'yaml',json:'json',sh:'bash',sql:'sql',c:'c',h:'c',cpp:'cpp',java:'java'};
+// Mirrors search.SCAN_STOP_CUTOFFS: these mean the walk ended before reading everything. Everything else is a selection cap.
+const SCAN_STOP_CUTOFFS=new Set(['time_budget','file_budget','entry_budget','depth_budget']);
+// Exclusions that are routine for any project and belong in the receipt, not in a warning.
+const ROUTINE_EXCLUSIONS=new Set(['unsupported_extension','excluded_directory','low_signal_match','binary','non_utf8']);
 function fenced(text,language=''){
   const runs=(text.match(/`+/g)||[]).map(run=>run.length);
   const marks='`'.repeat(Math.max(3,...runs.map(n=>n+1)));
@@ -451,7 +459,8 @@ function limitLines(p){
   const refusals=Object.entries(discovery.refusals||{}).filter(([,value])=>typeof value==='number'?value>0:!!value);
   const lines=['','## Scan limits',
     `- Files read: ${discovery.files_read??'unknown'}; excerpt bytes: ${p.receipt?.excerpt_bytes??'unknown'}. Lexical selection over selected files only, not an exhaustive review.`,
-    `- Cutoffs reached: ${cutoffs.length?cutoffs.join(', '):'none'}.`,
+    `- Scan stopped early: ${cutoffs.filter(c=>SCAN_STOP_CUTOFFS.has(c)).join(', ')||'no, the scan completed'}.`,
+    `- Selection caps applied: ${cutoffs.filter(c=>!SCAN_STOP_CUTOFFS.has(c)).join(', ')||'none'}.`,
     `- Excluded during the scan: ${refusals.length?refusals.map(([key,value])=>`${key} (${value})`).join(', '):'none'}.`,
     `- Preparation: ${p.routing?.status||'evidence_only'}; ${p.routing?.reason||'exact evidence only'}.`];
   for(const gap of p.gaps||[])lines.push(`- Gap: ${gap.message||gap.code}`);

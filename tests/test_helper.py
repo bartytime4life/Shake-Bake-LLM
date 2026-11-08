@@ -53,6 +53,31 @@ class HelperAcceptance(unittest.TestCase):
         self.assertEqual(evidence["text"], self.source)
         self.assertEqual(evidence["excerpt_sha256"], hashlib.sha256(self.source.encode()).hexdigest())
 
+    def test_controlling_context_records_pass_the_runner_check_and_are_fetchable(self):
+        # Four matching files plus a referenced definition, a usage and a test: more than four records.
+        (self.root / "app").mkdir(); (self.root / "tests").mkdir()
+        (self.root / "app" / "submit.py").write_text("from app.settings import load_settings\n\ndef submit_job(payload, environ):\n    return dispatch(load_settings(environ))\n", encoding="utf-8")
+        (self.root / "app" / "settings.py").write_text("import os\n\nDEFAULT = 'local'\n\ndef load_settings(environ):\n    return environ.get('BACKEND', DEFAULT)\n", encoding="utf-8")
+        (self.root / "app" / "worker.py").write_text("from app.submit import submit_job\n\ndef run(queue):\n    return [submit_job(p, {}) for p in queue]\n", encoding="utf-8")
+        (self.root / "tests" / "test_submit.py").write_text("from app.submit import submit_job\n\ndef test_default():\n    assert submit_job({}, {}) == 'local'\n", encoding="utf-8")
+        for name in ("a.md", "b.md", "c.md"):
+            (self.root / name).write_text("# dispatch notes\n", encoding="utf-8")
+        helper = self.session(evidence_only=True)
+        identifier = helper.start_task("demo", "Trace the dispatch call")["task_id"]
+        result = self.wait_for_result(helper, identifier)
+        self.assertEqual((result["state"], result["outcome"]), ("DONE", "ANSWER"), result.get("code"))
+        self.assertGreater(len(result["evidence"]), 4)
+        self.assertEqual([item["evidence_id"] for item in result["evidence"]], [f"E{index}" for index in range(1, len(result["evidence"]) + 1)])
+        self.assertTrue(result["context"])
+        last = result["evidence"][-1]["evidence_id"]
+        fetched = helper.fetch_evidence(identifier, last)
+        self.assertEqual(fetched["path"], result["evidence"][-1]["path"])
+        self.assertEqual(fetched["excerpt_sha256"], hashlib.sha256(fetched["text"].encode()).hexdigest())
+        with self.assertRaisesRegex(Refusal, "unknown_evidence"):
+            helper.fetch_evidence(identifier, f"E{len(result['evidence']) + 1}")
+        with self.assertRaisesRegex(Refusal, "unknown_evidence"):
+            helper.fetch_evidence(identifier, "E11")
+
     def test_unknown_project_refused_before_any_child(self):
         helper = self.session(evidence_only=True)
         for value in ("../outside", str(self.root), "other"):

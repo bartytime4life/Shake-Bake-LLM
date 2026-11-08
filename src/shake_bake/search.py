@@ -14,7 +14,58 @@ from .contracts import Packet, Refusal, Selection
 
 EXTENSIONS = frozenset({".py", ".js", ".ts", ".tsx", ".jsx", ".rs", ".go", ".md", ".toml", ".yaml", ".yml", ".json", ".txt", ".c", ".h", ".cpp", ".java", ".sh", ".sql"})
 EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build", "vendor", "target", ".idea", ".vscode"})
+PROSE_EXTENSIONS = frozenset({".md", ".txt"})
 STOP_WORDS = frozenset("the and for this that with from into about find show code where how does what review please have source function files file inspect controlling check".split())
+# Words that carry little signal in a request: English function words and the
+# vocabulary of issue templates. They never become search terms. Deliberately
+# absent: test, tests, error, failed, log, logs, which name real things in code.
+TEMPLATE_WORDS = frozenset("""
+are but can cannot not you your when then than these those there here without within onto over under after before because
+should would could will just also only any all some more most much many very use used using uses get got gets set
+make makes made like want need needs try tried trying run ran running see seen did done doing has had having was were
+been being which who why its our their them they him her his she out off per via etc one two new old same other
+another still again every each first last next following above below issue issues bug bugs problem problems describe
+description expected behavior behaviour actual steps reproduce reproduction screenshots screenshot additional context
+environment operating system information version versions browser checklist searched existing example minimal
+reproducible please thanks thank hello note report reported link links snippet output input result results install
+installed installation pip conda traceback stack trace question questions feature request currently however anyone
+someone something anything nothing already always never maybe might must seems seem looks look think thought
+""".split()) | STOP_WORDS
+URL_RE = re.compile(r"(?:https?://|www\.)\S+")
+MAX_TERMS = 16
+
+
+def request_terms(request: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Rank the request's words by signal and return (all ranked, the MAX_TERMS used).
+
+    Signal is positional-independent: identifier shape (underscore, digits, inner capitals)
+    counts most, then presence in the first line, repetition and length. URL fragments and
+    template words are dropped. Ties keep first-appearance order, so the result is stable.
+    """
+    text = URL_RE.sub(" ", request)
+    first_line = text.strip().split("\n", 1)[0].casefold() if text.strip() else ""
+    title_words = set(re.findall(r"[a-z_][a-z_0-9]+", first_line))
+    first_index: dict[str, int] = {}
+    counts: Counter = Counter()
+    shaped: dict[str, int] = {}
+    for index, token in enumerate(re.findall(r"[A-Za-z_][A-Za-z_0-9]+", text)):
+        if len(token) < 3:
+            continue
+        key = token.casefold()
+        if key in TEMPLATE_WORDS:
+            continue
+        first_index.setdefault(key, index)
+        counts[key] += 1
+        # Code-shaped words: an underscore or an inner capital is strong; a digit is weak.
+        strength = 3 if "_" in token or re.search(r"[a-z][A-Z]", token) else (1 if any(ch.isdigit() for ch in token) else 0)
+        shaped[key] = max(shaped.get(key, 0), strength)
+
+    def signal(key: str) -> int:
+        # A one-line request scores every word alike, so its words keep appearance order.
+        return shaped[key] + (2 if key in title_words else 0) + (1 if counts[key] > 1 else 0)
+
+    ranked = tuple(sorted(first_index, key=lambda key: (-signal(key), first_index[key])))
+    return ranked, ranked[:MAX_TERMS]
 # Primary selection stays at four windows; the controlling-context pass may add
 # definition windows, one usage window and one test window, in that order.
 PRIMARY_FILES = 4
@@ -42,6 +93,19 @@ LINE_INDEX_FILES = 6
 LINE_INDEX_LINES = 12
 LINE_INDEX_BYTES = 2048
 LINE_INDEX_TEXT = 120
+# Weight of pool-normalized embedding similarity against the pool-normalized lexical score.
+RERANK_BLEND = 0.5
+# A name defined in more than this many places is ambiguous and is not followed as context.
+AMBIGUOUS_DEFINITIONS = 2
+# Identifier names that are plain English or near-universal in code; following their
+# definition rarely helps and usually lands on an unrelated assignment.
+GENERIC_NAMES = frozenset("""
+name names context selected value values data result results item items index count path paths text lines
+line key keys config options args kwargs self cls state status type kind size total root request response
+error errors message messages info meta params param entry entries record records output input label labels
+""".split())
+# Cutoffs that mean the scan stopped before reading everything, as opposed to selection caps.
+SCAN_STOP_CUTOFFS = frozenset({"time_budget", "file_budget", "entry_budget", "depth_budget"})
 IDENTIFIER_RE = re.compile(r"[A-Za-z_][A-Za-z_0-9]{2,}")
 # Top-level definitions only: a leading-column assignment or a declaration keyword.
 DEFINITION_RE = re.compile(
@@ -56,10 +120,12 @@ KEYWORDS = frozenset(
 
 
 def _is_test_path(path: str) -> bool:
+    """A test directory, or a stem that is `test`/`tests`/`spec` or carries one as a `_` or `.` suffix or prefix;
+    `contests.py` or `testament.py` are not tests."""
     parts = path.casefold().split("/")
     name = parts[-1].rsplit(".", 1)[0]
     return any(part in ("test", "tests", "spec", "specs") for part in parts[:-1]) or \
-        name.startswith(("test_", "test")) or name.endswith(("_test", ".test", "_spec", ".spec", "tests"))
+        bool(re.fullmatch(r"(tests?|specs?)(?:[_.].+)?|.+[_.](tests?|specs?)", name))
 
 
 def _identifiers(text: str) -> tuple[str, ...]:
@@ -76,15 +142,19 @@ def _first_line(lines: list[str]) -> str:
 
 @dataclass(frozen=True)
 class SearchLimits:
-    max_files: int = 200
-    max_entries: int = 4000
+    # A 1,000-file walk took under half a second on the thirteen external repositories
+    # (November 7). `seconds` bounds the walk; the passes after it (scoring, controlling
+    # context, line index) are bounded by their own counts and bytes, and an optional
+    # rerank by its own deadline, so a preparation can take longer than `seconds`.
+    max_files: int = 1000
+    max_entries: int = 20000
     max_depth: int = 8
     seconds: float = 5.0
     excerpt_bytes: int = 16_384
     context_bytes: int = 2048
 
     def validate(self) -> None:
-        for name, ceiling in (("max_files", 1000), ("max_entries", 10000), ("max_depth", 16), ("excerpt_bytes", 65536)):
+        for name, ceiling in (("max_files", 5000), ("max_entries", 100000), ("max_depth", 16), ("excerpt_bytes", 65536)):
             value = getattr(self, name)
             if type(value) is not int or not 1 <= value <= ceiling:
                 raise Refusal("invalid_search_limits")
@@ -127,9 +197,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
     limits.validate()
     if not isinstance(request, str) or not request.strip() or len(request) > MAX_REQUEST_CHARS:
         raise Refusal("invalid_request")
-    all_terms = tuple(dict.fromkeys(t.casefold() for t in re.findall(r"[A-Za-z_][A-Za-z_0-9]+", request)
-                                    if len(t) >= 3 and t.casefold() not in STOP_WORDS))
-    terms = all_terms[:16]
+    all_terms, terms = request_terms(request)
     if not terms:
         raise Refusal("search_terms_required")
     if os.name != "posix" or not hasattr(os, "O_NOFOLLOW") or os.open not in os.supports_dir_fd:
@@ -221,18 +289,21 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
                 line_counts[path] = len(lines)
                 first_lines[path] = _first_line(lines)
                 if limits.context_bytes:
-                    for index, line in enumerate(lines):
-                        found = DEFINITION_RE.match(line)
-                        if not found:
-                            continue
-                        name = found.group(1) or found.group(2)
-                        if name.casefold() in KEYWORDS:
-                            continue
-                        if definition_entries >= DEFINITION_INDEX_ENTRIES:
-                            cutoffs.add("definition_index_budget")
-                            break
-                        definitions.setdefault(name, []).append((path, index))
-                        definition_entries += 1
+                    # Prose files (Markdown, text) hold no definitions; "let the server start" is not one.
+                    # They still count as places where a name is used or tested.
+                    if Path(entry.name).suffix.casefold() not in PROSE_EXTENSIONS:
+                        for index, line in enumerate(lines):
+                            found = DEFINITION_RE.match(line)
+                            if not found:
+                                continue
+                            name = found.group(1) or found.group(2)
+                            if name.casefold() in KEYWORDS:
+                                continue
+                            if definition_entries >= DEFINITION_INDEX_ENTRIES:
+                                cutoffs.add("definition_index_budget")
+                                break
+                            definitions.setdefault(name, []).append((path, index))
+                            definition_entries += 1
                     names_by_file[path] = Counter(_identifiers(data.decode("utf-8")))
                 total_lines += len(lines)
                 matches = []
@@ -241,7 +312,11 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
                     hit = frozenset(term for term in terms if term in folded)
                     if hit:
                         matches.append((index, hit, line.strip()[:LINE_INDEX_TEXT]))
-                in_path = frozenset(term for term in terms if term in path.casefold())
+                # A request writes `MobileNetV3`; the file is `mobilenet_v3.py`. Match paths with
+                # separators removed as well as literally.
+                folded_path = path.casefold()
+                compact_path = folded_path.replace("_", "").replace("-", "")
+                in_path = frozenset(term for term in terms if term in folded_path or term.replace("_", "") in compact_path)
                 if not matches and not in_path:
                     continue
                 document_frequency.update(in_path.union(*(item[1] for item in matches)))
@@ -308,17 +383,23 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
     if scorer is not None and ordered:
         from .rerank import MAX_POOL
         pool, rest = ordered[:MAX_POOL], ordered[MAX_POOL:]
-        if rest:
-            cutoffs.add("rerank_pool_budget")
         try:
             similarities = scorer(request, [item[8] for item in pool])
             if len(similarities) != len(pool) or not all(type(value) in (int, float) and -1.0001 <= value <= 1.0001 for value in similarities):
                 raise Refusal("rerank_invalid_similarities")
-            # Keep the one-window-per-file-first rule; within it, similarity decides and the lexical key breaks ties.
-            reordered = [item for _, item in sorted(zip(similarities, pool), key=lambda pair: (pair[1][6], -pair[0], lexical_key(pair[1])))]
-            rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates),
+            # Blend: half the pool-normalized similarity, half the pool-normalized lexical score, so a
+            # weak prose match cannot displace a strong identifier match. One-window-per-file-first
+            # still holds; the lexical key breaks ties.
+            low, high = min(similarities), max(similarities)
+            top = max(item[0] for item in pool) or 1.0
+            blended = [RERANK_BLEND * ((value - low) / (high - low) if high > low else 1.0) + (1 - RERANK_BLEND) * (item[0] / top)
+                       for value, item in zip(similarities, pool)]
+            reordered = [item for _, item in sorted(zip(blended, pool), key=lambda pair: (pair[1][6], -pair[0], lexical_key(pair[1])))]
+            rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates), "blend": RERANK_BLEND,
                              "order_changed": [c[1:4] for c in reordered] != [c[1:4] for c in pool],
-                             "similarities": [round(value, 4) for value in similarities]}
+                             "similarities": [round(value, 4) for value in similarities], "blended": [round(value, 4) for value in blended]}
+            if rest:
+                cutoffs.add("rerank_pool_budget")
             ordered = reordered + rest
         except Refusal as refusal:
             rerank_record = {**getattr(scorer, "record", {}), "pool": len(pool), "candidates": len(candidates), "error": refusal.code}
@@ -376,6 +457,10 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         for number, candidate in enumerate(selected, 1):
             for name in dict.fromkeys(candidate[7]):
                 if name.casefold() in terms or name not in definitions:
+                    continue
+                # Generic names (`name`, `files`, `context`) and names defined in several places
+                # are not controlling context; following one wastes a window on a guess.
+                if name.casefold() in TEMPLATE_WORDS or name.casefold() in GENERIC_NAMES or len(definitions[name]) > AMBIGUOUS_DEFINITIONS:
                     continue
                 if all(covered(path, index) for path, index in definitions[name]):
                     continue
