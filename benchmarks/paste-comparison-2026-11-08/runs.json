@@ -1,0 +1,174 @@
+[
+ {
+  "case": "c1",
+  "arm": "issue_only",
+  "tokens": 81211,
+  "tool_uses": 1,
+  "ms": 9860,
+  "files": [
+   "syft/frameworks/torch/hook/hook.py",
+   "syft/frameworks/torch/tensors/interpreters/pointer.py",
+   "syft/frameworks/torch/hook.py",
+   "syft/workers/base.py",
+   "syft/frameworks/torch/hook_args.py"
+  ],
+  "hits_at_5": 2
+ },
+ {
+  "case": "c1",
+  "arm": "with_brief",
+  "tokens": 85541,
+  "tool_uses": 2,
+  "ms": 7495,
+  "files": [
+   "syft/frameworks/torch/tensors/interpreters/pointer.py",
+   "syft/frameworks/torch/hook_args.py",
+   "syft/frameworks/torch/hook.py",
+   "syft/workers/base.py",
+   "syft/frameworks/torch/tensors/interpreters/native.py"
+  ],
+  "hits_at_5": 2
+ },
+ {
+  "case": "c2",
+  "arm": "issue_only",
+  "tokens": 81405,
+  "tool_uses": 1,
+  "ms": 7437,
+  "files": [
+   "gamestonk_terminal/fundamental_analysis/market_watch_model.py",
+   "gamestonk_terminal/fundamental_analysis/market_watch_view.py",
+   "gamestonk_terminal/fundamental_analysis/fa_menu.py"
+  ],
+  "hits_at_5": 2
+ },
+ {
+  "case": "c2",
+  "arm": "with_brief",
+  "tokens": 87009,
+  "tool_uses": 2,
+  "ms": 6084,
+  "files": [
+   "gamestonk_terminal/fundamental_analysis/market_watch_model.py",
+   "gamestonk_terminal/comparison_analysis/market_watch_view.py",
+   "tests/test_fa_market_watch_model.py"
+  ],
+  "hits_at_5": 1
+ },
+ {
+  "case": "c3",
+  "arm": "issue_only",
+  "tokens": 81429,
+  "tool_uses": 1,
+  "ms": 10735,
+  "files": [
+   "sanic/http.py",
+   "sanic/response.py",
+   "sanic/exceptions.py",
+   "sanic/helpers.py"
+  ],
+  "hits_at_5": 3
+ },
+ {
+  "case": "c3",
+  "arm": "with_brief",
+  "tokens": 87094,
+  "tool_uses": 2,
+  "ms": 6396,
+  "files": [
+   "sanic/http.py",
+   "sanic/response.py",
+   "sanic/exceptions.py",
+   "sanic/request.py",
+   "setup.py"
+  ],
+  "hits_at_5": 3
+ },
+ {
+  "case": "c4",
+  "arm": "issue_only",
+  "tokens": 81452,
+  "tool_uses": 1,
+  "ms": 5347,
+  "files": [
+   "netbox/ipam/api/serializers.py",
+   "netbox/netbox/api/serializers/base.py",
+   "netbox/utilities/api.py",
+   "netbox/netbox/api/fields.py",
+   "netbox/ipam/api/nested_serializers.py"
+  ],
+  "hits_at_5": 1
+ },
+ {
+  "case": "c4",
+  "arm": "with_brief",
+  "tokens": 87082,
+  "tool_uses": 2,
+  "ms": 6715,
+  "files": [
+   "netbox/ipam/api/serializers.py",
+   "netbox/ipam/api/nested_serializers.py",
+   "netbox/utilities/api.py",
+   "netbox/ipam/tests/test_api.py"
+  ],
+  "hits_at_5": 1
+ },
+ {
+  "case": "c5",
+  "arm": "issue_only",
+  "tokens": 83160,
+  "tool_uses": 1,
+  "ms": 5268,
+  "files": [
+   "src/pip/_internal/req/req_install.py",
+   "src/pip/_internal/req/req_set.py",
+   "src/pip/_internal/operations/prepare.py",
+   "src/pip/_internal/resolution/legacy/resolver.py",
+   "src/pip/_internal/commands/download.py"
+  ],
+  "hits_at_5": 1
+ },
+ {
+  "case": "c5",
+  "arm": "with_brief",
+  "tokens": 90591,
+  "tool_uses": 2,
+  "ms": 11285,
+  "files": [
+   "src/pip/_internal/resolution/legacy/resolver.py",
+   "src/pip/_internal/req/req_install.py",
+   "src/pip/_internal/operations/prepare.py",
+   "src/pip/_internal/req/req_set.py",
+   "src/pip/_internal/commands/download.py"
+  ],
+  "hits_at_5": 1
+ },
+ {
+  "case": "c6",
+  "arm": "issue_only",
+  "tokens": 81062,
+  "tool_uses": 1,
+  "ms": 5443,
+  "files": [
+   "dvc/logger.py",
+   "dvc/remote/local.py",
+   "dvc/main.py"
+  ],
+  "hits_at_5": 1
+ },
+ {
+  "case": "c6",
+  "arm": "with_brief",
+  "tokens": 86335,
+  "tool_uses": 2,
+  "ms": 8495,
+  "files": [
+   "dvc/logger.py",
+   "dvc/remote/local.py",
+   "tests/unit/test_logger.py",
+   "dvc/exceptions.py",
+   "dvc/repo/__init__.py"
+  ],
+  "hits_at_5": 1
+ }
+]

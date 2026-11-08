@@ -1,0 +1,231 @@
+{
+ "kind": "paste_comparison_result",
+ "summary": {
+  "issue_only": {
+   "total_hits_at_5": 10,
+   "gold_files": 25,
+   "median_tokens": 81417.0,
+   "median_seconds": 6.44
+  },
+  "with_brief": {
+   "total_hits_at_5": 9,
+   "gold_files": 25,
+   "median_tokens": 87045.5,
+   "median_seconds": 7.11
+  }
+ },
+ "wins": 0,
+ "losses": 1,
+ "decision_rule_met": false,
+ "pairs": [
+  {
+   "case": "c1",
+   "id": "openmined/pysyft/1908/1896",
+   "gold": [
+    "syft/frameworks/torch/hook.py",
+    "syft/frameworks/torch/torch_attributes.py",
+    "syft/workers/base.py",
+    "test/torch/tensors/test_gc.py"
+   ],
+   "issue_only": {
+    "tokens": 81211,
+    "tool_uses": 1,
+    "ms": 9860,
+    "hits_at_5": 2,
+    "files": [
+     "syft/frameworks/torch/hook/hook.py",
+     "syft/frameworks/torch/tensors/interpreters/pointer.py",
+     "syft/frameworks/torch/hook.py",
+     "syft/workers/base.py",
+     "syft/frameworks/torch/hook_args.py"
+    ]
+   },
+   "with_brief": {
+    "tokens": 85541,
+    "tool_uses": 2,
+    "ms": 7495,
+    "hits_at_5": 2,
+    "files": [
+     "syft/frameworks/torch/tensors/interpreters/pointer.py",
+     "syft/frameworks/torch/hook_args.py",
+     "syft/frameworks/torch/hook.py",
+     "syft/workers/base.py",
+     "syft/frameworks/torch/tensors/interpreters/native.py"
+    ]
+   }
+  },
+  {
+   "case": "c2",
+   "id": "openbb-finance/openbbterminal/410/409",
+   "gold": [
+    "gamestonk_terminal/fundamental_analysis/market_watch_model.py",
+    "gamestonk_terminal/fundamental_analysis/market_watch_view.py"
+   ],
+   "issue_only": {
+    "tokens": 81405,
+    "tool_uses": 1,
+    "ms": 7437,
+    "hits_at_5": 2,
+    "files": [
+     "gamestonk_terminal/fundamental_analysis/market_watch_model.py",
+     "gamestonk_terminal/fundamental_analysis/market_watch_view.py",
+     "gamestonk_terminal/fundamental_analysis/fa_menu.py"
+    ]
+   },
+   "with_brief": {
+    "tokens": 87009,
+    "tool_uses": 2,
+    "ms": 6084,
+    "hits_at_5": 1,
+    "files": [
+     "gamestonk_terminal/fundamental_analysis/market_watch_model.py",
+     "gamestonk_terminal/comparison_analysis/market_watch_view.py",
+     "tests/test_fa_market_watch_model.py"
+    ]
+   }
+  },
+  {
+   "case": "c3",
+   "id": "sanic-org/sanic/1327/1323",
+   "gold": [
+    "sanic/response.py",
+    "sanic/exceptions.py",
+    "sanic/http.py"
+   ],
+   "issue_only": {
+    "tokens": 81429,
+    "tool_uses": 1,
+    "ms": 10735,
+    "hits_at_5": 3,
+    "files": [
+     "sanic/http.py",
+     "sanic/response.py",
+     "sanic/exceptions.py",
+     "sanic/helpers.py"
+    ]
+   },
+   "with_brief": {
+    "tokens": 87094,
+    "tool_uses": 2,
+    "ms": 6396,
+    "hits_at_5": 3,
+    "files": [
+     "sanic/http.py",
+     "sanic/response.py",
+     "sanic/exceptions.py",
+     "sanic/request.py",
+     "setup.py"
+    ]
+   }
+  },
+  {
+   "case": "c4",
+   "id": "netbox-community/netbox/10187/9895",
+   "gold": [
+    "netbox/ipam/api/serializers.py",
+    "netbox/utilities/custom_inspectors.py",
+    "netbox/dcim/api/serializers.py",
+    "netbox/netbox/api/serializers/generic.py",
+    "netbox/dcim/api/nested_serializers.py",
+    "netbox/extras/api/serializers.py",
+    "netbox/netbox/settings.py",
+    "netbox/tenancy/api/serializers.py",
+    "netbox/virtualization/api/serializers.py"
+   ],
+   "issue_only": {
+    "tokens": 81452,
+    "tool_uses": 1,
+    "ms": 5347,
+    "hits_at_5": 1,
+    "files": [
+     "netbox/ipam/api/serializers.py",
+     "netbox/netbox/api/serializers/base.py",
+     "netbox/utilities/api.py",
+     "netbox/netbox/api/fields.py",
+     "netbox/ipam/api/nested_serializers.py"
+    ]
+   },
+   "with_brief": {
+    "tokens": 87082,
+    "tool_uses": 2,
+    "ms": 6715,
+    "hits_at_5": 1,
+    "files": [
+     "netbox/ipam/api/serializers.py",
+     "netbox/ipam/api/nested_serializers.py",
+     "netbox/utilities/api.py",
+     "netbox/ipam/tests/test_api.py"
+    ]
+   }
+  },
+  {
+   "case": "c5",
+   "id": "pypa/pip/12140/12138",
+   "gold": [
+    "src/pip/_internal/commands/download.py",
+    "src/pip/_internal/commands/wheel.py",
+    "src/pip/_internal/resolution/resolvelib/resolver.py"
+   ],
+   "issue_only": {
+    "tokens": 83160,
+    "tool_uses": 1,
+    "ms": 5268,
+    "hits_at_5": 1,
+    "files": [
+     "src/pip/_internal/req/req_install.py",
+     "src/pip/_internal/req/req_set.py",
+     "src/pip/_internal/operations/prepare.py",
+     "src/pip/_internal/resolution/legacy/resolver.py",
+     "src/pip/_internal/commands/download.py"
+    ]
+   },
+   "with_brief": {
+    "tokens": 90591,
+    "tool_uses": 2,
+    "ms": 11285,
+    "hits_at_5": 1,
+    "files": [
+     "src/pip/_internal/resolution/legacy/resolver.py",
+     "src/pip/_internal/req/req_install.py",
+     "src/pip/_internal/operations/prepare.py",
+     "src/pip/_internal/req/req_set.py",
+     "src/pip/_internal/commands/download.py"
+    ]
+   }
+  },
+  {
+   "case": "c6",
+   "id": "iterative/dvc/1870/1869",
+   "gold": [
+    "dvc/remote/local.py",
+    "dvc/remote/ssh/__init__.py",
+    "dvc/remote/http.py",
+    "dvc/remote/s3.py"
+   ],
+   "issue_only": {
+    "tokens": 81062,
+    "tool_uses": 1,
+    "ms": 5443,
+    "hits_at_5": 1,
+    "files": [
+     "dvc/logger.py",
+     "dvc/remote/local.py",
+     "dvc/main.py"
+    ]
+   },
+   "with_brief": {
+    "tokens": 86335,
+    "tool_uses": 2,
+    "ms": 8495,
+    "hits_at_5": 1,
+    "files": [
+     "dvc/logger.py",
+     "dvc/remote/local.py",
+     "tests/unit/test_logger.py",
+     "dvc/exceptions.py",
+     "dvc/repo/__init__.py"
+    ]
+   }
+  }
+ ]
+}

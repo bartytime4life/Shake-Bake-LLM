@@ -89,12 +89,10 @@ multi-file change is simply a task where exploration beats preselection.
 
 ## What follows
 
-Given this result, more collector tuning is not the next step. The open
-question is where, if anywhere, the brief helps: the most likely place is the
-no-tools paste path in Claude or ChatGPT chat, where the host cannot explore
-and the brief is all it has. A matched comparison there (brief against the
-issue alone, no tools) is cheap to run and would show whether the product's
-value is in that path. The brief's framing (excerpts presented as a starting
+Given this result, more collector tuning is not the next step. The most
+likely remaining place for the brief to help was the no-tools paste path; the
+[paste-path comparison](paste-comparison-2026-11-08.md) run straight after
+found no benefit there either (9 against 10 of 25 files, no case won). The brief's framing (excerpts presented as a starting
 point, an explicit request to look beyond them, no "answer with" section that
 narrows the scope) is a second candidate, to be frozen before it is measured.
 
