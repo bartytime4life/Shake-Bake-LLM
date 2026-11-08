@@ -51,6 +51,25 @@ class ExternalRecallAcceptance(unittest.TestCase):
         self.assertEqual(report["cases_hitting_file_budget"], 0)
         self.assertIn("not answer accuracy", report["warning"])
 
+    def test_reused_embedding_scorer_exports_current_failure_telemetry(self):
+        from shake_bake.rerank import EmbeddingScorer
+        from test_rerank import embed_server
+        root = self.base / "repos" / "parcel"
+        cases = [{"id": f"synthetic-rerank-{i}", "root": root, "request": "submit_job PARCEL_BACKEND",
+                  "changed_files": ["app/settings.py"]} for i in range(2)]
+        with embed_server(fail_batch=2) as (port, _):
+            report = recall.run(cases, SearchLimits(), EmbeddingScorer("fixture:embed", port=port))
+        first, second = [case["rerank"] for case in report["cases"]]
+        self.assertGreater(first["windows_scored"], 0)
+        self.assertNotIn("error", first)
+        self.assertEqual(second["error"], "embedding_count_mismatch")
+        self.assertEqual(second["windows_scored"], 0)
+        self.assertEqual(second["embed_calls"], 1)
+        self.assertEqual(second["embed_calls_completed"], 1)
+        self.assertEqual(second["truncated_windows"], 0)
+        self.assertFalse(second["request_truncated"])
+        self.assertGreaterEqual(second["elapsed_seconds"], 0)
+
     def test_cli_writes_receipt_outside_checkout_and_prints_summary(self):
         output = self.base / "receipt.json"
         stdout = io.StringIO()

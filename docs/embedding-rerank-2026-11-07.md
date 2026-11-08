@@ -21,16 +21,21 @@ reranked primary set as before.
 
 `rerank.EmbeddingScorer(model, port, seconds)` is the scorer for a loopback
 Ollama embedding model. It checks the model's metadata is local, records the
-runtime version, posts the request and the window texts to `/api/embed` with
-`keep_alive: 0` and no truncation, and refuses a remote response, a model
-mismatch, a wrong vector count, a wrong or non-finite dimension, a zero vector
-or a window over 4,096 bytes. Similarities are cosines computed here, not
+runtime version, posts scoring copies in batches of up to eight inputs to
+`/api/embed` with `keep_alive: 0` and server-side `truncate: False`, and refuses
+a remote response, a model mismatch, a wrong vector count, a wrong or
+non-finite dimension, or a zero vector. Request and window scoring copies are
+limited to 4,096 UTF-8 bytes; an incomplete trailing character is dropped only
+from that copy. Exact excerpts and the original request remain unchanged.
+Metadata, runtime lookup and all batches share one deadline. Similarities are cosines computed here, not
 trusted from the server. A refusal never hides evidence: `prepare` keeps the
 lexical order and records the refusal code in `SearchResult.rerank`; a
 successful rerank records the model, pool and candidate counts, whether the
 order changed, the rounded similarities, dimensions, reported usage and
-elapsed time. The brief's scan receipt states the outcome in one line, labeled
-a scan fact about ordering.
+elapsed time. The brief's scan receipt labels the outcome as a scan fact about
+ordering and also reports attempted requests, complete responses and scoring
+copy truncation. Counts and elapsed time are invocation-local, including when
+the scorer is reused and a later case fails. See the receipt definitions below.
 
 Enabled with `--rerank-model` on the CLI brief, the Task Lab runner and the
 external recall adapter; the workbench is not wired yet. Nothing is downloaded;
@@ -38,14 +43,60 @@ the model must already be installed.
 
 ## Program checks
 
-Four new tests run a loopback stub embedding server whose vectors point one way
+The original four tests run a loopback stub embedding server whose vectors point one way
 when a text contains a marker and the other way otherwise: the rerank moves the
 marker file to the front without adding or dropping windows and sends exactly
 the request plus the pool; each refusal (remote metadata, model mismatch, count
 mismatch, bad dimension) falls back to the lexical order with its code
 recorded; the pool is capped at 24 with the cutoff disclosed; and the rendered
-brief carries the scan-fact line for both the success and the refusal. 201
-Python tests pass.
+brief carries the scan-fact line for both the success and the refusal. PR #35
+reported 204 Python tests; that historical count is not a new model qualification.
+
+The follow-up adds synthetic regressions for the full 24-window pool at 1,024
+dimensions, correct cross-batch vector alignment, Unicode scoring truncation
+with exact evidence hashes, reused-scorer success/failure/recovery, a malformed
+second batch, an aggregate network deadline, a high-dimensional response above
+the unchanged transport cap, a remote embedding response and off-by-default
+construction. A synthetic recall-adapter check verifies exported per-case
+telemetry after a reused scorer fails. The stub now identifies the query by
+text, instead of incorrectly treating each batch's first input as the query.
+
+### Receipt definitions and remaining acceptance evidence
+
+- `embed_calls`: embedding POST attempts dispatched to the bounded transport;
+  includes a call whose response times out or is refused.
+- `embed_calls_completed`: attempts for which the transport returned a parsed
+  JSON object. Its model, vector count or contents may still be refused.
+- `windows_scored`: windows in a successfully completed cosine-scoring call;
+  zero after any scorer refusal. Partial vectors never determine selection.
+- `truncated_windows` and `request_truncated`: shortening of this invocation's
+  scoring copies, computed before source is sent; preserved on later failure.
+- `local_server_reported_usage`: accepted per-batch usage accumulated during
+  this invocation only; partial on failure, not a complete task measurement.
+- `elapsed_seconds` and `error`: this invocation's elapsed time and refusal,
+  never fields retained from a previous case. Successful recovery removes the
+  previous error. The deadline covers network waiting across all requests;
+  bounded local encoding, parsing and cosine computation are not a hard
+  real-time guarantee.
+
+The fixed batch size is qualified here only by synthetic transport tests and
+the historical 1,024-dimensional trial. Larger allowed dimensions can still
+exceed 256 KiB and must visibly fall back; the cap is not increased.
+
+Historical JSON receipts below are preserved. All twelve self-commit rerank
+rows omit the new batch/truncation counters and identify `dev15`, so they do not
+directly verify the final source's real-model truncation path. Their generic
+adapter warning incorrectly says the cases were authored outside this project;
+these are the collector authors' own development commits. They are not part
+of the [independent retrieval evaluation](independent-retrieval-2026-11-07.md).
+
+Before experimental acceptance, obtain explicit approval for a bounded trial
+using the already-installed embedding model and exact reviewed source. Retain
+source/model identity, runtime version, a full 24-window pool, an oversized
+Unicode window, per-batch response bytes, attempts, truncation and deadline
+results, source hash preservation and a visible refusal/fallback case. No such
+real-model follow-up was run for this receipt correction. Model reuse and
+lexical/embedding blending remain separate, unexecuted experiments.
 
 ## Development trial with `qwen3-embedding:0.6b`
 
@@ -99,6 +150,12 @@ documentation; direction only):
 
 More cases reach at least one changed file, while cases that were already
 well served lose hits: the rerank spreads coverage rather than deepening it.
+The all-excerpt macro mean actually falls slightly, from 18.637% to 18.567%,
+which the one-decimal display hides. Total primary changed-file hits fall from
+18 to 12 and all-excerpt hits from 26 to 19; macro recall weights each case
+equally even when their changed-file counts differ. Mean recorded total
+preparation time rises from 0.062 seconds to 7.118 seconds. These are paired
+historical single runs, not repeated latency measurements or answer accuracy.
 The time cost is the larger finding. The scorer sends `keep_alive: 0` like the
 worker, so Ollama unloads the 0.6B model after every call and reloads it for
 the next, which is most of the 1.5 seconds per call; a repository-sized pool
