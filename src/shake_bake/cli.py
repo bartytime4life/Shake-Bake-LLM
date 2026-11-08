@@ -7,7 +7,7 @@ import sys
 
 from .collector import build_packet
 from .contracts import Refusal, Selection
-from .briefing import build_brief, render
+from .briefing import build_brief, render, render_orientation
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -50,6 +50,8 @@ def brief_main(argv: list[str]) -> int:
     parser.add_argument("--task-kind", choices=("code", "troubleshoot", "documents", "search"), help="Optional hint for the local model's drafted prompt; collection is unchanged.")
     parser.add_argument("--ollama-port", type=int, default=11434)
     parser.add_argument("--rerank-model", help="Explicitly enable an installed local embedding model that reorders candidate windows; it adds no window and no download is performed.")
+    parser.add_argument("--style", choices=("evidence", "orientation"), default="evidence",
+                        help="Markdown layout: the evidence brief (default) or the candidate orientation brief.")
     args = parser.parse_args(argv)
     try:
         brief = build_brief(args.root, args.task, model=args.model, port=args.ollama_port, task_kind=args.task_kind, rerank_model=args.rerank_model)
@@ -59,7 +61,7 @@ def brief_main(argv: list[str]) -> int:
     except Exception:
         print(json.dumps({"outcome": "ERROR", "code": "preparation_failed"}, sort_keys=True))
         return 1
-    print(json.dumps(brief.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) if args.format == "json" else render(brief), end="\n" if args.format == "json" else "")
+    print(json.dumps(brief.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) if args.format == "json" else (render_orientation(brief) if args.style == "orientation" else render(brief)), end="\n" if args.format == "json" else "")
     return 0 if brief.outcome == "ANSWER" else 3
 
 

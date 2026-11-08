@@ -1,0 +1,412 @@
+{
+ "kind": "orientation_comparison_result",
+ "summary": {
+  "native_tools": {
+   "total_hits_at_5": 6,
+   "median_tool_uses": 4.0,
+   "mean_tool_uses": 4,
+   "median_tokens": 86983.5,
+   "median_seconds": 11.03
+  },
+  "orientation_tools": {
+   "total_hits_at_5": 7,
+   "median_tool_uses": 3.5,
+   "mean_tool_uses": 3.83,
+   "median_tokens": 88080.5,
+   "median_seconds": 11.61
+  },
+  "issue_only_paste": {
+   "total_hits_at_5": 6,
+   "median_tool_uses": 1.0,
+   "mean_tool_uses": 1.17,
+   "median_tokens": 82046.5,
+   "median_seconds": 6.69
+  },
+  "orientation_paste": {
+   "total_hits_at_5": 6,
+   "median_tool_uses": 2.0,
+   "mean_tool_uses": 2,
+   "median_tokens": 84937.5,
+   "median_seconds": 7.77
+  }
+ },
+ "tools_path": {
+  "wins": 1,
+  "losses": 0,
+  "rule_met": true
+ },
+ "paste_path": {
+  "wins": 0,
+  "losses": 0,
+  "rule_met": false
+ },
+ "runs": [
+  {
+   "case": "c1",
+   "arm": "native_tools",
+   "tokens": 86557,
+   "tool_uses": 3,
+   "ms": 9395,
+   "files": [
+    "scripts/generate_conda_file.py",
+    "setup.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c1",
+   "arm": "orientation_tools",
+   "tokens": 87315,
+   "tool_uses": 3,
+   "ms": 11230,
+   "files": [
+    "scripts/generate_conda_file.py",
+    "tests/ci/azure_pipeline_test/dsvm_nightly_win_pyspark.yml"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c1",
+   "arm": "issue_only_paste",
+   "tokens": 81994,
+   "tool_uses": 1,
+   "ms": 7153,
+   "files": [
+    "tools/generate_conda_file.py",
+    "setup.py",
+    "tests/ci/azure_pipeline_test/dsvm_nightly_windows_test.yml",
+    "tests/conftest.py"
+   ],
+   "hits_at_5": 0
+  },
+  {
+   "case": "c1",
+   "arm": "orientation_paste",
+   "tokens": 84890,
+   "tool_uses": 2,
+   "ms": 11505,
+   "files": [
+    "tools/generate_conda_file.py",
+    "tests/ci/azure_pipeline_test/dsvm_nightly_win_pyspark.yml",
+    "setup.py"
+   ],
+   "hits_at_5": 0
+  },
+  {
+   "case": "c2",
+   "arm": "native_tools",
+   "tokens": 82875,
+   "tool_uses": 4,
+   "ms": 10813,
+   "files": [
+    "faker/providers/person/cs_CZ/__init__.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c2",
+   "arm": "orientation_tools",
+   "tokens": 87023,
+   "tool_uses": 5,
+   "ms": 12914,
+   "files": [
+    "faker/providers/person/cs_CZ/__init__.py",
+    "tests/providers/test_person.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c2",
+   "arm": "issue_only_paste",
+   "tokens": 81107,
+   "tool_uses": 1,
+   "ms": 5166,
+   "files": [
+    "faker/providers/person/cs_CZ/__init__.py",
+    "tests/providers/test_person.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c2",
+   "arm": "orientation_paste",
+   "tokens": 83371,
+   "tool_uses": 2,
+   "ms": 12824,
+   "files": [
+    "faker/providers/person/cs_CZ/__init__.py",
+    "tests/providers/test_person.py",
+    "faker/providers/person/__init__.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c3",
+   "arm": "native_tools",
+   "tokens": 88760,
+   "tool_uses": 6,
+   "ms": 12243,
+   "files": [
+    "src/textual/widgets/_data_table.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c3",
+   "arm": "orientation_tools",
+   "tokens": 89822,
+   "tool_uses": 5,
+   "ms": 11998,
+   "files": [
+    "src/textual/widgets/_data_table.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c3",
+   "arm": "issue_only_paste",
+   "tokens": 83298,
+   "tool_uses": 2,
+   "ms": 9293,
+   "files": [
+    "src/textual/widgets/_data_table.py",
+    "tests/test_data_table.py",
+    "CHANGELOG.md"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c3",
+   "arm": "orientation_paste",
+   "tokens": 87034,
+   "tool_uses": 2,
+   "ms": 7519,
+   "files": [
+    "src/textual/widgets/_data_table.py",
+    "tests/test_data_table.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "native_tools",
+   "tokens": 87410,
+   "tool_uses": 5,
+   "ms": 11238,
+   "files": [
+    "pre_commit/util.py",
+    "pre_commit/xargs.py",
+    "pre_commit/parse_shebang.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "orientation_tools",
+   "tokens": 88846,
+   "tool_uses": 3,
+   "ms": 10924,
+   "files": [
+    "pre_commit/util.py",
+    "pre_commit/parse_shebang.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "issue_only_paste",
+   "tokens": 83058,
+   "tool_uses": 1,
+   "ms": 5843,
+   "files": [
+    "pre_commit/languages/script.py",
+    "pre_commit/parse_shebang.py",
+    "pre_commit/util.py",
+    "pre_commit/xargs.py",
+    "pre_commit/languages/helpers.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "orientation_paste",
+   "tokens": 86809,
+   "tool_uses": 2,
+   "ms": 6820,
+   "files": [
+    "pre_commit/util.py",
+    "pre_commit/parse_shebang.py",
+    "pre_commit/languages/script.py",
+    "pre_commit/xargs.py",
+    "pre_commit/languages/helpers.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "native_tools",
+   "tokens": 89998,
+   "tool_uses": 4,
+   "ms": 13615,
+   "files": [
+    "rasa/core/policies/rule_policy.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "orientation_tools",
+   "tokens": 89347,
+   "tool_uses": 4,
+   "ms": 15579,
+   "files": [
+    "rasa/core/policies/rule_policy.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "issue_only_paste",
+   "tokens": 81436,
+   "tool_uses": 1,
+   "ms": 6232,
+   "files": [
+    "rasa/core/policies/rule_policy.py",
+    "rasa/core/policies/ensemble.py",
+    "rasa/shared/core/trackers.py",
+    "rasa/shared/core/domain.py",
+    "rasa/core/featurizers/tracker_featurizers.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "orientation_paste",
+   "tokens": 83606,
+   "tool_uses": 2,
+   "ms": 8027,
+   "files": [
+    "rasa/core/policies/rule_policy.py",
+    "rasa/shared/core/domain.py",
+    "rasa/core/featurizers/tracker_featurizers.py",
+    "rasa/shared/core/trackers.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "native_tools",
+   "tokens": 83866,
+   "tool_uses": 2,
+   "ms": 8405,
+   "files": [
+    "manim/mobject/coordinate_systems.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "orientation_tools",
+   "tokens": 85750,
+   "tool_uses": 3,
+   "ms": 9626,
+   "files": [
+    "manim/mobject/coordinate_systems.py",
+    "manim/mobject/three_dimensions.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "issue_only_paste",
+   "tokens": 82099,
+   "tool_uses": 1,
+   "ms": 8967,
+   "files": [
+    "manim/mobject/coordinate_systems.py",
+    "manim/mobject/number_line.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "orientation_paste",
+   "tokens": 84985,
+   "tool_uses": 2,
+   "ms": 7060,
+   "files": [
+    "manim/mobject/coordinate_systems.py",
+    "tests/test_graphical_units/test_coordinate_systems.py",
+    "manim/mobject/three_dimensions.py",
+    "tests/test_coordinate_system.py"
+   ],
+   "hits_at_5": 1
+  }
+ ],
+ "gold": [
+  {
+   "case": "c1",
+   "id": "microsoft/recommenders/999/997",
+   "gold": [
+    "scripts/generate_conda_file.py"
+   ],
+   "brief_bytes": 5183,
+   "brief_sha256": "e426661188ed5479bd9114c9027d862c00d3d6abe8a2b70e4b45f7e1c4f3a197",
+   "issue_sha256": "7e483aa2b1303b7f43caedabf87dd2b8ba663e6cdf3308051caedefc8e9de320"
+  },
+  {
+   "case": "c2",
+   "id": "joke2k/faker/828/625",
+   "gold": [
+    "tests/providers/test_person.py",
+    "faker/providers/person/cs_CZ/__init__.py"
+   ],
+   "brief_bytes": 3630,
+   "brief_sha256": "f118dca3df9e9e0df478ccc3d9bcb86341beba026df5b66bb85bcf4f015576d0",
+   "issue_sha256": "f343934e84c7928958f590b6d07506c7fb0f2e8497e3ac65d4fa3fa67341d19a"
+  },
+  {
+   "case": "c3",
+   "id": "textualize/textual/2788/2782",
+   "gold": [
+    "src/textual/widgets/_data_table.py"
+   ],
+   "brief_bytes": 8470,
+   "brief_sha256": "a381d632918f9bc4b11560931283598f71637f9dc2122fd2b41a71e176b12121",
+   "issue_sha256": "a64e1eb9304a78df1931af38e0c5a5278abf74234d3f27cb0599bb8b425ff040"
+  },
+  {
+   "case": "c4",
+   "id": "pre-commit/pre-commit/1364/1350",
+   "gold": [
+    "tests/util_test.py",
+    "pre_commit/util.py",
+    "pre_commit/error_handler.py"
+   ],
+   "brief_bytes": 7035,
+   "brief_sha256": "03d4bc46b198002b735b4f78f20585856a7861cb1dc73325081d2b7090edc8ae",
+   "issue_sha256": "34aae9ea44adc4c5251f41789d547624d01d5cfae62dc2f4a78bfdd35a0b2521"
+  },
+  {
+   "case": "c5",
+   "id": "rasahq/rasa/10704/10703",
+   "gold": [
+    "rasa/core/policies/rule_policy.py"
+   ],
+   "brief_bytes": 3867,
+   "brief_sha256": "fb4cefc9ecb0ab6a4c176fb44dc04b3b0423317bd59cc6cbc24f4937dd332a63",
+   "issue_sha256": "208b489b1dbb9c367cf34db8fb61207a2b17cba092b54a60e3e61795c37a0890"
+  },
+  {
+   "case": "c6",
+   "id": "manimcommunity/manim/1467/1446",
+   "gold": [
+    "manim/mobject/coordinate_systems.py",
+    "tests/test_axes_shift.py"
+   ],
+   "brief_bytes": 5477,
+   "brief_sha256": "f8ac1d5aea811c9d72c8c9a1bd2366c795f9a9298778d22d62e187bb233c040f",
+   "issue_sha256": "d84575d89d72b0cf2cb2d8546bf95dde7583d1e8e7785ea37a1825cb7e1fed26"
+  }
+ ]
+}

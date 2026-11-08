@@ -1,0 +1,78 @@
+{
+ "kind": "preregistered_frozen_recall_protocol",
+ "schema": 1,
+ "date": "2026-11-08",
+ "status": "Registered and pushed before any reserved test-split row was read for this run.",
+ "dataset": "JetBrains-Research/lca-bug-localization",
+ "dataset_revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+ "config": "py",
+ "split": "test",
+ "pool": "The 50 Python test rows, minus the 12 text_ids selected by the 2026-11-07 independent audit, minus any text_id among the first 300 dev rows read on 2026-11-07 (dev contains test).",
+ "selection": {
+  "seed": "shake-bake-frozen-dev20-2026-11-08-v1:",
+  "rule": "first 12 distinct text_id values of the pool ordered by sha256(seed + text_id); no replacements for unavailable or oversized inputs",
+  "selected": 12,
+  "reserve_note": "The remaining pool rows stay reserved for a later frozen candidate."
+ },
+ "acquisition": {
+  "method": "git init; git fetch --depth 1 https://github.com/<owner>/<name>.git <base_sha>; git checkout FETCH_HEAD, outside every checkout",
+  "per_checkout_cap_bytes": 314572800,
+  "total_cap_bytes": 2147483648,
+  "oversize_or_unavailable": "omitted and disclosed, never replaced or scored as zero"
+ },
+ "request": "issue_title + blank line + issue_body exactly as the dataset gives them, cut at 16000 characters",
+ "gold": "changed_files from the fixing pull request (imperfect relevance proxy; absent paths stay in denominators)",
+ "collectors": {
+  "before": {
+   "commit": "2222a67d4289a18abfb2305b9a62f5c9ab36c547",
+   "label": "PR #30 collector, the 2026-11-07 audit's 'after'"
+  },
+  "candidate": {
+   "commit": "f8041a1a345c3a92f9bf14390c4cb64e9ac2a72b",
+   "label": "0.4.0.dev20, frozen",
+   "sources_sha256": {
+    "__init__.py": "cc3678804064d9f07715e235bb26f2825a2153b8654516996c2a49b2e1084a38",
+    "contracts.py": "55ca71215d7b827c1bb43c1e636998817455c9fa69b2f467c735c73ce34ff10c",
+    "collector.py": "e516bada366a26090617824e16ecb77ee50521c7cf3529327347887ae09330c6",
+    "search.py": "afd7d48fd9596a69c767efbe70d42048fb89060d05ebe16768b3b93ac5951bda"
+   }
+  }
+ },
+ "measurement": {
+  "adapter": "benchmarks/external_recall.py at the candidate commit, one copy for both collectors",
+  "adapter_sha256": "012946ec9676f7ddd476373711da28937c6373787e963c981aac488b90dbcbcb",
+  "comparer": "benchmarks/compare_recall_receipts.py",
+  "rerank": null
+ },
+ "profiles": {
+  "default": {
+   "max_files": 200,
+   "max_entries": 4000,
+   "max_depth": 8,
+   "seconds": 5.0,
+   "excerpt_bytes": 16384,
+   "context_bytes": 2048
+  },
+  "expanded": {
+   "max_files": 1000,
+   "max_entries": 10000,
+   "max_depth": 16,
+   "seconds": 30.0,
+   "excerpt_bytes": 16384,
+   "context_bytes": 2048
+  }
+ },
+ "metrics": [
+  "per-case and total hits at primary, excerpted, with_map levels",
+  "cases reached at any level",
+  "per-case wins/ties/losses",
+  "cutoffs and exclusions"
+ ],
+ "decision_rule": "The candidate is reported as an improvement on this sample only if, at the expanded profile, per-case wins exceed losses on hits with map AND total primary hits are not lower than before. Otherwise the result is reported as not established. Losses are reported case by case either way.",
+ "not_measured": [
+  "answer quality",
+  "host turns",
+  "cloud tokens or cost",
+  "any model"
+ ]
+}

@@ -1,0 +1,22 @@
+{
+ "rows_read": 400,
+ "offsets": [
+  300,
+  699
+ ],
+ "excluded": {
+  "repo_used_before": 210,
+  "reserved_test_id": 28,
+  "size": 17,
+  "changed": 1
+ },
+ "eligible_repositories": 20,
+ "selected": [
+  "microsoft/recommenders/999/997",
+  "joke2k/faker/828/625",
+  "textualize/textual/2788/2782",
+  "pre-commit/pre-commit/1364/1350",
+  "rasahq/rasa/10704/10703",
+  "manimcommunity/manim/1467/1446"
+ ]
+}

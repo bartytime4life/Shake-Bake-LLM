@@ -1,0 +1,137 @@
+{
+  "after_receipt_sha256": "c2350211d18069f03719f261bf9b6f16b4b2646a5735908ffdebed2ef3e64850",
+  "before_receipt_sha256": "7f9f8e36cf5198324e7bb26320fdcfa78a260cc2afc0337e210b29c7af52e23b",
+  "case_root_locations_sha256": "ef47c9f1a867007abed5129bd323e371e6b516f3db5a6cde94bbd063ddcec942",
+  "cases_sha256": "17af978abfff472327522132590ce772aada900650e80b3e0f9a8d72da365b64",
+  "comparison_source_sha256": "e3f64bc0595be4055099933d875a490464a4dee4e349e8284f923d67f9ae0d95",
+  "corpus_immutability_established": false,
+  "excluded_pairs": [],
+  "kind": "paired_external_recall_comparison",
+  "limits": {
+    "context_bytes": 2048,
+    "excerpt_bytes": 16384,
+    "max_depth": 8,
+    "max_entries": 4000,
+    "max_files": 200,
+    "seconds": 5.0
+  },
+  "metrics": {
+    "excerpted": {
+      "gold_files": 41,
+      "hits_after": 16,
+      "hits_before": 13,
+      "losses": 2,
+      "mean_recall_after": 0.5472222222222223,
+      "mean_recall_before": 0.36527777777777776,
+      "micro_recall_after": 0.3902439024390244,
+      "micro_recall_before": 0.3170731707317073,
+      "ties": 6,
+      "wins": 4
+    },
+    "primary": {
+      "gold_files": 41,
+      "hits_after": 14,
+      "hits_before": 10,
+      "losses": 1,
+      "mean_recall_after": 0.5027777777777778,
+      "mean_recall_before": 0.31527777777777777,
+      "micro_recall_after": 0.34146341463414637,
+      "micro_recall_before": 0.24390243902439024,
+      "ties": 7,
+      "wins": 4
+    },
+    "with_index": {
+      "gold_files": 41,
+      "hits_after": 23,
+      "hits_before": 21,
+      "losses": 2,
+      "mean_recall_after": 0.7055555555555556,
+      "mean_recall_before": 0.6180555555555556,
+      "micro_recall_after": 0.5609756097560976,
+      "micro_recall_before": 0.5121951219512195,
+      "ties": 7,
+      "wins": 3
+    },
+    "with_map": {
+      "gold_files": 41,
+      "hits_after": 23,
+      "hits_before": 21,
+      "losses": 2,
+      "mean_recall_after": 0.7055555555555556,
+      "mean_recall_before": 0.6180555555555556,
+      "micro_recall_after": 0.5609756097560976,
+      "micro_recall_before": 0.5121951219512195,
+      "ties": 7,
+      "wins": 3
+    }
+  },
+  "paired_scored_cases": 12,
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "scans": {
+    "after": {
+      "cutoff_case_counts": {
+        "context_map_budget": 7,
+        "context_window_budget": 6,
+        "file_budget": 4,
+        "line_index_budget": 12,
+        "query_term_budget": 10,
+        "selection_budget": 11,
+        "window_budget": 12
+      },
+      "exclusion_counts": {
+        "excluded_directory": 3,
+        "file_too_large": 9,
+        "low_signal_match": 1045,
+        "path_not_allowed": 12,
+        "symlink": 3,
+        "unsupported_extension": 484
+      },
+      "median_case_seconds": 0.035500000000000004
+    },
+    "before": {
+      "cutoff_case_counts": {
+        "context_map_budget": 11,
+        "context_window_budget": 8,
+        "file_budget": 4,
+        "query_term_budget": 12,
+        "selection_budget": 12,
+        "window_budget": 12
+      },
+      "exclusion_counts": {
+        "excluded_directory": 2,
+        "file_too_large": 9,
+        "low_signal_match": 961,
+        "path_not_allowed": 12,
+        "symlink": 3,
+        "unsupported_extension": 470
+      },
+      "median_case_seconds": 0.036000000000000004
+    }
+  },
+  "selected_cases": 12,
+  "selection_sha256": "5abd547ae0020595f43df25c3246e1729b8904df6a623c24875a2c3d5b7a74dc",
+  "source_identity_after": {
+    "adapter_sha256": "012946ec9676f7ddd476373711da28937c6373787e963c981aac488b90dbcbcb",
+    "collector_sources_sha256": {
+      "__init__.py": "cc3678804064d9f07715e235bb26f2825a2153b8654516996c2a49b2e1084a38",
+      "collector.py": "e516bada366a26090617824e16ecb77ee50521c7cf3529327347887ae09330c6",
+      "contracts.py": "55ca71215d7b827c1bb43c1e636998817455c9fa69b2f467c735c73ce34ff10c",
+      "rerank.py": "6636c1adec412e7e6c762f41e90fff8a68e6b7cdfa2dd3ffdd42cf8a08edb6b6",
+      "search.py": "afd7d48fd9596a69c767efbe70d42048fb89060d05ebe16768b3b93ac5951bda",
+      "worker.py": "2ce099359e9d3a73f3082b54fae75786c08d39ff2789a1b6a5d9e8d90a3686c0"
+    }
+  },
+  "source_identity_before": {
+    "adapter_sha256": "012946ec9676f7ddd476373711da28937c6373787e963c981aac488b90dbcbcb",
+    "collector_sources_sha256": {
+      "__init__.py": "828ff5205767bf24648d2d38913b1ad1a65112903db75f0f8fd177911ae97c64",
+      "collector.py": "6e57c2a3fb3522c23ff1d7b2ec80d17efbad47e71f2d68916336f6af22692a92",
+      "contracts.py": "55ca71215d7b827c1bb43c1e636998817455c9fa69b2f467c735c73ce34ff10c",
+      "search.py": "4dfe76fc239d3dd3833474da70e9cfd1ac0f676f7bb588acc26e81a0d82c671f",
+      "worker.py": "3b47f9860aa8f87f17837892203992595b7cceeea570e195c1d31eaae6d024ab"
+    }
+  },
+  "timing_scope": "One untraced prepare call per case; excludes input/provenance hashing.",
+  "warning": "This compares declared inputs and measured file recall, not corpus immutability, answer accuracy, cloud usage or costs. On-disk source hashes are not loaded-code attestation."
+}

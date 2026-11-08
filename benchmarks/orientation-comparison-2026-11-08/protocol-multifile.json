@@ -1,0 +1,38 @@
+{
+ "kind": "preregistered_orientation_comparison",
+ "schema": 1,
+ "date": "2026-11-08",
+ "run": "multi-file sample",
+ "status": "Registered and pushed before any row at dev offsets 700 to 1199 was read.",
+ "question": "On multi-file fixes, does the orientation brief help a Claude host, with tools and on the paste path?",
+ "candidate": {
+  "commit": "e5373279e791a7e44dceb1095591de9d9464a5d4",
+  "sources_sha256": {
+   "briefing.py": "8019a0f16ddf67703ec691070ea46c513b0aebe9924216947efc2f50e2753601",
+   "search.py": "afd7d48fd9596a69c767efbe70d42048fb89060d05ebe16768b3b93ac5951bda"
+  }
+ },
+ "cases": {
+  "dataset": "JetBrains-Research/lca-bug-localization",
+  "revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+  "config": "py",
+  "split": "dev",
+  "pool": "dev rows at offsets 700 to 1199 (never read), minus every text_id of the 50-row py test split (by id only), minus every repository used in any earlier run (external, frozen, host, paste and first orientation runs)",
+  "filters": "changed_files_count 2 to 6 and code_changed_files_count at least 2; permissive repository license (MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0); 50 to 1,500 non-test files; one case per repository",
+  "selection": "first 8 by sha256('shake-bake-orientation-multifile-2026-11-08-v1:' + text_id), each repository represented by its lowest-hash row, no replacements",
+  "acquisition": "shallow git fetch at base_sha, copied without .git; caps 300 MiB per checkout, 2 GiB total; omissions disclosed"
+ },
+ "arms": "native_tools, orientation_tools, issue_only_paste, orientation_paste, as in benchmarks/orientation-comparison-2026-11-08",
+ "host": "Claude Code subagent, general-purpose type, sonnet alias, one run per case and arm, prompts identical to the first orientation run",
+ "decision_rules": {
+  "tools_path": "helps only if total hits at 5 are higher than native AND orientation wins more cases than it loses",
+  "paste_path": "helps only if total hits at 5 are higher than issue-only AND orientation wins more cases than it loses",
+  "note": "Stricter than the first orientation run's tools rule, which a no-harm result could meet; this run asks for a gain.",
+  "pooled": "Also reported, not decided on: the fourteen fresh cases of both orientation runs together."
+ },
+ "limits": [
+  "eight cases, one repeat",
+  "public issues may be in the host's training data",
+  "isolation by instruction"
+ ]
+}
