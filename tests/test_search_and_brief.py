@@ -15,6 +15,11 @@ from shake_bake.contracts import Refusal
 from shake_bake.search import SearchLimits, prepare
 
 
+def _code_for_test(text):
+    from shake_bake.briefing import _code
+    return _code(text)
+
+
 class SearchAcceptance(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -138,6 +143,33 @@ class SearchAcceptance(unittest.TestCase):
         self.assertLess(text.index("## Original request"), answer)
         self.assertLess(answer, text.index("## E1"))
         self.assertNotIn("## Answer with", render(build_brief(self.root, "zebraprinter")))
+
+    def test_orientation_brief_orients_flags_near_duplicates_and_keeps_scope_open(self):
+        from shake_bake.briefing import ORIENTATION_EXCERPT_LINES, near_duplicates, render_orientation
+        body = "def validate_structure(slices, detected):\n    # executable slice coverage admission rule\n    return len(slices) <= detected\n"
+        (self.root / "copy_a.py").write_text(body, encoding="utf-8")
+        (self.root / "copy_b.py").write_text(body, encoding="utf-8")
+        (self.root / "long.py").write_text("# slice coverage\n" + "".join(f"value_{i} = {i}  # coverage\n" for i in range(30)), encoding="utf-8")
+        brief = build_brief(self.root, self.task)
+        text = render_orientation(brief)
+        self.assertTrue(text.startswith("# Where to start looking (Shake & Bake orientation brief)\n"))
+        self.assertIn(self.task, text)
+        self.assertIn("They are starting points, not the answer", text)
+        self.assertNotIn("## Answer with", text)
+        self.assertIn("## Where the request's terms appear, most matches first", text)
+        self.assertIn("## Near-duplicate code in different files", text)
+        self.assertTrue(near_duplicates(brief.search.packet.evidence))
+        for record in brief.search.packet.evidence:
+            self.assertIn(_code_for_test(record.path), text)
+        for block in text.split("## Short excerpts (exact text, may be cut)")[1].split("```")[1::2]:
+            self.assertLessEqual(len(block.strip("\n").splitlines()), ORIENTATION_EXCERPT_LINES)
+        self.assertLess(len(text.encode()), len(render(brief).encode()))
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(["brief", "--root", str(self.root), "--task", self.task, "--style", "orientation"])
+        self.assertEqual(code, 0)
+        self.assertEqual(output.getvalue(), text)
+        self.assertIn("Explore the repository directly.", render_orientation(build_brief(self.root, "zebraprinter")))
 
     def test_cli_runs_the_full_question_to_handoff_path(self):
         output = io.StringIO()
