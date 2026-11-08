@@ -1,10 +1,10 @@
 # Current evaluation status
 
-Updated November 8, 2026 for `0.4.0.dev20`. No local model profile is qualified for
+Updated November 8, 2026 for `0.4.0.dev21`. No local model profile is qualified for
 
 Collector file recall, frozen and held out (November 8): the `dev20` collector beat the PR #30 collector on twelve reserved Long Code Arena Python cases under a pre-registered rule, 26 against 23 of 41 changed files reached including the map, with 3 case-level wins and 2 losses. See [the frozen-run record](frozen-recall-2026-11-08.md). This qualifies no model and measures no answer.
 
-Host comparison (November 8): on six real issues with Claude Code subagents, the evidence-only brief did not reduce host tokens or mean tool calls and the hosts named fewer of the changed files (7 against 14 of 25). The pre-registered rule was not met. See [the host-comparison record](host-comparison-2026-11-08.md). The no-tools paste path showed no benefit either (9 against 10 of 25); see [the paste-path record](paste-comparison-2026-11-08.md).
+Host comparison (November 8): on six real issues with Claude Code subagents, the evidence-only brief did not reduce host tokens or mean tool calls and the hosts named fewer of the changed files (7 against 14 of 25). The pre-registered rule was not met. See [the host-comparison record](host-comparison-2026-11-08.md). The no-tools paste path showed no benefit either (9 against 10 of 25); see [the paste-path record](paste-comparison-2026-11-08.md). A reframed orientation brief then lost no case in twelve paired comparisons on fresh cases but showed no clear gain; see [the orientation record](orientation-comparison-2026-11-08.md).
 automatic selection. The latest larger-budget experiment is rejected: both
 thinking-on candidates produced six supported handoffs out of ten, retained two
 critical unsupported claims and lost a previously supported concurrency answer

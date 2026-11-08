@@ -1,0 +1,36 @@
+{
+ "method": "git fetch --depth 1 at base_sha, copied without .git",
+ "cases": [
+  {
+   "key": "microsoft__recommenders__999__997",
+   "status": "ok",
+   "bytes_on_disk": 4020723
+  },
+  {
+   "key": "joke2k__faker__828__625",
+   "status": "ok",
+   "bytes_on_disk": 3612270
+  },
+  {
+   "key": "textualize__textual__2788__2782",
+   "status": "ok",
+   "bytes_on_disk": 63338335
+  },
+  {
+   "key": "pre-commit__pre-commit__1364__1350",
+   "status": "ok",
+   "bytes_on_disk": 864331
+  },
+  {
+   "key": "rasahq__rasa__10704__10703",
+   "status": "ok",
+   "bytes_on_disk": 13736137
+  },
+  {
+   "key": "manimcommunity__manim__1467__1446",
+   "status": "ok",
+   "bytes_on_disk": 8211527
+  }
+ ],
+ "omitted": 0
+}
