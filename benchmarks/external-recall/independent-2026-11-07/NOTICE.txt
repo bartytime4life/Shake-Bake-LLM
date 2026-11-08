@@ -1,0 +1,15 @@
+Independent retrieval audit, November 7, 2026
+
+Dataset attribution: Bogomolov et al., Long Code Arena: a Set of Benchmarks
+for Long-Context Code Models (2024), https://arxiv.org/abs/2406.11612.
+Dataset: JetBrains-Research/lca-bug-localization, Apache-2.0 declaration;
+revision and original source-license URLs/checksums are in manifest.json.
+Benchmark publication terms are linked there; resulting research publications
+must be open access. Original MIT/Apache-2.0 repository notices remain
+applicable. The project license does not replace third-party terms.
+
+These records contain computed measurements, public task IDs, gold path
+metadata and acquisition/source identities. They contain no issue bodies,
+source excerpts, full dataset, source corpora, local configuration or model
+outputs. Native CLI receipts are exposed-case accounting replays, not a new
+independent cohort. The separate summary is labeled as a derived audit.

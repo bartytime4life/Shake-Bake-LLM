@@ -1,5 +1,10 @@
 # Retrieval scoring and external file recall
 
+> Historical PR #30 development record. Its external-run-pending statements
+> describe this original stage. The later [independent nine-case audit](independent-retrieval-2026-11-07.md)
+> reports bounded gains, regressions, relevant-file exclusions and a separate
+> exposed-case filter diagnostic. The measurements below are preserved.
+
 Status: development changes in `0.4.0.dev11`, November 7, 2026. These are the
 first three candidates from the [November 6 web research](research-2026-11-06.md),
 the ones that need no model: BM25-style file scoring, a disclosed distractor

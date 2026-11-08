@@ -1,0 +1,132 @@
+{
+  "after_receipt_sha256": "bb203576408f4ffd78933bc6627718eb98591b354d4fb7ab15a88d4dd9fd8edf",
+  "before_receipt_sha256": "d728cc5d8a23278026b66a256c28c81c4e8892366de99184854de4c3fdfc6843",
+  "case_root_locations_sha256": "5a92195d3d87f8af12727fdfafd188a060be850ce39e29173c6a045305aedaf7",
+  "cases_sha256": "163842936c535f19715d92c062cc8611d392115ff6cf8c931a74acda7a1c1771",
+  "comparison_source_sha256": "e3f64bc0595be4055099933d875a490464a4dee4e349e8284f923d67f9ae0d95",
+  "corpus_immutability_established": false,
+  "excluded_pairs": [],
+  "kind": "paired_external_recall_comparison",
+  "limits": {
+    "context_bytes": 2048,
+    "excerpt_bytes": 16384,
+    "max_depth": 8,
+    "max_entries": 4000,
+    "max_files": 200,
+    "seconds": 5.0
+  },
+  "metrics": {
+    "excerpted": {
+      "gold_files": 17,
+      "hits_after": 2,
+      "hits_before": 1,
+      "losses": 0,
+      "mean_recall_after": 0.16666666666666666,
+      "mean_recall_before": 0.05555555555555555,
+      "micro_recall_after": 0.11764705882352941,
+      "micro_recall_before": 0.058823529411764705,
+      "ties": 8,
+      "wins": 1
+    },
+    "primary": {
+      "gold_files": 17,
+      "hits_after": 2,
+      "hits_before": 1,
+      "losses": 0,
+      "mean_recall_after": 0.16666666666666666,
+      "mean_recall_before": 0.05555555555555555,
+      "micro_recall_after": 0.11764705882352941,
+      "micro_recall_before": 0.058823529411764705,
+      "ties": 8,
+      "wins": 1
+    },
+    "with_index": {
+      "gold_files": 17,
+      "hits_after": 3,
+      "hits_before": 2,
+      "losses": 0,
+      "mean_recall_after": 0.2222222222222222,
+      "mean_recall_before": 0.16666666666666666,
+      "micro_recall_after": 0.17647058823529413,
+      "micro_recall_before": 0.11764705882352941,
+      "ties": 8,
+      "wins": 1
+    },
+    "with_map": {
+      "gold_files": 17,
+      "hits_after": 3,
+      "hits_before": 2,
+      "losses": 0,
+      "mean_recall_after": 0.2222222222222222,
+      "mean_recall_before": 0.16666666666666666,
+      "micro_recall_after": 0.17647058823529413,
+      "micro_recall_before": 0.11764705882352941,
+      "ties": 8,
+      "wins": 1
+    }
+  },
+  "paired_scored_cases": 9,
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "scans": {
+    "after": {
+      "cutoff_case_counts": {
+        "context_map_budget": 8,
+        "context_window_budget": 6,
+        "file_budget": 7,
+        "query_term_budget": 9,
+        "selection_budget": 9,
+        "window_budget": 9
+      },
+      "exclusion_counts": {
+        "excluded_directory": 2,
+        "file_too_large": 3,
+        "low_signal_match": 1097,
+        "path_not_allowed": 1,
+        "symlink": 3,
+        "unsupported_extension": 1414
+      },
+      "median_case_seconds": 0.11
+    },
+    "before": {
+      "cutoff_case_counts": {
+        "context_map_budget": 9,
+        "context_window_budget": 7,
+        "file_budget": 7,
+        "query_term_budget": 9,
+        "selection_budget": 9,
+        "window_budget": 9
+      },
+      "exclusion_counts": {
+        "excluded_directory": 2,
+        "file_too_large": 3,
+        "path_not_allowed": 1,
+        "symlink": 3,
+        "unsupported_extension": 1414
+      },
+      "median_case_seconds": 0.162
+    }
+  },
+  "selected_cases": 9,
+  "selection_sha256": "07c18b5a4548f305a97f675f0cc405fd25d83b84a0dd7894434fa726cefc7657",
+  "source_identity_after": {
+    "adapter_sha256": "13666899451282a0cc0f160fc3159364ce84b06011bb7820b572c06d048310ab",
+    "collector_sources_sha256": {
+      "__init__.py": "828ff5205767bf24648d2d38913b1ad1a65112903db75f0f8fd177911ae97c64",
+      "collector.py": "6e57c2a3fb3522c23ff1d7b2ec80d17efbad47e71f2d68916336f6af22692a92",
+      "contracts.py": "55ca71215d7b827c1bb43c1e636998817455c9fa69b2f467c735c73ce34ff10c",
+      "search.py": "4dfe76fc239d3dd3833474da70e9cfd1ac0f676f7bb588acc26e81a0d82c671f"
+    }
+  },
+  "source_identity_before": {
+    "adapter_sha256": "13666899451282a0cc0f160fc3159364ce84b06011bb7820b572c06d048310ab",
+    "collector_sources_sha256": {
+      "__init__.py": "9db8cbb9338176ef289ccf9062f260e480aa990db9c31d180b9097d0579893c9",
+      "collector.py": "6e57c2a3fb3522c23ff1d7b2ec80d17efbad47e71f2d68916336f6af22692a92",
+      "contracts.py": "55ca71215d7b827c1bb43c1e636998817455c9fa69b2f467c735c73ce34ff10c",
+      "search.py": "f752569a082204abd598ae4e26e6253045ed1ccdc960129e0280cacf6a971009"
+    }
+  },
+  "timing_scope": "One untraced prepare call per case; excludes input/provenance hashing.",
+  "warning": "This compares declared inputs and measured file recall, not corpus immutability, answer accuracy, cloud usage or costs. On-disk source hashes are not loaded-code attestation."
+}

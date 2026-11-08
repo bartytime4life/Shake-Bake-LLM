@@ -1,0 +1,2587 @@
+{
+  "case_results": [
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 346,
+          "exclusions": {
+            "file_too_large": 1,
+            "low_signal_match": 153,
+            "unsupported_extension": 61
+          },
+          "files_examined": 200,
+          "gold_files": 2,
+          "gold_status": {
+            "src/datasets/arrow_dataset.py": {
+              "collection_status": "file_too_large",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "tests/test_arrow_dataset.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 140.307457,
+          "processing_ms": [
+            154.422232,
+            170.034083,
+            140.307457,
+            128.409474,
+            129.468715
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 3017,
+          "source_bytes_read": 1637766,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 346,
+          "exclusions": {
+            "file_too_large": 1,
+            "unsupported_extension": 61
+          },
+          "files_examined": 200,
+          "gold_files": 2,
+          "gold_status": {
+            "src/datasets/arrow_dataset.py": {
+              "collection_status": "file_too_large",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "tests/test_arrow_dataset.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 170.380416,
+          "processing_ms": [
+            198.153026,
+            167.329432,
+            180.319211,
+            170.380416,
+            164.529288
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2480,
+          "source_bytes_read": 1637766,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "huggingface/datasets/4828/4796",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 486,
+          "exclusions": {
+            "file_too_large": 1,
+            "low_signal_match": 245,
+            "unsupported_extension": 71
+          },
+          "files_examined": 326,
+          "gold_files": 2,
+          "gold_status": {
+            "src/datasets/arrow_dataset.py": {
+              "collection_status": "file_too_large",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "tests/test_arrow_dataset.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 1,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 282.356898,
+          "processing_ms": [
+            282.356898,
+            305.204702,
+            274.274291,
+            302.548084,
+            262.368079
+          ],
+          "recall_excerpted": 0.5,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.5,
+          "selected_excerpt_bytes": 2668,
+          "source_bytes_read": 3307986,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 486,
+          "exclusions": {
+            "file_too_large": 1,
+            "unsupported_extension": 71
+          },
+          "files_examined": 326,
+          "gold_files": 2,
+          "gold_status": {
+            "src/datasets/arrow_dataset.py": {
+              "collection_status": "file_too_large",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "tests/test_arrow_dataset.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            }
+          },
+          "hits_excerpted": 1,
+          "hits_primary": 1,
+          "hits_with_map": 1,
+          "median_processing_ms": 330.789974,
+          "processing_ms": [
+            317.114403,
+            312.546955,
+            330.789974,
+            332.12346,
+            373.994573
+          ],
+          "recall_excerpted": 0.5,
+          "recall_primary": 0.5,
+          "recall_with_map": 0.5,
+          "selected_excerpt_bytes": 2336,
+          "source_bytes_read": 3307986,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "huggingface/datasets/4828/4796",
+      "profile": "expanded"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 1065,
+          "exclusions": {
+            "low_signal_match": 120,
+            "unsupported_extension": 806
+          },
+          "files_examined": 200,
+          "gold_files": 1,
+          "gold_status": {
+            "keras/layers/convolutional/base_conv.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 267.945326,
+          "processing_ms": [
+            254.591141,
+            328.092805,
+            267.945326,
+            329.574491,
+            267.555911
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2013,
+          "source_bytes_read": 3467346,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 1065,
+          "exclusions": {
+            "unsupported_extension": 806
+          },
+          "files_examined": 200,
+          "gold_files": 1,
+          "gold_status": {
+            "keras/layers/convolutional/base_conv.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 327.121626,
+          "processing_ms": [
+            324.12128,
+            327.121626,
+            422.671151,
+            311.006725,
+            350.642834
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2515,
+          "source_bytes_read": 3467346,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "keras-team/keras/15943/15942",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 1531,
+          "exclusions": {
+            "low_signal_match": 431,
+            "unsupported_extension": 854
+          },
+          "files_examined": 619,
+          "gold_files": 1,
+          "gold_status": {
+            "keras/layers/convolutional/base_conv.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 802.570477,
+          "processing_ms": [
+            806.607487,
+            803.439587,
+            785.541319,
+            775.835205,
+            802.570477
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2261,
+          "source_bytes_read": 9434217,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 1531,
+          "exclusions": {
+            "unsupported_extension": 854
+          },
+          "files_examined": 619,
+          "gold_files": 1,
+          "gold_status": {
+            "keras/layers/convolutional/base_conv.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 919.902888,
+          "processing_ms": [
+            1027.141191,
+            984.85587,
+            919.902888,
+            916.80601,
+            879.003219
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2318,
+          "source_bytes_read": 9434217,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "keras-team/keras/15943/15942",
+      "profile": "expanded"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 378,
+          "exclusions": {
+            "file_too_large": 1,
+            "low_signal_match": 84,
+            "path_not_allowed": 1,
+            "unsupported_extension": 87
+          },
+          "files_examined": 200,
+          "gold_files": 3,
+          "gold_status": {
+            "rasa/cli/x.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "rasa/core/run.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "rasa/core/utils.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 43.446726,
+          "processing_ms": [
+            43.637555,
+            41.86222,
+            46.360413,
+            41.912656,
+            43.446726
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 1950,
+          "source_bytes_read": 363267,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 378,
+          "exclusions": {
+            "file_too_large": 1,
+            "path_not_allowed": 1,
+            "unsupported_extension": 87
+          },
+          "files_examined": 200,
+          "gold_files": 3,
+          "gold_status": {
+            "rasa/cli/x.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "rasa/core/run.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "rasa/core/utils.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 52.528751,
+          "processing_ms": [
+            53.243843,
+            52.416741,
+            51.56925,
+            52.747322,
+            52.528751
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 1486,
+          "source_bytes_read": 363267,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "rasahq/rasa/4035/4015",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 631,
+          "exclusions": {
+            "file_too_large": 1,
+            "low_signal_match": 245,
+            "path_not_allowed": 1,
+            "unsupported_extension": 96
+          },
+          "files_examined": 438,
+          "gold_files": 3,
+          "gold_status": {
+            "rasa/cli/x.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": true,
+              "primary": false
+            },
+            "rasa/core/run.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "rasa/core/utils.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 180.442228,
+          "processing_ms": [
+            185.614312,
+            232.717154,
+            179.82824,
+            177.315439,
+            180.442228
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.3333333333333333,
+          "selected_excerpt_bytes": 2521,
+          "source_bytes_read": 1915434,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 631,
+          "exclusions": {
+            "file_too_large": 1,
+            "path_not_allowed": 1,
+            "unsupported_extension": 96
+          },
+          "files_examined": 438,
+          "gold_files": 3,
+          "gold_status": {
+            "rasa/cli/x.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            },
+            "rasa/core/run.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "rasa/core/utils.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 1,
+          "hits_primary": 1,
+          "hits_with_map": 1,
+          "median_processing_ms": 224.631848,
+          "processing_ms": [
+            246.224687,
+            224.631848,
+            223.938076,
+            222.281771,
+            274.559731
+          ],
+          "recall_excerpted": 0.3333333333333333,
+          "recall_primary": 0.3333333333333333,
+          "recall_with_map": 0.3333333333333333,
+          "selected_excerpt_bytes": 2122,
+          "source_bytes_read": 1915434,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "rasahq/rasa/4035/4015",
+      "profile": "expanded"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 426,
+          "exclusions": {
+            "excluded_directory": 1,
+            "file_too_large": 1,
+            "low_signal_match": 159,
+            "unsupported_extension": 152
+          },
+          "files_examined": 200,
+          "gold_files": 1,
+          "gold_status": {
+            "openapi/generate_openapi.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 322.56729,
+          "processing_ms": [
+            333.522766,
+            322.56729,
+            320.73878,
+            341.238552,
+            312.944602
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 3766,
+          "source_bytes_read": 4760209,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 426,
+          "exclusions": {
+            "excluded_directory": 1,
+            "file_too_large": 1,
+            "unsupported_extension": 152
+          },
+          "files_examined": 200,
+          "gold_files": 1,
+          "gold_status": {
+            "openapi/generate_openapi.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 480.265158,
+          "processing_ms": [
+            477.993688,
+            509.098547,
+            544.89338,
+            480.265158,
+            444.450265
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 3455,
+          "source_bytes_read": 4760209,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "wekan/wekan/3889/3884",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 1114,
+          "exclusions": {
+            "excluded_directory": 1,
+            "file_too_large": 1,
+            "low_signal_match": 554,
+            "symlink": 1,
+            "unsupported_extension": 273
+          },
+          "files_examined": 707,
+          "gold_files": 1,
+          "gold_status": {
+            "openapi/generate_openapi.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": true,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 580.037652,
+          "processing_ms": [
+            650.67295,
+            580.037652,
+            566.27595,
+            539.503639,
+            591.176078
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 2831,
+          "source_bytes_read": 7296287,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 1114,
+          "exclusions": {
+            "excluded_directory": 1,
+            "file_too_large": 1,
+            "symlink": 1,
+            "unsupported_extension": 273
+          },
+          "files_examined": 707,
+          "gold_files": 1,
+          "gold_status": {
+            "openapi/generate_openapi.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 772.897141,
+          "processing_ms": [
+            747.218794,
+            928.88537,
+            749.265957,
+            772.897141,
+            811.833524
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 3182,
+          "source_bytes_read": 7296287,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "wekan/wekan/3889/3884",
+      "profile": "expanded"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 265,
+          "exclusions": {
+            "low_signal_match": 137,
+            "unsupported_extension": 4
+          },
+          "files_examined": 200,
+          "gold_files": 1,
+          "gold_status": {
+            "scripts/controlnet.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 93.737616,
+          "processing_ms": [
+            100.493256,
+            100.527526,
+            89.552578,
+            93.737616,
+            92.032899
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2517,
+          "source_bytes_read": 961398,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 265,
+          "exclusions": {
+            "unsupported_extension": 4
+          },
+          "files_examined": 200,
+          "gold_files": 1,
+          "gold_status": {
+            "scripts/controlnet.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 108.428244,
+          "processing_ms": [
+            96.573228,
+            114.487752,
+            108.428244,
+            104.616029,
+            127.663851
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2708,
+          "source_bytes_read": 961398,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "mikubill/sd-webui-controlnet/321/307",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 491,
+          "exclusions": {
+            "low_signal_match": 248,
+            "unsupported_extension": 34
+          },
+          "files_examined": 392,
+          "gold_files": 1,
+          "gold_status": {
+            "scripts/controlnet.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            }
+          },
+          "hits_excerpted": 1,
+          "hits_primary": 1,
+          "hits_with_map": 1,
+          "median_processing_ms": 199.236214,
+          "processing_ms": [
+            199.236214,
+            193.973461,
+            251.695959,
+            211.437874,
+            175.141305
+          ],
+          "recall_excerpted": 1.0,
+          "recall_primary": 1.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 2702,
+          "source_bytes_read": 2022283,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 491,
+          "exclusions": {
+            "unsupported_extension": 34
+          },
+          "files_examined": 392,
+          "gold_files": 1,
+          "gold_status": {
+            "scripts/controlnet.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": true,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 225.795227,
+          "processing_ms": [
+            225.795227,
+            246.31407,
+            221.020295,
+            242.536425,
+            218.668495
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 2878,
+          "source_bytes_read": 2022283,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "mikubill/sd-webui-controlnet/321/307",
+      "profile": "expanded"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 376,
+          "exclusions": {
+            "low_signal_match": 136,
+            "unsupported_extension": 165
+          },
+          "files_examined": 185,
+          "gold_files": 2,
+          "gold_status": {
+            "beets/dbcore/types.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "beetsplug/acousticbrainz.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": true,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 223.566523,
+          "processing_ms": [
+            223.566523,
+            222.393338,
+            218.388341,
+            266.360915,
+            232.129012
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.5,
+          "selected_excerpt_bytes": 2368,
+          "source_bytes_read": 2598206,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 376,
+          "exclusions": {
+            "unsupported_extension": 165
+          },
+          "files_examined": 185,
+          "gold_files": 2,
+          "gold_status": {
+            "beets/dbcore/types.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "beetsplug/acousticbrainz.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 285.81726,
+          "processing_ms": [
+            285.81726,
+            276.855797,
+            285.416599,
+            297.817645,
+            298.884002
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2404,
+          "source_bytes_read": 2598206,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "beetbox/beets/3238/2790",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 376,
+          "exclusions": {
+            "low_signal_match": 136,
+            "unsupported_extension": 165
+          },
+          "files_examined": 185,
+          "gold_files": 2,
+          "gold_status": {
+            "beets/dbcore/types.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "beetsplug/acousticbrainz.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": true,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 223.324908,
+          "processing_ms": [
+            223.017463,
+            230.603728,
+            280.757998,
+            218.044658,
+            223.324908
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.5,
+          "selected_excerpt_bytes": 2368,
+          "source_bytes_read": 2598206,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 376,
+          "exclusions": {
+            "unsupported_extension": 165
+          },
+          "files_examined": 185,
+          "gold_files": 2,
+          "gold_status": {
+            "beets/dbcore/types.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "beetsplug/acousticbrainz.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 301.480371,
+          "processing_ms": [
+            285.027255,
+            283.423838,
+            339.338206,
+            301.480371,
+            326.224142
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 2404,
+          "source_bytes_read": 2598206,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "beetbox/beets/3238/2790",
+      "profile": "expanded"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 157,
+          "exclusions": {
+            "excluded_directory": 1,
+            "low_signal_match": 70,
+            "unsupported_extension": 35
+          },
+          "files_examined": 104,
+          "gold_files": 1,
+          "gold_status": {
+            "jax/random.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            }
+          },
+          "hits_excerpted": 1,
+          "hits_primary": 1,
+          "hits_with_map": 1,
+          "median_processing_ms": 127.804126,
+          "processing_ms": [
+            127.804126,
+            123.583818,
+            143.740791,
+            110.193274,
+            157.909797
+          ],
+          "recall_excerpted": 1.0,
+          "recall_primary": 1.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 3192,
+          "source_bytes_read": 1410746,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 157,
+          "exclusions": {
+            "excluded_directory": 1,
+            "unsupported_extension": 35
+          },
+          "files_examined": 104,
+          "gold_files": 1,
+          "gold_status": {
+            "jax/random.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": true,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 141.054924,
+          "processing_ms": [
+            141.054924,
+            156.725517,
+            154.674355,
+            139.023562,
+            137.498094
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 3268,
+          "source_bytes_read": 1410746,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "google/jax/1039/1033",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 157,
+          "exclusions": {
+            "excluded_directory": 1,
+            "low_signal_match": 70,
+            "unsupported_extension": 35
+          },
+          "files_examined": 104,
+          "gold_files": 1,
+          "gold_status": {
+            "jax/random.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            }
+          },
+          "hits_excerpted": 1,
+          "hits_primary": 1,
+          "hits_with_map": 1,
+          "median_processing_ms": 119.133397,
+          "processing_ms": [
+            121.588321,
+            129.87639,
+            108.058392,
+            119.133397,
+            117.901423
+          ],
+          "recall_excerpted": 1.0,
+          "recall_primary": 1.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 3192,
+          "source_bytes_read": 1410746,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 157,
+          "exclusions": {
+            "excluded_directory": 1,
+            "unsupported_extension": 35
+          },
+          "files_examined": 104,
+          "gold_files": 1,
+          "gold_status": {
+            "jax/random.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": true,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 152.654151,
+          "processing_ms": [
+            154.221722,
+            152.654151,
+            165.034041,
+            145.15136,
+            150.394102
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 3268,
+          "source_bytes_read": 1410746,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "google/jax/1039/1033",
+      "profile": "expanded"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 447,
+          "exclusions": {
+            "low_signal_match": 181,
+            "unsupported_extension": 15
+          },
+          "files_examined": 200,
+          "gold_files": 2,
+          "gold_status": {
+            "faker/providers/date_time/__init__.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            },
+            "tests/providers/test_date_time.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 1,
+          "hits_primary": 1,
+          "hits_with_map": 1,
+          "median_processing_ms": 125.09769,
+          "processing_ms": [
+            123.450378,
+            125.09769,
+            130.977626,
+            125.473379,
+            117.687119
+          ],
+          "recall_excerpted": 0.5,
+          "recall_primary": 0.5,
+          "recall_with_map": 0.5,
+          "selected_excerpt_bytes": 2408,
+          "source_bytes_read": 1661037,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 447,
+          "exclusions": {
+            "unsupported_extension": 15
+          },
+          "files_examined": 200,
+          "gold_files": 2,
+          "gold_status": {
+            "faker/providers/date_time/__init__.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            },
+            "tests/providers/test_date_time.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 1,
+          "hits_primary": 1,
+          "hits_with_map": 1,
+          "median_processing_ms": 184.246077,
+          "processing_ms": [
+            184.246077,
+            189.732727,
+            179.527378,
+            191.528985,
+            183.933914
+          ],
+          "recall_excerpted": 0.5,
+          "recall_primary": 0.5,
+          "recall_with_map": 0.5,
+          "selected_excerpt_bytes": 2384,
+          "source_bytes_read": 1661037,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "joke2k/faker/671/667",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 654,
+          "exclusions": {
+            "low_signal_match": 312,
+            "unsupported_extension": 17
+          },
+          "files_examined": 339,
+          "gold_files": 2,
+          "gold_status": {
+            "faker/providers/date_time/__init__.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            },
+            "tests/providers/test_date_time.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            }
+          },
+          "hits_excerpted": 2,
+          "hits_primary": 2,
+          "hits_with_map": 2,
+          "median_processing_ms": 187.697212,
+          "processing_ms": [
+            187.697212,
+            177.126283,
+            190.131715,
+            207.96639,
+            182.381291
+          ],
+          "recall_excerpted": 1.0,
+          "recall_primary": 1.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 2106,
+          "source_bytes_read": 2438434,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 654,
+          "exclusions": {
+            "unsupported_extension": 17
+          },
+          "files_examined": 339,
+          "gold_files": 2,
+          "gold_status": {
+            "faker/providers/date_time/__init__.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            },
+            "tests/providers/test_date_time.py": {
+              "collection_status": "matched",
+              "excerpted": true,
+              "indexed": false,
+              "mapped": false,
+              "primary": true
+            }
+          },
+          "hits_excerpted": 2,
+          "hits_primary": 2,
+          "hits_with_map": 2,
+          "median_processing_ms": 288.884874,
+          "processing_ms": [
+            288.884874,
+            268.18903,
+            383.021461,
+            314.13144,
+            276.995231
+          ],
+          "recall_excerpted": 1.0,
+          "recall_primary": 1.0,
+          "recall_with_map": 1.0,
+          "selected_excerpt_bytes": 2912,
+          "source_bytes_read": 2438434,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "joke2k/faker/671/667",
+      "profile": "expanded"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 412,
+          "exclusions": {
+            "low_signal_match": 57,
+            "symlink": 3,
+            "unsupported_extension": 89
+          },
+          "files_examined": 200,
+          "gold_files": 4,
+          "gold_status": {
+            "paddlespeech/cli/asr/infer.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/s2t/transform/perturb.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/s2t/transform/spectrogram.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/vector/exps/ge2e/audio_processor.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 55.857968,
+          "processing_ms": [
+            58.101331,
+            56.908799,
+            54.124145,
+            54.876685,
+            55.857968
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 3853,
+          "source_bytes_read": 578657,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 412,
+          "exclusions": {
+            "symlink": 3,
+            "unsupported_extension": 89
+          },
+          "files_examined": 200,
+          "gold_files": 4,
+          "gold_status": {
+            "paddlespeech/cli/asr/infer.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/s2t/transform/perturb.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/s2t/transform/spectrogram.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/vector/exps/ge2e/audio_processor.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 68.194085,
+          "processing_ms": [
+            67.293001,
+            69.071681,
+            68.234045,
+            67.920511,
+            68.194085
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 4488,
+          "source_bytes_read": 578657,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "paddlepaddle/paddlespeech/1432/1426",
+      "profile": "default"
+    },
+    {
+      "arms": {
+        "current": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 1456,
+          "exclusions": {
+            "low_signal_match": 493,
+            "symlink": 10,
+            "unsupported_extension": 119
+          },
+          "files_examined": 1000,
+          "gold_files": 4,
+          "gold_status": {
+            "paddlespeech/cli/asr/infer.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/s2t/transform/perturb.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": true,
+              "primary": false
+            },
+            "paddlespeech/s2t/transform/spectrogram.py": {
+              "collection_status": "low_signal_match",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/vector/exps/ge2e/audio_processor.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 1,
+          "median_processing_ms": 334.46739,
+          "processing_ms": [
+            339.621666,
+            334.46739,
+            333.022616,
+            360.133784,
+            332.721338
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.25,
+          "selected_excerpt_bytes": 3073,
+          "source_bytes_read": 3834281,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        },
+        "previous": {
+          "cutoffs": [
+            "context_map_budget",
+            "context_window_budget",
+            "file_budget",
+            "query_term_budget",
+            "selection_budget",
+            "window_budget"
+          ],
+          "entries_seen": 1456,
+          "exclusions": {
+            "symlink": 10,
+            "unsupported_extension": 119
+          },
+          "files_examined": 1000,
+          "gold_files": 4,
+          "gold_status": {
+            "paddlespeech/cli/asr/infer.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/s2t/transform/perturb.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/s2t/transform/spectrogram.py": {
+              "collection_status": "matched",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            },
+            "paddlespeech/vector/exps/ge2e/audio_processor.py": {
+              "collection_status": "not_examined_by_walk",
+              "excerpted": false,
+              "indexed": false,
+              "mapped": false,
+              "primary": false
+            }
+          },
+          "hits_excerpted": 0,
+          "hits_primary": 0,
+          "hits_with_map": 0,
+          "median_processing_ms": 436.563556,
+          "processing_ms": [
+            517.75799,
+            410.779694,
+            445.325601,
+            435.392375,
+            436.563556
+          ],
+          "recall_excerpted": 0.0,
+          "recall_primary": 0.0,
+          "recall_with_map": 0.0,
+          "selected_excerpt_bytes": 3541,
+          "source_bytes_read": 3834281,
+          "trace_matches_untraced": true,
+          "untraced_repeats_stable": true
+        }
+      },
+      "id": "paddlepaddle/paddlespeech/1432/1426",
+      "profile": "expanded"
+    }
+  ],
+  "claim_scope": "Nine available cases from the unchanged twelve-case Python selection; not benchmark-wide and not model accuracy, usage or cost. Later replay/ablation use already-exposed cases.",
+  "filter_ablation": {
+    "case_results": [
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 0,
+            "on": 0
+          }
+        },
+        "id": "huggingface/datasets/4828/4796",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 0,
+            "on": 0
+          }
+        },
+        "id": "keras-team/keras/15943/15942",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 0,
+            "on": 0
+          }
+        },
+        "id": "rasahq/rasa/4035/4015",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 0,
+            "on": 0
+          }
+        },
+        "id": "wekan/wekan/3889/3884",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 0,
+            "on": 0
+          }
+        },
+        "id": "mikubill/sd-webui-controlnet/321/307",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "beetbox/beets/3238/2790",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_primary": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "google/jax/1039/1033",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [
+          "faker/cli.py",
+          "faker/providers/address/en_US/__init__.py",
+          "faker/providers/address/pl_PL/__init__.py",
+          "faker/providers/file/__init__.py",
+          "faker/providers/isbn/isbn.py",
+          "faker/providers/isbn/rules.py"
+        ],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_primary": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "joke2k/faker/671/667",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 0,
+            "on": 0
+          }
+        },
+        "id": "paddlepaddle/paddlespeech/1432/1426",
+        "profile": "default"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "huggingface/datasets/4828/4796",
+        "profile": "expanded"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 0,
+            "on": 0
+          }
+        },
+        "id": "keras-team/keras/15943/15942",
+        "profile": "expanded"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "rasahq/rasa/4035/4015",
+        "profile": "expanded"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "wekan/wekan/3889/3884",
+        "profile": "expanded"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_primary": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "mikubill/sd-webui-controlnet/321/307",
+        "profile": "expanded"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "beetbox/beets/3238/2790",
+        "profile": "expanded"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_primary": {
+            "off": 1,
+            "on": 1
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "google/jax/1039/1033",
+        "profile": "expanded"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 2,
+            "on": 2
+          },
+          "hits_primary": {
+            "off": 2,
+            "on": 2
+          },
+          "hits_with_map": {
+            "off": 2,
+            "on": 2
+          }
+        },
+        "id": "joke2k/faker/671/667",
+        "profile": "expanded"
+      },
+      {
+        "changed_mapped_paths": [],
+        "changed_primary_paths": [],
+        "hits": {
+          "hits_excerpted": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_primary": {
+            "off": 0,
+            "on": 0
+          },
+          "hits_with_map": {
+            "off": 1,
+            "on": 1
+          }
+        },
+        "id": "paddlepaddle/paddlespeech/1432/1426",
+        "profile": "expanded"
+      }
+    ],
+    "independent_held_out_result": false,
+    "kind": "exposed_case_diagnostic_summary",
+    "paddlespeech_mechanism": {
+      "filter_off": {
+        "all_matched_terms_common": true,
+        "best_file_score": 26.876657079868504,
+        "bm25_score_before_filter": 1.3122243850877888,
+        "examined_text_files": 1000,
+        "file_score_rank_after_filter": 549,
+        "fraction_of_best": 0.04882394343866105,
+        "matched_in_walk": true,
+        "matched_terms": [
+          "but",
+          "paddlepaddle"
+        ],
+        "matching_line_counts": {
+          "but": 1,
+          "paddlepaddle": 1
+        },
+        "path_terms": [],
+        "retained_after_filter": true,
+        "term_document_frequency": {
+          "but": 508,
+          "paddlepaddle": 530
+        }
+      },
+      "filter_on": {
+        "all_matched_terms_common": true,
+        "best_file_score": 26.876657079868504,
+        "bm25_score_before_filter": 1.3122243850877888,
+        "examined_text_files": 1000,
+        "file_score_rank_after_filter": null,
+        "fraction_of_best": 0.04882394343866105,
+        "matched_in_walk": true,
+        "matched_terms": [
+          "but",
+          "paddlepaddle"
+        ],
+        "matching_line_counts": {
+          "but": 1,
+          "paddlepaddle": 1
+        },
+        "path_terms": [],
+        "retained_after_filter": false,
+        "term_document_frequency": {
+          "but": 508,
+          "paddlepaddle": 530
+        }
+      },
+      "status_off": {
+        "collection_status": "matched",
+        "excerpted": false,
+        "indexed": false,
+        "mapped": false,
+        "primary": false
+      },
+      "status_on": {
+        "collection_status": "low_signal_match",
+        "excerpted": false,
+        "indexed": false,
+        "mapped": false,
+        "primary": false
+      }
+    },
+    "profiles": {
+      "default": {
+        "filter_off": {
+          "cases": 9,
+          "cutoff_cases": {
+            "context_map_budget": 9,
+            "context_window_budget": 6,
+            "file_budget": 7,
+            "query_term_budget": 9,
+            "selection_budget": 9,
+            "window_budget": 9
+          },
+          "gold_files": 17,
+          "hits_excerpted": 2,
+          "hits_primary": 2,
+          "hits_with_map": 3,
+          "low_signal_exclusions": 0,
+          "mean_recall_excerpted": 0.16666666666666666,
+          "mean_recall_primary": 0.16666666666666666,
+          "mean_recall_with_map": 0.2222222222222222,
+          "median_case_processing_ms": 128.027993,
+          "relevant_low_signal_exclusions": 0
+        },
+        "filter_on": {
+          "cases": 9,
+          "cutoff_cases": {
+            "context_map_budget": 8,
+            "context_window_budget": 6,
+            "file_budget": 7,
+            "query_term_budget": 9,
+            "selection_budget": 9,
+            "window_budget": 9
+          },
+          "gold_files": 17,
+          "hits_excerpted": 2,
+          "hits_primary": 2,
+          "hits_with_map": 3,
+          "low_signal_exclusions": 1097,
+          "mean_recall_excerpted": 0.16666666666666666,
+          "mean_recall_primary": 0.16666666666666666,
+          "mean_recall_with_map": 0.2222222222222222,
+          "median_case_processing_ms": 123.680247,
+          "relevant_low_signal_exclusions": 0
+        }
+      },
+      "expanded": {
+        "filter_off": {
+          "cases": 9,
+          "cutoff_cases": {
+            "context_map_budget": 9,
+            "context_window_budget": 8,
+            "file_budget": 1,
+            "query_term_budget": 9,
+            "selection_budget": 9,
+            "window_budget": 9
+          },
+          "gold_files": 17,
+          "hits_excerpted": 5,
+          "hits_primary": 4,
+          "hits_with_map": 9,
+          "low_signal_exclusions": 0,
+          "mean_recall_excerpted": 0.3888888888888889,
+          "mean_recall_primary": 0.3333333333333333,
+          "mean_recall_with_map": 0.6203703703703703,
+          "median_case_processing_ms": 258.639274,
+          "relevant_low_signal_exclusions": 0
+        },
+        "filter_on": {
+          "cases": 9,
+          "cutoff_cases": {
+            "context_map_budget": 9,
+            "context_window_budget": 8,
+            "file_budget": 1,
+            "query_term_budget": 9,
+            "selection_budget": 9,
+            "window_budget": 9
+          },
+          "gold_files": 17,
+          "hits_excerpted": 5,
+          "hits_primary": 4,
+          "hits_with_map": 9,
+          "low_signal_exclusions": 2734,
+          "mean_recall_excerpted": 0.3888888888888889,
+          "mean_recall_primary": 0.3333333333333333,
+          "mean_recall_with_map": 0.6203703703703703,
+          "median_case_processing_ms": 232.045551,
+          "relevant_low_signal_exclusions": 1
+        }
+      }
+    },
+    "result_sha256": "17348d3d24a78949325f1a7f29f8557b99526b429830f6f1832fd84bef28c1e2"
+  },
+  "identity_wrapper_sha256": "20b7985c5317a45090372a996b61b9886726b7c24e95719339822a088049e1c7",
+  "kind": "reviewed_public_independent_retrieval_audit_summary",
+  "not_native_cli_receipt": true,
+  "original_evaluator_sha256": "c053dadcc858443f612ef32bd77e07852bd21bc7ffef1f36ada0fb88c27982f2",
+  "original_receipt_sha256": "c346cc07df1b2ed3c36d087b068db7416f4bb94b60fdc7cecf3b355c2417519d",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "profiles": {
+    "default": {
+      "current": {
+        "cases": 9,
+        "cutoffs": {
+          "context_map_budget": 8,
+          "context_window_budget": 6,
+          "file_budget": 7,
+          "query_term_budget": 9,
+          "selection_budget": 9,
+          "window_budget": 9
+        },
+        "exclusions": {
+          "excluded_directory": 2,
+          "file_too_large": 3,
+          "low_signal_match": 1097,
+          "path_not_allowed": 1,
+          "symlink": 3,
+          "unsupported_extension": 1414
+        },
+        "gold_files": 17,
+        "hits_excerpted": 2,
+        "hits_primary": 2,
+        "hits_with_index": 3,
+        "hits_with_map": 3,
+        "mean_recall_excerpted": 0.16666666666666666,
+        "mean_recall_primary": 0.16666666666666666,
+        "mean_recall_with_index": 0.2222222222222222,
+        "mean_recall_with_map": 0.2222222222222222,
+        "median_case_processing_ms": 127.804126,
+        "relevant_low_signal_paths": []
+      },
+      "paired": {
+        "losses": 0,
+        "mean_delta_primary": 0.1111111111111111,
+        "ties": 8,
+        "wins": 1
+      },
+      "previous": {
+        "cases": 9,
+        "cutoffs": {
+          "context_map_budget": 9,
+          "context_window_budget": 7,
+          "file_budget": 7,
+          "query_term_budget": 9,
+          "selection_budget": 9,
+          "window_budget": 9
+        },
+        "exclusions": {
+          "excluded_directory": 2,
+          "file_too_large": 3,
+          "path_not_allowed": 1,
+          "symlink": 3,
+          "unsupported_extension": 1414
+        },
+        "gold_files": 17,
+        "hits_excerpted": 1,
+        "hits_primary": 1,
+        "hits_with_index": 2,
+        "hits_with_map": 2,
+        "mean_recall_excerpted": 0.05555555555555555,
+        "mean_recall_primary": 0.05555555555555555,
+        "mean_recall_with_index": 0.16666666666666666,
+        "mean_recall_with_map": 0.16666666666666666,
+        "median_case_processing_ms": 170.380416,
+        "relevant_low_signal_paths": []
+      }
+    },
+    "expanded": {
+      "current": {
+        "cases": 9,
+        "cutoffs": {
+          "context_map_budget": 9,
+          "context_window_budget": 8,
+          "file_budget": 1,
+          "query_term_budget": 9,
+          "selection_budget": 9,
+          "window_budget": 9
+        },
+        "exclusions": {
+          "excluded_directory": 2,
+          "file_too_large": 3,
+          "low_signal_match": 2734,
+          "path_not_allowed": 1,
+          "symlink": 11,
+          "unsupported_extension": 1664
+        },
+        "gold_files": 17,
+        "hits_excerpted": 5,
+        "hits_primary": 4,
+        "hits_with_index": 9,
+        "hits_with_map": 9,
+        "mean_recall_excerpted": 0.3888888888888889,
+        "mean_recall_primary": 0.3333333333333333,
+        "mean_recall_with_index": 0.6203703703703703,
+        "mean_recall_with_map": 0.6203703703703703,
+        "median_case_processing_ms": 223.324908,
+        "relevant_low_signal_paths": [
+          {
+            "id": "paddlepaddle/paddlespeech/1432/1426",
+            "path": "paddlespeech/s2t/transform/spectrogram.py"
+          }
+        ]
+      },
+      "paired": {
+        "losses": 2,
+        "mean_delta_primary": 0.12962962962962962,
+        "ties": 5,
+        "wins": 2
+      },
+      "previous": {
+        "cases": 9,
+        "cutoffs": {
+          "context_map_budget": 9,
+          "context_window_budget": 9,
+          "file_budget": 1,
+          "query_term_budget": 9,
+          "selection_budget": 9,
+          "window_budget": 9
+        },
+        "exclusions": {
+          "excluded_directory": 2,
+          "file_too_large": 3,
+          "path_not_allowed": 1,
+          "symlink": 11,
+          "unsupported_extension": 1664
+        },
+        "gold_files": 17,
+        "hits_excerpted": 4,
+        "hits_primary": 4,
+        "hits_with_index": 6,
+        "hits_with_map": 6,
+        "mean_recall_excerpted": 0.2037037037037037,
+        "mean_recall_primary": 0.2037037037037037,
+        "mean_recall_with_index": 0.42592592592592593,
+        "mean_recall_with_map": 0.42592592592592593,
+        "median_case_processing_ms": 301.480371,
+        "relevant_low_signal_paths": []
+      }
+    }
+  },
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "schema": 1,
+  "timing": {
+    "rotating_arm_order": true,
+    "scope": "Warm-cache prepare calls; excludes imports, corpus hashing, network and tracing. Separate from native CLI one-call replay timings.",
+    "untraced_repeats": 5,
+    "warmups": 1
+  }
+}

@@ -18,8 +18,10 @@ A JSON Lines file, one case per line:
 
 `root` is a directory holding the repository checkout at the commit before the
 fix, relative to `--repos` or absolute. It must be outside this checkout.
-`changed_files` are repository-relative POSIX paths. Keep case files, receipts
-and repositories outside the checkout; nothing here is committed.
+`changed_files` are repository-relative POSIX paths. Keep case files, live receipt outputs
+and repositories outside the checkout. The reviewed public audit exports
+linked below contain only hashes, counts and public localization metadata,
+not issue bodies, source packets or local configuration.
 
 ```bash
 python3.12 -B benchmarks/external_recall.py --cases /abs/cases.jsonl --repos /abs/repos --max-files 1000 --seconds 30 --output /abs/receipt.json
@@ -137,3 +139,20 @@ new held-out performance result. See `pilot-protocol-2026-11-07.json` for the
 pinned public dataset/protocol metadata; case text and source snapshots are not
 committed here. The LCA `dev` split contains `test`, so those splits must not be
 treated as disjoint development and held-out sets.
+
+
+## Recorded independent audit
+
+The [November 7 independent audit](../../docs/independent-retrieval-2026-11-07.md)
+records nine of the original twelve selected Long Code Arena Python cases,
+with paired mean/total recall, regressions, truncation, relevant-file exclusions
+and timing. The original seven-case protocol above remains historical.
+[The manifest and reviewed receipt exports](independent-2026-11-07/manifest.json)
+pin the exact inputs and acquisition omissions. The native schema-2 receipts
+are accounting replays on those already-exposed cases, not new held-out
+results. The derived custom audit is explicitly labeled separately from them.
+
+No issue bodies, source excerpts, full dataset, corpus snapshots or private
+local configuration are committed. Attribution and third-party terms are in
+[NOTICE](independent-2026-11-07/NOTICE.txt). New large downloads and installed
+application changes still require a separately shown operation and approval.
