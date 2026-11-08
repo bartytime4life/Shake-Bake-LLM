@@ -103,6 +103,25 @@ def _code(text: str) -> str:
     return marks + pad + shown + pad + marks
 
 
+def _rerank_lines(record: dict | None) -> list[str]:
+    if not record:
+        return []
+    if "error" in record:
+        outcome = "Rerank: local embedding model " + str(record.get("model")) + " refused (" + record["error"] + "); lexical order kept."
+    else:
+        outcome = (f"Rerank: local embedding model {record.get('model')} scored {record.get('pool')} of {record.get('candidates')} candidate windows; "
+                   f"order {'changed' if record.get('order_changed') else 'unchanged'}. A scan fact about ordering, not an interpretation; it added no window.")
+    lines = [outcome]
+    if "embed_calls" in record:
+        lines.append(f"Rerank attempt: {record['embed_calls']} embedding request(s); {record.get('embed_calls_completed', 'unrecorded')} complete response(s); "
+                     f"elapsed {record.get('elapsed_seconds', 'unrecorded')} seconds. Complete responses may still be refused.")
+    if "truncated_windows" in record or "request_truncated" in record:
+        request_cut = "unrecorded" if "request_truncated" not in record else "yes" if record["request_truncated"] else "no"
+        lines.append(f"Rerank scoring copy: {record.get('truncated_windows', 'unrecorded')} window(s) shortened; request shortened: {request_cut}. "
+                     "Exact excerpts and the original request are unchanged.")
+    return lines
+
+
 def render(brief: Brief) -> str:
     search = brief.search
     lines = ["# Shake and Bake evidence brief", "", f"Outcome: {brief.outcome}", "",
@@ -152,11 +171,7 @@ def render(brief: Brief) -> str:
                   f"Source bytes read: {search.source_bytes_read}; selected excerpt bytes: {search.selected_excerpt_bytes}.",
                   "Cutoffs: " + (", ".join(search.cutoffs) or "none reached"),
                   "Exclusions: " + str(search.exclusions),
-                  *([("Rerank: local embedding model " + str(search.rerank.get("model")) + " refused (" + search.rerank["error"] + "); lexical order kept.")
-                     if "error" in search.rerank else
-                     (f"Rerank: local embedding model {search.rerank.get('model')} scored {search.rerank.get('pool')} of {search.rerank.get('candidates')} candidate windows; "
-                      f"order {'changed' if search.rerank.get('order_changed') else 'unchanged'}. A scan fact about ordering, not an interpretation; it added no window.")]
-                    if search.rerank else []),
+                  *_rerank_lines(search.rerank),
                   "Cloud tokens and savings: not measured. No direct cloud-provider client is implemented.",
                   "When enabled, Ollama uses a loopback connection; its daemon must be trusted and configured with cloud features disabled."])
     if brief.worker:

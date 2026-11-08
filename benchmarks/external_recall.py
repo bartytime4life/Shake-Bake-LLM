@@ -106,7 +106,9 @@ def run(cases: list[dict], limits: SearchLimits, scorer=None) -> dict:
             continue
         row["seconds"] = round(time.perf_counter() - started, 3)
         if getattr(result, "rerank", None) is not None:
-            row["rerank"] = {key: result.rerank.get(key) for key in ("model", "pool", "candidates", "order_changed", "error", "elapsed_seconds", "embed_calls", "truncated_windows") if key in result.rerank}
+            row["rerank"] = {key: result.rerank.get(key) for key in ("model", "pool", "candidates", "order_changed", "error", "elapsed_seconds",
+                                                                 "embed_calls", "embed_calls_completed", "windows_scored", "truncated_windows", "request_truncated")
+                             if key in result.rerank}
         evidence = list(result.packet.evidence) if result.packet else []
         # Controlling context follows the actual primary windows, which may
         # number fewer than the four-window ceiling. Never count that context
