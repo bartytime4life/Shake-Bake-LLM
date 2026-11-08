@@ -1,0 +1,63 @@
+[
+ {
+  "case": "c1",
+  "id": "openmined/pysyft/1908/1896",
+  "gold": [
+   "syft/frameworks/torch/hook.py",
+   "syft/frameworks/torch/torch_attributes.py",
+   "syft/workers/base.py",
+   "test/torch/tensors/test_gc.py"
+  ]
+ },
+ {
+  "case": "c2",
+  "id": "openbb-finance/openbbterminal/410/409",
+  "gold": [
+   "gamestonk_terminal/fundamental_analysis/market_watch_model.py",
+   "gamestonk_terminal/fundamental_analysis/market_watch_view.py"
+  ]
+ },
+ {
+  "case": "c3",
+  "id": "sanic-org/sanic/1327/1323",
+  "gold": [
+   "sanic/response.py",
+   "sanic/exceptions.py",
+   "sanic/http.py"
+  ]
+ },
+ {
+  "case": "c4",
+  "id": "netbox-community/netbox/10187/9895",
+  "gold": [
+   "netbox/ipam/api/serializers.py",
+   "netbox/utilities/custom_inspectors.py",
+   "netbox/dcim/api/serializers.py",
+   "netbox/netbox/api/serializers/generic.py",
+   "netbox/dcim/api/nested_serializers.py",
+   "netbox/extras/api/serializers.py",
+   "netbox/netbox/settings.py",
+   "netbox/tenancy/api/serializers.py",
+   "netbox/virtualization/api/serializers.py"
+  ]
+ },
+ {
+  "case": "c5",
+  "id": "pypa/pip/12140/12138",
+  "gold": [
+   "src/pip/_internal/commands/download.py",
+   "src/pip/_internal/commands/wheel.py",
+   "src/pip/_internal/resolution/resolvelib/resolver.py"
+  ]
+ },
+ {
+  "case": "c6",
+  "id": "iterative/dvc/1870/1869",
+  "gold": [
+   "dvc/remote/local.py",
+   "dvc/remote/ssh/__init__.py",
+   "dvc/remote/http.py",
+   "dvc/remote/s3.py"
+  ]
+ }
+]

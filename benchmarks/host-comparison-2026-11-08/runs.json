@@ -1,0 +1,14 @@
+[
+ {"case":"c1","arm":"native","tokens":89242,"tool_uses":8,"ms":24077,"files":["syft/frameworks/torch/hook.py","syft/workers/base.py","syft/frameworks/torch/tensors/interpreters/pointer.py"]},
+ {"case":"c1","arm":"brief","tokens":95634,"tool_uses":11,"ms":52793,"files":["syft/frameworks/torch/hook_args.py","syft/frameworks/torch/tensors/interpreters/pointer.py","syft/frameworks/torch/hook.py","syft/frameworks/torch/tensors/interpreters/native.py"]},
+ {"case":"c2","arm":"native","tokens":83714,"tool_uses":3,"ms":9087,"files":["gamestonk_terminal/fundamental_analysis/market_watch_model.py"]},
+ {"case":"c2","arm":"brief","tokens":86841,"tool_uses":2,"ms":7647,"files":["gamestonk_terminal/fundamental_analysis/market_watch_model.py","gamestonk_terminal/comparison_analysis/market_watch_view.py"]},
+ {"case":"c3","arm":"native","tokens":84322,"tool_uses":2,"ms":8879,"files":["sanic/http.py","sanic/response.py","sanic/exceptions.py"]},
+ {"case":"c3","arm":"brief","tokens":87795,"tool_uses":3,"ms":11305,"files":["sanic/http.py","sanic/exceptions.py","sanic/response.py"]},
+ {"case":"c4","arm":"native","tokens":87766,"tool_uses":4,"ms":16581,"files":["netbox/ipam/api/serializers.py","netbox/utilities/custom_inspectors.py","netbox/extras/api/serializers.py","netbox/dcim/api/serializers.py"]},
+ {"case":"c4","arm":"brief","tokens":88337,"tool_uses":3,"ms":9260,"files":["netbox/ipam/api/serializers.py","netbox/netbox/api/fields.py","netbox/utilities/api.py"]},
+ {"case":"c5","arm":"native","tokens":90214,"tool_uses":4,"ms":13015,"files":["src/pip/_internal/operations/prepare.py","src/pip/_internal/cli/req_command.py"]},
+ {"case":"c5","arm":"brief","tokens":92287,"tool_uses":4,"ms":16387,"files":["src/pip/_internal/operations/prepare.py","src/pip/_internal/cli/req_command.py","src/pip/_internal/req/req_set.py","src/pip/_internal/resolution/legacy/resolver.py"]},
+ {"case":"c6","arm":"native","tokens":84439,"tool_uses":5,"ms":13680,"files":["dvc/remote/local.py","dvc/remote/s3.py","dvc/remote/http.py","dvc/remote/ssh/__init__.py","dvc/logger.py"]},
+ {"case":"c6","arm":"brief","tokens":88709,"tool_uses":3,"ms":10314,"files":["dvc/logger.py","dvc/remote/local.py"]}
+]
