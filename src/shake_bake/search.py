@@ -13,7 +13,8 @@ from .collector import MAX_FILES, MAX_REQUEST_CHARS, _parts, _read, build_packet
 from .contracts import Packet, Refusal, Selection
 
 EXTENSIONS = frozenset({".py", ".js", ".ts", ".tsx", ".jsx", ".rs", ".go", ".md", ".toml", ".yaml", ".yml", ".json", ".txt", ".c", ".h", ".cpp", ".java", ".sh", ".sql"})
-EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build", "vendor", "target", ".idea", ".vscode"})
+# `_vendor` is pip's convention for bundled third-party copies, the same thing as `vendor`.
+EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build", "vendor", "_vendor", "target", ".idea", ".vscode"})
 PROSE_EXTENSIONS = frozenset({".md", ".txt"})
 STOP_WORDS = frozenset("the and for this that with from into about find show code where how does what review please have source function files file inspect controlling check".split())
 # Words that carry little signal in a request: English function words and the
@@ -315,7 +316,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
                 # A request writes `MobileNetV3`; the file is `mobilenet_v3.py`. Match paths with
                 # separators removed as well as literally.
                 folded_path = path.casefold()
-                compact_path = folded_path.replace("_", "").replace("-", "")
+                compact_path = folded_path.replace("_", "").replace("-", "").replace(" ", "")
                 in_path = frozenset(term for term in terms if term in folded_path or term.replace("_", "") in compact_path)
                 if not matches and not in_path:
                     continue

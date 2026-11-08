@@ -348,6 +348,20 @@ class RetrievalScoring(unittest.TestCase):
         self.assertTrue(all(len(item["text"]) <= 120 for item in big["entries"]))
         self.assertEqual(big["entries"], sorted(big["entries"], key=lambda item: item["line"]))
 
+    def test_paths_with_spaces_match_compact_terms_and_pip_vendor_copies_are_excluded(self):
+        (self.root / "Project Euler" / "Problem 01").mkdir(parents=True)
+        (self.root / "Project Euler" / "Problem 01" / "sol2.py").write_text("def solution(n):\n    return sum(range(n))\n", encoding="utf-8")
+        (self.root / "other.py").write_text("# unrelated solution helper\n", encoding="utf-8")
+        result = prepare(self.root, "ProjectEuler problem sol2 gives the wrong solution")
+        self.assertEqual(result.packet.evidence[0].path, "Project Euler/Problem 01/sol2.py")
+        (self.root / "pkg" / "_vendor").mkdir(parents=True)
+        (self.root / "pkg" / "_vendor" / "markers.py").write_text("# python_version python_version python_version\n", encoding="utf-8")
+        (self.root / "pkg" / "core.py").write_text("# python_version check\n", encoding="utf-8")
+        vendored = prepare(self.root, "python_version check")
+        self.assertNotIn("pkg/_vendor/markers.py", [record.path for record in vendored.packet.evidence])
+        self.assertIn("pkg/core.py", [record.path for record in vendored.packet.evidence])
+        self.assertGreaterEqual(vendored.exclusions.get("excluded_directory", 0), 1)
+
     def test_generic_and_ambiguous_names_are_not_followed_as_context(self):
         # lib.py does not match the request; it is reached only as the definition of load_rules.
         (self.root / "main.py").write_text("from lib import load_rules\n\ndef run(name, context):\n    # policy entry point\n    rules = load_rules(name)\n    return rules, context\n", encoding="utf-8")
