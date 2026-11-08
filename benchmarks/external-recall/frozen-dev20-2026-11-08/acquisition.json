@@ -1,0 +1,69 @@
+{
+ "method": "git fetch --depth 1 at base_sha from GitHub",
+ "per_checkout_cap_bytes": 314572800,
+ "total_cap_bytes": 2147483648,
+ "cases": [
+  {
+   "key": "openmined__pysyft__1908__1896",
+   "status": "ok",
+   "bytes_on_disk": 626209
+  },
+  {
+   "key": "openbb-finance__openbbterminal__410__409",
+   "status": "ok",
+   "bytes_on_disk": 73642087
+  },
+  {
+   "key": "sanic-org__sanic__1327__1323",
+   "status": "ok",
+   "bytes_on_disk": 743602
+  },
+  {
+   "key": "netbox-community__netbox__10187__9895",
+   "status": "ok",
+   "bytes_on_disk": 20443744
+  },
+  {
+   "key": "pypa__pip__12140__12138",
+   "status": "ok",
+   "bytes_on_disk": 25877580
+  },
+  {
+   "key": "iterative__dvc__1870__1869",
+   "status": "ok",
+   "bytes_on_disk": 1088456
+  },
+  {
+   "key": "chia-network__chia-blockchain__11764__11628",
+   "status": "ok",
+   "bytes_on_disk": 13283917
+  },
+  {
+   "key": "aws__chalice__504__501",
+   "status": "ok",
+   "bytes_on_disk": 1123396
+  },
+  {
+   "key": "stevenblack__hosts__112__107",
+   "status": "ok",
+   "bytes_on_disk": 11426128
+  },
+  {
+   "key": "rapptz__discord.py__1967__1862",
+   "status": "ok",
+   "bytes_on_disk": 3992913
+  },
+  {
+   "key": "archivebox__archivebox__822__821",
+   "status": "ok",
+   "bytes_on_disk": 2152862
+  },
+  {
+   "key": "modin-project__modin__1657__1656",
+   "status": "ok",
+   "bytes_on_disk": 3363177
+  }
+ ],
+ "total_bytes_on_disk": 157764071,
+ "omitted": 0
+}

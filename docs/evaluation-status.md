@@ -1,6 +1,8 @@
 # Current evaluation status
 
 Updated November 8, 2026 for `0.4.0.dev20`. No local model profile is qualified for
+
+Collector file recall, frozen and held out (November 8): the `dev20` collector beat the PR #30 collector on twelve reserved Long Code Arena Python cases under a pre-registered rule, 26 against 23 of 41 changed files reached including the map, with 3 case-level wins and 2 losses. See [the frozen-run record](frozen-recall-2026-11-08.md). This qualifies no model and measures no answer.
 automatic selection. The latest larger-budget experiment is rejected: both
 thinking-on candidates produced six supported handoffs out of ten, retained two
 critical unsupported claims and lost a previously supported concurrency answer
