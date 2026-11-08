@@ -80,3 +80,6 @@ with either brief.
 
 Run data (usage, named files, hits, input hashes; no issue text) is under
 `benchmarks/orientation-comparison-2026-11-08/`.
+
+Follow-up: the larger multi-file sample ran the same day and met both gain
+rules; see [the multi-file record](orientation-multifile-2026-11-08.md).

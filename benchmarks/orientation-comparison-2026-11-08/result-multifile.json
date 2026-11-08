@@ -1,0 +1,596 @@
+{
+ "kind": "orientation_comparison_result",
+ "run": "multi-file sample",
+ "protocol": "protocol-multifile.json",
+ "gold_files_total": 19,
+ "summary": {
+  "native_tools": {
+   "total_hits_at_5": 9,
+   "median_tool_uses": 3.5,
+   "mean_tool_uses": 3.5,
+   "median_tokens": 86341.0,
+   "median_seconds": 9.63
+  },
+  "orientation_tools": {
+   "total_hits_at_5": 11,
+   "median_tool_uses": 4.0,
+   "mean_tool_uses": 4.12,
+   "median_tokens": 87567.0,
+   "median_seconds": 11.76
+  },
+  "issue_only_paste": {
+   "total_hits_at_5": 9,
+   "median_tool_uses": 1.0,
+   "mean_tool_uses": 1.25,
+   "median_tokens": 81916.0,
+   "median_seconds": 7.58
+  },
+  "orientation_paste": {
+   "total_hits_at_5": 13,
+   "median_tool_uses": 2.0,
+   "mean_tool_uses": 2,
+   "median_tokens": 83978.0,
+   "median_seconds": 7.27
+  }
+ },
+ "tools_path": {
+  "wins": 2,
+  "losses": 0,
+  "rule_met": true
+ },
+ "paste_path": {
+  "wins": 5,
+  "losses": 1,
+  "rule_met": true
+ },
+ "runs": [
+  {
+   "case": "c1",
+   "arm": "native_tools",
+   "tokens": 83361,
+   "tool_uses": 4,
+   "ms": 11792,
+   "files": [
+    "readthedocs/core/management/commands/reindex_elasticsearch.py",
+    "readthedocs/privacy/backend.py",
+    "readthedocs/search/parse_json.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c1",
+   "arm": "orientation_tools",
+   "tokens": 85142,
+   "tool_uses": 4,
+   "ms": 8770,
+   "files": [
+    "readthedocs/core/management/commands/reindex_elasticsearch.py",
+    "readthedocs/search/utils.py",
+    "readthedocs/search/parse_json.py",
+    "readthedocs/builds/models.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c1",
+   "arm": "issue_only_paste",
+   "tokens": 81491,
+   "tool_uses": 1,
+   "ms": 5659,
+   "files": [
+    "readthedocs/core/management/commands/reindex_elasticsearch.py",
+    "readthedocs/builds/managers.py",
+    "readthedocs/search/parse_json.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c1",
+   "arm": "orientation_paste",
+   "tokens": 83720,
+   "tool_uses": 2,
+   "ms": 5748,
+   "files": [
+    "readthedocs/core/management/commands/reindex_elasticsearch.py",
+    "readthedocs/projects/tasks.py",
+    "readthedocs/search/utils.py",
+    "readthedocs/search/parse_json.py",
+    "readthedocs/builds/models.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c2",
+   "arm": "native_tools",
+   "tokens": 86671,
+   "tool_uses": 5,
+   "ms": 14784,
+   "files": [
+    "cupyx/jit/_interface.py",
+    "cupyx/jit/_cuda_typerules.py",
+    "cupy/cuda/function.pyx"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c2",
+   "arm": "orientation_tools",
+   "tokens": 87710,
+   "tool_uses": 5,
+   "ms": 13579,
+   "files": [
+    "cupyx/jit/_interface.py",
+    "cupyx/jit/_cuda_typerules.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c2",
+   "arm": "issue_only_paste",
+   "tokens": 82375,
+   "tool_uses": 1,
+   "ms": 8707,
+   "files": [
+    "cupyx/jit/_interface.py",
+    "cupyx/jit/_cuda_types.py",
+    "cupyx/jit/_compile.py",
+    "cupyx/jit/_cuda_typerules.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c2",
+   "arm": "orientation_paste",
+   "tokens": 85586,
+   "tool_uses": 2,
+   "ms": 11683,
+   "files": [
+    "cupyx/jit/_interface.py",
+    "cupyx/jit/_cuda_typerules.py",
+    "cupyx/jit/_compile.py",
+    "cupyx/jit/_cuda_types.py",
+    "tests/cupyx_tests/jit_tests/test_raw.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c3",
+   "arm": "native_tools",
+   "tokens": 83490,
+   "tool_uses": 2,
+   "ms": 6748,
+   "files": [
+    "docker/models/images.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c3",
+   "arm": "orientation_tools",
+   "tokens": 85578,
+   "tool_uses": 4,
+   "ms": 24730,
+   "files": [
+    "docker/models/images.py",
+    "tests/unit/models_images_test.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c3",
+   "arm": "issue_only_paste",
+   "tokens": 82224,
+   "tool_uses": 2,
+   "ms": 9450,
+   "files": [
+    "docker/models/images.py",
+    "docker/api/image.py",
+    "tests/unit/models_images_test.py",
+    "tests/integration/models_images_test.py"
+   ],
+   "hits_at_5": 3
+  },
+  {
+   "case": "c3",
+   "arm": "orientation_paste",
+   "tokens": 84220,
+   "tool_uses": 2,
+   "ms": 8407,
+   "files": [
+    "docker/models/images.py",
+    "docker/api/image.py",
+    "tests/unit/models_images_test.py"
+   ],
+   "hits_at_5": 3
+  },
+  {
+   "case": "c4",
+   "arm": "native_tools",
+   "tokens": 86011,
+   "tool_uses": 3,
+   "ms": 10184,
+   "files": [
+    "falcon/routing/compiled.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "orientation_tools",
+   "tokens": 87273,
+   "tool_uses": 3,
+   "ms": 14678,
+   "files": [
+    "falcon/routing/compiled.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "issue_only_paste",
+   "tokens": 81418,
+   "tool_uses": 1,
+   "ms": 10799,
+   "files": [
+    "falcon/routing/compiled.py",
+    "falcon/routing/util.py",
+    "falcon/api.py",
+    "tests/test_default_router.py",
+    "tests/test_uri_templates.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c4",
+   "arm": "orientation_paste",
+   "tokens": 83243,
+   "tool_uses": 2,
+   "ms": 6905,
+   "files": [
+    "falcon/routing/compiled.py",
+    "tests/test_uri_templates.py",
+    "falcon/api.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "native_tools",
+   "tokens": 89354,
+   "tool_uses": 5,
+   "ms": 19039,
+   "files": [
+    "src/sqlfluff/core/linter.py",
+    "src/sqlfluff/core/parser/markers.py",
+    "src/sqlfluff/core/errors.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "orientation_tools",
+   "tokens": 90355,
+   "tool_uses": 6,
+   "ms": 13327,
+   "files": [
+    "src/sqlfluff/core/linter.py",
+    "src/sqlfluff/core/parser/markers.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "issue_only_paste",
+   "tokens": 82754,
+   "tool_uses": 1,
+   "ms": 5863,
+   "files": [
+    "src/sqlfluff/core/linter/linter.py",
+    "src/sqlfluff/core/linter/common.py",
+    "src/sqlfluff/core/templaters/base.py",
+    "src/sqlfluff/core/templaters/jinja.py",
+    "src/sqlfluff/core/parser/lexer.py"
+   ],
+   "hits_at_5": 0
+  },
+  {
+   "case": "c5",
+   "arm": "orientation_paste",
+   "tokens": 86351,
+   "tool_uses": 2,
+   "ms": 8668,
+   "files": [
+    "src/sqlfluff/core/linter.py",
+    "src/sqlfluff/core/templaters/jinja.py",
+    "src/sqlfluff/core/templaters/python.py",
+    "src/sqlfluff/core/parser/markers.py",
+    "src/sqlfluff/core/parser/segments/base.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "native_tools",
+   "tokens": 87588,
+   "tool_uses": 4,
+   "ms": 8075,
+   "files": [
+    "ci/rebuild_updated_recipes.py",
+    "ci/constants.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c6",
+   "arm": "orientation_tools",
+   "tokens": 87424,
+   "tool_uses": 4,
+   "ms": 9289,
+   "files": [
+    "ci/rebuild_updated_recipes.py",
+    "ci/constants.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c6",
+   "arm": "issue_only_paste",
+   "tokens": 81294,
+   "tool_uses": 1,
+   "ms": 5471,
+   "files": [
+    "ci/rebuild_updated_recipes.py",
+    ".travis.yml"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "orientation_paste",
+   "tokens": 83560,
+   "tool_uses": 2,
+   "ms": 6460,
+   "files": [
+    "ci/rebuild_updated_recipes.py",
+    "ci/constants.py",
+    ".travis.yml"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c7",
+   "arm": "native_tools",
+   "tokens": 85377,
+   "tool_uses": 2,
+   "ms": 6783,
+   "files": [
+    "conans/client/graph/graph.py",
+    "conans/client/graph/graph_builder.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c7",
+   "arm": "orientation_tools",
+   "tokens": 91707,
+   "tool_uses": 4,
+   "ms": 10189,
+   "files": [
+    "conans/client/graph/graph.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c7",
+   "arm": "issue_only_paste",
+   "tokens": 83004,
+   "tool_uses": 2,
+   "ms": 7532,
+   "files": [
+    "conans/client/graph/graph.py",
+    "conans/client/graph/graph_builder.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c7",
+   "arm": "orientation_paste",
+   "tokens": 86347,
+   "tool_uses": 2,
+   "ms": 7642,
+   "files": [
+    "conans/client/graph/graph.py",
+    "conans/client/graph/graph_builder.py",
+    "conans/client/graph/graph_binaries.py",
+    "conans/client/graph/graph_error.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c8",
+   "arm": "native_tools",
+   "tokens": 89265,
+   "tool_uses": 3,
+   "ms": 9084,
+   "files": [
+    "core/dbt/clients/_jinja_blocks.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c8",
+   "arm": "orientation_tools",
+   "tokens": 92382,
+   "tool_uses": 3,
+   "ms": 10047,
+   "files": [
+    "core/dbt/clients/_jinja_blocks.py",
+    "test/unit/test_jinja.py",
+    "test/unit/test_parser.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c8",
+   "arm": "issue_only_paste",
+   "tokens": 81608,
+   "tool_uses": 1,
+   "ms": 7628,
+   "files": [
+    "dbt/clients/_jinja_blocks.py",
+    "dbt/clients/jinja.py",
+    "dbt/exceptions.py"
+   ],
+   "hits_at_5": 0
+  },
+  {
+   "case": "c8",
+   "arm": "orientation_paste",
+   "tokens": 83736,
+   "tool_uses": 2,
+   "ms": 5745,
+   "files": [
+    "core/dbt/clients/_jinja_blocks.py",
+    "core/dbt/parser/snapshots.py",
+    "test/unit/test_parser.py"
+   ],
+   "hits_at_5": 1
+  }
+ ],
+ "gold": [
+  {
+   "case": "c1",
+   "id": "readthedocs/readthedocs.org/1688/1641",
+   "gold": [
+    "readthedocs/projects/tasks.py",
+    "readthedocs/core/management/commands/reindex_elasticsearch.py"
+   ],
+   "brief_bytes": 4520,
+   "brief_sha256": "e3455b69dc4251b3ffa7043fdfc243198d6c80893a2365e2b76484494e503628",
+   "issue_sha256": "5eabd0bb370c6274f92bb23eb1340122ddfea03cd9598b0b2c806ece27a16e00"
+  },
+  {
+   "case": "c2",
+   "id": "cupy/cupy/6948/6940",
+   "gold": [
+    "cupyx/jit/_interface.py",
+    "tests/cupyx_tests/jit_tests/test_raw.py"
+   ],
+   "brief_bytes": 5332,
+   "brief_sha256": "b04e9fe399140b2d54fac7ebc6c576551055a2b364dfbf1ddb3700ebb3f549db",
+   "issue_sha256": "0e981c721d836824c1537ee07b4463dda9385ea6377cabadf7b83e2e5a1e53df"
+  },
+  {
+   "case": "c3",
+   "id": "docker/docker-py/2186/2116",
+   "gold": [
+    "docker/api/image.py",
+    "tests/unit/models_containers_test.py",
+    "tests/unit/models_images_test.py",
+    "docker/models/images.py"
+   ],
+   "brief_bytes": 4651,
+   "brief_sha256": "12a8528f0bb847c8f6d0c7c461367a5dee67f9c7ef01a1882759cec41b7ceffa",
+   "issue_sha256": "22c4006d225be57d9f493cbe793d34e18c7fe861e807b2860f994e048dceefbb"
+  },
+  {
+   "case": "c4",
+   "id": "falconry/falcon/723/702",
+   "gold": [
+    "tests/test_default_router.py",
+    "falcon/routing/compiled.py"
+   ],
+   "brief_bytes": 3902,
+   "brief_sha256": "5a39be492b744c61610de3ba36ab7c1497fb43471202e85e9ca86fd4d4914aa4",
+   "issue_sha256": "6371d209d32a1ae9640078cc57a32ce29ddf5083e64b4c076d0de383149fc205"
+  },
+  {
+   "case": "c5",
+   "id": "sqlfluff/sqlfluff/978/976",
+   "gold": [
+    "test/core/linter_test.py",
+    "src/sqlfluff/core/linter.py"
+   ],
+   "brief_bytes": 6805,
+   "brief_sha256": "fced4ed71fe67253ca1778f3f8232222d46b507e93112b690dfe42d9f3a1c5c6",
+   "issue_sha256": "1cfd213c225349914a7364ae913b883cf9b2d093a320097c8d5114718d3d3d48"
+  },
+  {
+   "case": "c6",
+   "id": "kivy/python-for-android/1515/1485",
+   "gold": [
+    "pythonforandroid/recipes/jedi/__init__.py",
+    "ci/rebuild_updated_recipes.py",
+    "ci/constants.py"
+   ],
+   "brief_bytes": 4135,
+   "brief_sha256": "a1e4c673f533a3d3d5b454a10c8ae362652dd3cc1ede23493bb81d5ed372b337",
+   "issue_sha256": "f35ddc4c17d52d26d9442d4b67d18b4afc2414ca060c10a03657225d118a6e12"
+  },
+  {
+   "case": "c7",
+   "id": "conan-io/conan/13631/13630",
+   "gold": [
+    "conans/client/graph/graph.py",
+    "conans/test/integration/graph/core/graph_manager_test.py"
+   ],
+   "brief_bytes": 7213,
+   "brief_sha256": "4675df4af61998d453cb7d04f459f4d79f64b5c0628525efbc633e53669252f7",
+   "issue_sha256": "4ff1c9c0b29e7980aaec6c7a113f0ff00754f23fb88be9d6284cbee62e9bf2fa"
+  },
+  {
+   "case": "c8",
+   "id": "dbt-labs/dbt-core/1543/1533",
+   "gold": [
+    "core/dbt/clients/_jinja_blocks.py",
+    "test/unit/test_jinja.py"
+   ],
+   "brief_bytes": 4040,
+   "brief_sha256": "d6a5ed8edd8c29c3c1280b658df07bbc0bae5194e92e5337ce5308e2353615f6",
+   "issue_sha256": "5c0b28426e933c000caffb2c6cac36f165f80b7f79f98fd636bdc1d6c5de3f8c"
+  }
+ ],
+ "pooled_14_cases": {
+  "note": "reported, not decided on",
+  "gold_files_total": 29,
+  "total_hits_at_5": {
+   "native_tools": 15,
+   "orientation_tools": 18,
+   "issue_only_paste": 15,
+   "orientation_paste": 19
+  },
+  "tools_path": {
+   "wins": 3,
+   "losses": 0
+  },
+  "paste_path": {
+   "wins": 5,
+   "losses": 1
+  }
+ },
+ "isolation": {
+  "method": "every tool call's arguments scanned for absolute paths outside the run's own case directory, non-read tools, and git, network or package commands",
+  "runs_checked": 32,
+  "violations": 0,
+  "flags_reviewed": 6,
+  "flag_causes": "relative paths after cd into the case repo, /dev/null redirects, and a find exclude pattern; every command stayed inside its case directory"
+ },
+ "brief_contains_gold": {
+  "files": 15,
+  "of": 19,
+  "missing": {
+   "c3": [
+    "tests/unit/models_containers_test.py"
+   ],
+   "c6": [
+    "pythonforandroid/recipes/jedi/__init__.py"
+   ],
+   "c7": [
+    "conans/test/integration/graph/core/graph_manager_test.py"
+   ],
+   "c8": [
+    "test/unit/test_jinja.py"
+   ]
+  }
+ }
+}
