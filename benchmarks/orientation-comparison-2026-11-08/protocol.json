@@ -1,0 +1,49 @@
+{
+ "kind": "preregistered_orientation_comparison",
+ "schema": 1,
+ "date": "2026-11-08",
+ "status": "Registered and pushed before any fresh row was read.",
+ "question": "Does the orientation brief help a Claude host where the evidence brief did not, with tools and on the paste path?",
+ "candidate": {
+  "commit": "e5373279e791a7e44dceb1095591de9d9464a5d4",
+  "label": "0.4.0.dev21, brief --style orientation, frozen",
+  "sources_sha256": {
+   "briefing.py": "8019a0f16ddf67703ec691070ea46c513b0aebe9924216947efc2f50e2753601",
+   "search.py": "afd7d48fd9596a69c767efbe70d42048fb89060d05ebe16768b3b93ac5951bda"
+  }
+ },
+ "design_inputs": "The orientation layout was designed after reading the six exposed host-comparison cases; none of the cases below.",
+ "cases": {
+  "dataset": "JetBrains-Research/lca-bug-localization",
+  "revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+  "config": "py",
+  "split": "dev",
+  "pool": "dev rows at offsets 300 to 699 (never read), minus every text_id of the 50-row py test split (reserved, compared by id only), minus every repository used in the 2026-11-07 external run or the 2026-11-08 frozen run",
+  "filters": "permissive repository license (MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0); 50 to 1,500 non-test files; at most 10 changed files; one case per repository",
+  "selection": "first 6 by sha256('shake-bake-orientation-2026-11-08-v1:' + text_id), no replacements",
+  "acquisition": "shallow git fetch at base_sha, copied without .git; caps 300 MiB per checkout, 2 GiB total; omissions disclosed",
+  "gold": "changed_files of the fixing pull request"
+ },
+ "arms": {
+  "native_tools": "issue + repository",
+  "orientation_tools": "issue + repository + orientation brief",
+  "issue_only_paste": "issue only, no repository",
+  "orientation_paste": "issue + orientation brief, no repository"
+ },
+ "host": {
+  "kind": "Claude Code subagent, general-purpose type",
+  "model": "sonnet alias",
+  "repeats": 1,
+  "prompts": "identical to benchmarks/host-comparison-2026-11-08 and paste-comparison-2026-11-08 except the file name of the brief"
+ },
+ "decision_rules": {
+  "tools_path": "orientation counts as helping with tools only if total hits at 5 are not lower than native AND median host tokens or median tool calls are lower",
+  "paste_path": "orientation counts as helping on the paste path only if total hits at 5 are higher than issue-only AND it wins more cases than it loses",
+  "otherwise": "not established; every run is reported"
+ },
+ "limits": [
+  "six cases, one repeat",
+  "public issues may be in the host's training data",
+  "isolation by instruction; tool calls not audited"
+ ]
+}
