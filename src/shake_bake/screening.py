@@ -92,33 +92,38 @@ def screen_failure(report) -> list[dict]:
     return findings
 
 
-def screen(search) -> list[dict]:
-    """Findings over everything the brief can share, in brief order, at most MAX_FINDINGS.
-    Each: kind, where (request, evidence id, map or line index), path, line, masked preview."""
+def screen_items(items) -> list[dict]:
+    """Findings over (where, path, first line number or None, text) items, in order, at most MAX_FINDINGS.
+    Each: kind, where, path, line, masked preview."""
     findings = []
-
-    def add(where, path, base_line, text):
-        for kind, line, preview in scan(text):
+    for where, path, base_line, text in items:
+        for kind, line, preview in scan(text or ""):
             findings.append({"kind": kind, "where": where, "path": path,
                              "line": None if base_line is None else base_line + line - 1, "preview": preview})
-
-    add("request", None, None, search.original_request)
-    if search.packet is not None:
-        for number, record in enumerate(search.packet.evidence, 1):
-            add(f"E{number}", record.path, record.start_line, record.text)
-    for item in search.context_map:
-        add("map first line", item["path"], None, item.get("first_line") or "")
-    for entry in search.line_index:
-        for item in entry["entries"]:
-            add("line index", entry["path"], item["line"], item.get("text") or "")
     return findings[:MAX_FINDINGS]
 
 
-def warning_lines(findings) -> list[str]:
-    """Plain lines for the person sharing the brief; never part of the brief itself."""
+def screen(search) -> list[dict]:
+    """Everything a brief can share: the request, excerpts, map first lines and the line index."""
+    items = [("request", None, None, search.original_request)]
+    if search.packet is not None:
+        items += [(f"E{number}", record.path, record.start_line, record.text) for number, record in enumerate(search.packet.evidence, 1)]
+    items += [("map first line", item["path"], None, item.get("first_line")) for item in search.context_map]
+    items += [("line index", entry["path"], item["line"], item.get("text")) for entry in search.line_index for item in entry["entries"]]
+    return screen_items(items)
+
+
+def screen_failure(error_output: str, command: str, evidence) -> list[dict]:
+    """Everything a failure report can share: the pasted output (line numbers within it), the command and excerpts."""
+    return screen_items([("error output", None, 1, error_output), ("command", None, None, command)]
+                        + [(item["evidence_id"], item["path"], item["start_line"], item["text"]) for item in evidence])
+
+
+def warning_lines(findings, subject: str = "this brief") -> list[str]:
+    """Plain lines for the person sharing the brief or report; never part of it."""
     if not findings:
         return []
-    lines = [f"Possible credentials in what this brief would share ({len(findings)} found). "
+    lines = [f"Possible credentials in what {subject} would share ({len(findings)} found). "
              "Exact text is unchanged; remove or rotate before sharing if they are real:"]
     for item in findings:
         place = item["where"] + (f" {item['path']}" if item["path"] else "") + (f" line {item['line']}" if item["line"] else "")

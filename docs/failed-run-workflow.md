@@ -27,4 +27,4 @@ PYTHONPATH=src python3.12 -B -m shake_bake diagnose \
 
 It prints JSON. Exit status `0` means source was located, `3` means no source was located, and `2` means the request was refused. None means the bug has been fixed. Use UTF-8 input and keep private error files outside inspected source if they should not be included in future briefs.
 
-Committed verification uses disposable synthetic source and supported error formats, including an optional Node.js run on a generated fixture. TypeScript parsing is verified against synthetic compiler-format output; a real TypeScript compiler was not available in the local verification environment. It covers exact line matching, source changes, chained errors, path confinement, input limits, real HTTP and browser exports. Those checks verify workflow mechanics; no private-project failure or general diagnostic accuracy is claimed.
+

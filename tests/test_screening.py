@@ -1,5 +1,6 @@
 import contextlib
 import io
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -79,3 +80,28 @@ class Integration(unittest.TestCase):
             main(["brief", "--root", str(self.root), "--task", self.task])
         self.assertEqual(err.getvalue(), "")
         self.assertEqual(prepare(self.root, self.task).screening, ())
+
+
+class FailureReports(unittest.TestCase):
+    def test_failure_reports_carry_masked_findings_and_keep_exact_text(self):
+        from shake_bake.troubleshoot import locate_failure
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            source = f"import os\nTOKEN = '{GITHUB}'\nraise SystemExit(os.environ['MISSING'])\n"
+            (root / "app.py").write_text(source, encoding="utf-8")
+            error = ('Traceback (most recent call last):\n  File "app.py", line 3, in <module>\n'
+                     "    raise SystemExit(os.environ['MISSING'])\nKeyError: 'MISSING'\n"
+                     f"request failed: https://api.example.invalid/v1?key={GOOGLE}\n")
+            report = locate_failure(root, error, f"STRIPE={STRIPE} python3 app.py")
+            self.assertEqual(report["error_output"], error, "the pasted output is unchanged")
+            self.assertEqual([(f["kind"], f["where"], f["path"], f["line"]) for f in report["screening"]],
+                             [("Google API key", "error output", None, 5), ("Stripe live key", "command", None, None),
+                              ("GitHub token", "E1", "app.py", 2)])
+            self.assertNotIn(GITHUB, json.dumps(report["screening"]))
+            (root / "err.txt").write_text(error, encoding="utf-8")
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                main(["diagnose", "--root", str(root), "--error-file", str(root / "err.txt")])
+            self.assertIn("Possible credentials in what this report would share (2 found)", err.getvalue())
+            self.assertNotIn(GOOGLE, err.getvalue())
+            self.assertEqual(json.loads(out.getvalue())["error_output"], error)

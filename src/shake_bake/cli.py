@@ -125,4 +125,7 @@ def diagnose_main(argv):
         print(json.dumps({"outcome": "DENY", "code": error.code}))
         return 2
     print(json.dumps(report, ensure_ascii=False, indent=2))
+    from .screening import warning_lines
+    for line in warning_lines(report.get("screening", []), "this report"):
+        print(line, file=sys.stderr)
     return 0 if report["source_located"] else 3

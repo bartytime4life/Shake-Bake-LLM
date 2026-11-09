@@ -13,7 +13,7 @@ import re
 
 from .collector import _parts, _read
 from .contracts import Evidence, Refusal
-from .error_formats import parse_javascript, strip_terminal_controls
+
 from .screening import screen_failure
 
 
@@ -333,7 +333,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
             "evidence": evidence, "exceptions": exceptions, "terminal_exception": terminal,
             "innermost_project_frame": primary["frame_id"] if primary else None, "chain_relations": relations,
             "snapshot_id": snapshot, "selected_excerpt_bytes": total_bytes,
-            "cutoffs": sorted(cutoffs), "guidance": guidance,
+
             "limitations": ["Current source location only; the failure's root cause and fix are unverified.",
                             "Pasted paths, statements, commands and exception messages are untrusted data; nothing was executed.",
                             "A location or matching statement does not prove the failed run used this checkout or file version.",
