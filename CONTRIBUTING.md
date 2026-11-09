@@ -7,6 +7,7 @@ PYTHONPATH=src python3 -B -m unittest discover -s tests -v
 PYTHONPATH=src python3 -B benchmarks/evaluate_selection.py
 PYTHONPATH=src python3 -B benchmarks/run_task_lab.py --evidence-only
 node --check src/shake_bake/web/app.js
+node --check src/shake_bake/web/troubleshoot.js
 node scripts/frontend_smoke.cjs
 node scripts/model_readiness_test.cjs
 node scripts/clipboard_test.cjs
@@ -73,3 +74,5 @@ The isolated `readiness-browser` CI job installs pinned Playwright development t
 For current measured outcomes and the difference between production settings and private diagnostic budgets, read [evaluation status](docs/evaluation-status.md). Update affected current guides and status pages when results change; retain dated experiment/acceptance records, failed attempts and original source requests. Public receipts use synthetic source and validated final notes; raw owner records and model reasoning stay private.
 
 `node scripts/browser_workbench_test.cjs` checks setting confirmation/failure, stale responses, connection recovery, mobile history, keyboard source scrolling and recorded-preview controls. `node scripts/browser_clipboard_test.cjs` checks native clipboard readback and manual recovery in an isolated browser. Both accept an isolated installed Python path as their first argument. All three browser scripts accept `SB_CHROMIUM_EXECUTABLE=/absolute/path/to/chrome` to use an existing Chromium binary with a fresh test profile; otherwise they use Playwright's managed browser. Source tests require `python3` on PATH to resolve to Python 3.11+. These are developer tools, not application dependencies. See [the focused workbench fix record](docs/workbench-fixes-2026-11-05.md).
+
+`node scripts/browser_troubleshoot_test.cjs` checks the failed-run workflow over real local HTTP with disposable synthetic Python source: explicit folder connection, unchanged drafts, exact source and exports, changed source, unsupported logs and UTF-8 limits. It accepts an isolated installed Python path and the same Chromium override as the other browser scripts. It never runs the recorded failing command or calls a model.

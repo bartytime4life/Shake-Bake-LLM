@@ -35,10 +35,13 @@ def render_preview(record):
     # Escape source/code data so a captured excerpt cannot close the script tag.
     payload=json.dumps(record,ensure_ascii=False).replace("<","\\u003c").replace("\u2028","\\u2028").replace("\u2029","\\u2029")
     css=(ASSETS/"styles.css").read_text()
-    script=(ASSETS/"app.js").read_text().replace("</script","<\\/script")
+    script="\n".join((ASSETS/name).read_text() for name in ("app.js", "troubleshoot.js")).replace("</script","<\\/script")
     html=(ASSETS/"index.html").read_text()
     html=html.replace('<link rel="stylesheet" href="styles.css">', '<style>'+css+'</style>')
     html=html.replace('<script src="app.js" defer></script>', '')
+    html=html.replace('<script src="troubleshoot.js" defer></script>', '')
+    # The recorded artifact is an inert source-brief inspector, not a live locator.
+    html=html.replace('id="source-brief-workflow" hidden', 'id="source-brief-workflow"')
     for icon in (ASSETS / "icons").glob("*.svg"):
         inline = "data:image/svg+xml;base64," + base64.b64encode(icon.read_bytes()).decode()
         html = html.replace("icons/" + icon.name, inline)

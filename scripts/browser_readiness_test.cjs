@@ -29,7 +29,7 @@ async function scenario(label,run){
   h.check=async()=>{await page.locator('#check-model').click();await page.waitForFunction(()=>!document.querySelector('#check-model').disabled);assert.match(await page.locator('#model-facts').innerText(),/Q4_SYNTHETIC/);};
   h.cleared=async()=>assert.doesNotMatch(await page.locator('#model-facts').innerText(),/Q4_SYNTHETIC|Reported digest|Checking selected/);
   try{
-    await page.goto(baseURL);await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.'));
+    await page.goto(baseURL);await page.locator('#choose-source-brief').click();await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.'));
     await page.locator('#task-options > summary').click();
     await page.locator('#model-details-toggle').click();await page.locator('#ai-mode').selectOption('trial');
     await page.getByText('This computer & selected model',{exact:true}).click();

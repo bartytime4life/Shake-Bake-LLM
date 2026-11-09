@@ -181,10 +181,10 @@ function draftContext(){
     ? 'For example: Check whether the validator accepts fewer slices than expected.'
     : 'For example: Find where this project handles failed sign-ins and explain what happens.';
   if(!kindValid)$('task-options').open=true;
-  $('project-help').classList.toggle('sr-only',projectValid&&kindValid);
+  $('project-help').classList.toggle('sr-only',projectValid&&kindValid&&$('project').value!=='starter-demo');
   $('project-help').textContent=!projectValid
     ? `The saved project${draftProjectId?' “'+draftProjectId+'”':''} is unavailable. Choose an approved project for this draft.${kindValid?'':' Choose a task type too.'}`
-    : !kindValid?'The saved task type is unavailable. Choose a task type for this draft.':"Only projects approved in the owner's launch configuration are available.";
+    : !kindValid?'The saved task type is unavailable. Choose a task type for this draft.':$('project').value==='starter-demo'?'Synthetic demo selected: only bundled example files are available. Choose your real project above, or use Connect project folder in the failed-run workflow.':"Only projects you explicitly connected or approved at launch are available.";
 }
 function saveDraft(){
   if(preview||fileLaunch)return;
@@ -288,7 +288,7 @@ function renderBrief(previous = false) {
   const text=handoffText(pinned);
   if($('handoff-text').value!==text)$('handoff-text').value=text;
   $('handoff-size').textContent=handoffSize(text);
-  const packet=pinned.packet; $('brief-title').textContent=previous ? 'Previous brief — no new result yet' : pinned.status==='incomplete' ? 'Brief incomplete — review the gaps' : 'Your brief is ready';
+  const packet=pinned.packet; $('brief-title').textContent=previous ? 'Previous brief — no new result yet' : !packet.evidence.length ? 'No source found — check the selected project' : pinned.status==='incomplete' ? 'Brief incomplete — review the gaps' : 'Your brief is ready';
   $('brief-subtitle').textContent=`${pinned.project_id==='starter-demo'?'Synthetic demo':pinned.project_id} · ${packet.evidence.length} source excerpt${packet.evidence.length===1?'':'s'}`;
   $('job-identity').textContent=`Project: ${pinned.project_id} · Job: ${pinned.job_id} · Started: ${packet.started_at}`;
   $('original-request').textContent=packet.original_request; $('brief-details').hidden=false;
@@ -357,7 +357,12 @@ async function refreshState(initial=false){
     // Loading old evidence must not hold up task controls, history or polling.
     const latest=state.recent.find(item=>item.status==='prepared'||item.status==='incomplete');if(latest)void loadBrief(latest);
   }
-  if(!initial)$('local-ai').checked=!state.local_ai_paused;renderHistory(state.recent);modelView();controls();
+  if(!initial){
+    $('local-ai').checked=!state.local_ai_paused;
+    for(const project of nativeState.projects)if(![...$('project').options].some(option=>option.value===project.id))$('project').append(new Option(project.label||project.id,project.id));
+  }
+  renderHistory(state.recent);modelView();controls();
+  if(window.dispatchEvent&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('sb-workbench-state',{detail:state}));
 }
 async function poll(){
   if(polling||!active?.job_id)return;polling=true;
@@ -681,7 +686,7 @@ function handoffView(){
 }
 function renderCopyStatus(){
   const pending=copyState?.status==='pending';
-  $('copy').disabled=!pinned?.packet||pending;
+  $('copy').disabled=!pinned?.packet?.evidence?.length||pending;
   $('copy').setAttribute('aria-busy',String(pending));
   $('copy-status').hidden=!copyState;
   if(!copyState)return;
@@ -705,7 +710,7 @@ function renderHandoff(){
 function restoreBriefStyle(){try{const saved=localStorage.getItem('sb-brief-style');if(BRIEF_STYLES.has(saved))$('brief-style').value=saved;}catch{}}
 $('brief-style').addEventListener('change',()=>{if(!preview&&!fileLaunch)try{localStorage.setItem('sb-brief-style',briefStyle());}catch{}renderHandoff();});
 $('copy').addEventListener('click',async()=>{
-  if(!pinned?.packet||copyState?.status==='pending')return;
+  if(!pinned?.packet?.evidence?.length||copyState?.status==='pending')return;
   // Capture the exact job before awaiting the browser. An unresolved clipboard request
   // cannot be cancelled; do not queue another or attribute a late result to a new pin.
   const text=handoffText(pinned);
@@ -753,7 +758,8 @@ async function initialize(){
   try{await refreshState(true);if(preview){pinned=viewJob(preview.result);renderBrief(false);message('Recorded inert demo. New tasks require the local app.');}}
   catch(error){message(error.message,true);connectionFailed();}
   if(!preview){timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(()=>{if(!active||!connected)syncSession();},3000);}
-};initialize();
+};
+window.sbWorkbench={api,syncSession,getState:()=>state,isPreview:()=>!!preview||fileLaunch};initialize();
 
 function memoryText(value){return typeof value==='number'?`${(value/1073741824).toFixed(1)} GiB`:'Not detected';}
 function facts(id,entries){const list=$(id);list.replaceChildren();for(const [name,value]of entries){const term=document.createElement('dt'),detail=document.createElement('dd');term.textContent=name;detail.textContent=value;list.append(term,detail);}}
