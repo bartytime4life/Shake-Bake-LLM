@@ -96,6 +96,7 @@
           <button type="button" class="primary" id="copy" disabled><img src="icons/copy.svg" alt="">Copy brief</button>
           <p>Paste into <a id="open-claude" href="https://claude.ai/" target="_blank" rel="noopener noreferrer" aria-label="Open Claude in a new tab" aria-describedby="handoff-privacy">Claude</a> or <a id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-label="Open ChatGPT in a new tab" aria-describedby="handoff-privacy">ChatGPT</a>, then send.</p>
         </div>
+        <div class="brief-style"><label for="brief-style">Brief layout</label><select id="brief-style" aria-describedby="brief-style-help"><option value="orientation" selected>Starting points (default)</option><option value="evidence">Full evidence, cited answer</option></select><p id="brief-style-help" class="small muted">In two pre-registered runs with Claude, starting points led to more of the files real fixes changed. Full evidence shows every excerpt and asks for a cited answer.</p></div>
         <p id="handoff-privacy" class="small muted">Only share source you intend to send. Nothing is sent automatically.</p>
         <p id="handoff-size" class="small muted"></p>
         <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>
