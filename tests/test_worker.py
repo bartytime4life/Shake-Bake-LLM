@@ -267,6 +267,47 @@ class WorkerAcceptance(unittest.TestCase):
                 organize(packet, "fixture:local", port=port)
         self.assertEqual(len(requests), 1)
 
+    def test_oversized_source_gets_a_fitted_copy_and_the_model_cites_only_what_it_saw(self):
+        selections = []
+        for index in range(8):
+            body = "".join(f"def coverage_step_{index}_{line}(value):  # slice coverage guard line {line}\n" for line in range(40))
+            (self.root / f"module_{index}.py").write_text(body, encoding="utf-8")
+            selections.append(Selection(f"module_{index}.py", 1, 40))
+        packet = build_packet(self.root, "Inspect coverage", tuple(selections))
+        self.assertGreater(len(json.dumps([r.text for r in packet.evidence]).encode()), 6000)
+        with stub_server() as (port, requests):
+            note = organize(packet, "fixture:local", port=port)
+        payload = next(body for path, body in requests if path == "/api/chat")
+        sent = json.loads(payload["messages"][1]["content"])
+        self.assertLessEqual(len(payload["messages"][1]["content"].encode()), 6000)
+        self.assertEqual(sent["original_request"], packet.original_request)
+        shown = [item["id"] for item in sent["evidence"]]
+        self.assertEqual(shown, [f"E{n}" for n in range(1, len(shown) + 1)], "records are left out from the end")
+        self.assertGreater(len(shown), 1)
+        self.assertEqual(sent["worker_view"]["omitted_evidence"], [f"E{n}" for n in range(len(shown) + 1, 9)])
+        for item in sent["evidence"]:
+            self.assertTrue(item["text_cut"])
+            self.assertEqual(item["text"].count("\n"), 12)
+            self.assertEqual(item["shown_end_line"], item["start_line"] + 11)
+        enum = payload["format"]["properties"]["evidence_ids"]["items"]["enum"]
+        self.assertEqual(enum, shown, "the model may cite only what it was shown")
+        self.assertEqual(note.source_view, {"lines_per_excerpt": 12, "shown": shown, "cut": shown,
+                                            "omitted": sent["worker_view"]["omitted_evidence"]})
+        self.assertEqual(len(packet.evidence[0].text.splitlines()), 40, "exact evidence is unchanged")
+
+    def test_source_that_fits_is_sent_whole(self):
+        from dataclasses import asdict
+        with stub_server() as (port, requests):
+            note = organize(self.packet, "fixture:local", port=port, task_kind="code", collection_context={"scope": "fixture"})
+        content = next(body for path, body in requests if path == "/api/chat")["messages"][1]["content"]
+        earlier = {"original_request": self.packet.original_request, "snapshot_id": self.packet.snapshot_id, "collection": {"scope": "fixture"},
+                   "evidence": [{"id": "E1", **asdict(self.packet.evidence[0])}], "task_kind": "code"}
+        self.assertEqual(content, json.dumps(earlier, ensure_ascii=False), "a copy that fits is byte-identical to the earlier construction")
+        sent = json.loads(content)
+        self.assertNotIn("worker_view", sent)
+        self.assertNotIn("text_cut", sent["evidence"][0])
+        self.assertIsNone(note.source_view)
+
     def test_chunked_http_response_is_supported(self):
         with stub_server(chunked=True) as (port, _):
             note = organize(self.packet, "fixture:local", port=port)

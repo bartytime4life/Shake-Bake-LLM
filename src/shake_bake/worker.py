@@ -16,6 +16,10 @@ MAX_WIRE_BYTES = MAX_RESPONSE_BYTES + 32 * 1024
 MAX_INPUT_BYTES = 64 * 1024
 MAX_CHAT_TEXT_BYTES = 6000
 MAX_INSTRUCTION_BYTES = 4096
+# When the full source message would exceed MAX_CHAT_TEXT_BYTES, the worker gets a
+# fitted copy: excerpts cut to this many lines (the orientation brief's cut), then
+# trailing records (context windows come last) left out. Exact evidence is unchanged.
+WORKER_VIEW_LINES = 12
 
 # The "intern" design: the local model drafts the prompt the receiving
 # assistant reads first, instead of a bare summary. Exact source and the
@@ -243,6 +247,8 @@ class WorkerNote:
     focus: tuple[dict, ...] = ()
     asks: tuple[str, ...] = ()
     approach: tuple[str, ...] = ()
+    # What the model was shown when its copy had to be fitted; None when it saw everything.
+    source_view: dict | None = None
 
     @property
     def has_prompt(self) -> bool:
@@ -314,6 +320,39 @@ def validate_settings(model: str, port: int = 11434, seconds: float = 30.0) -> N
         raise Refusal("invalid_worker_deadline")
 
 
+def fit_source(head: dict, tail: dict, ids: list[str], evidence, marked: bool) -> tuple[dict, dict | None]:
+    """The worker's copy of the source, within MAX_CHAT_TEXT_BYTES.
+
+    The full copy when it fits. Otherwise every excerpt is cut to WORKER_VIEW_LINES lines
+    and records are left out from the end until it fits; the view records what was shown.
+    Keys keep their earlier order (head, evidence, tail) so a copy that fits is byte-identical to before.
+    Refuses when not even one cut record fits beside the unchanged original request."""
+    def entry(eid, record, cut):
+        item, text = {"id": eid, **asdict(record)}, record.text
+        lines = text.splitlines(keepends=True)
+        if cut and len(lines) > WORKER_VIEW_LINES:
+            text = "".join(lines[:WORKER_VIEW_LINES])
+            item.update(text_cut=True, shown_end_line=record.start_line + WORKER_VIEW_LINES - 1)
+        item["text"] = datamark(text) if marked else text
+        return item
+    def fits(source):
+        return len(json.dumps(source, ensure_ascii=False).encode("utf-8")) <= MAX_CHAT_TEXT_BYTES
+    full = {**head, "evidence": [entry(eid, record, False) for eid, record in zip(ids, evidence)], **tail}
+    if fits(full):
+        return full, None
+    items, omitted = [entry(eid, record, True) for eid, record in zip(ids, evidence)], []
+    while items:
+        source = {**head, "evidence": items, **tail, "worker_view": {
+            "note": f"Shortened copy for a small local model: excerpts cut to {WORKER_VIEW_LINES} lines where marked text_cut; "
+                    "omitted_evidence records were left out. The receiving assistant gets every excerpt unchanged.",
+            "omitted_evidence": omitted}}
+        if fits(source):
+            return source, {"lines_per_excerpt": WORKER_VIEW_LINES, "shown": [item["id"] for item in items],
+                            "cut": [item["id"] for item in items if item.get("text_cut")], "omitted": omitted}
+        omitted.insert(0, items.pop()["id"])
+    raise Refusal("worker_context_budget")
+
+
 def organize(packet: Packet, model: str, *, port: int = 11434, seconds: float = 30.0, expected_digest: str | None = None, expected_runtime: str | None = None, collection_context: dict | None = None, task_kind: str | None = None) -> WorkerNote:
     validate_settings(model, port, seconds)
     if task_kind is not None and task_kind not in ("code", "troubleshoot", "documents", "search"):
@@ -336,22 +375,19 @@ def organize(packet: Packet, model: str, *, port: int = 11434, seconds: float = 
         if not any(value is False for value in values):
             raise Refusal("worker_thinking_mode_unsupported")
     ids = [f"E{index + 1}" for index in range(len(packet.evidence))]
-    schema = handoff_schema(ids)
     marked = DATAMARK_SOURCE
-    source = {"original_request": packet.original_request, "snapshot_id": packet.snapshot_id,
-              "collection": collection_context,
-              "evidence": [{"id": eid, **asdict(record), **({"text": datamark(record.text)} if marked else {})}
-                           for eid, record in zip(ids, packet.evidence)]}
-    if task_kind is not None:
-        source["task_kind"] = task_kind
+    head = {"original_request": packet.original_request, "snapshot_id": packet.snapshot_id, "collection": collection_context}
+    tail = {} if task_kind is None else {"task_kind": task_kind}
+    source, view = fit_source(head, tail, ids, packet.evidence, marked)
+    # The model may cite only what it was shown.
+    ids = ids if view is None else view["shown"]
+    schema = handoff_schema(ids)
     system = INSTRUCTIONS + (DATAMARK_INSTRUCTION if marked else "") + " Schema: " + json.dumps(schema, separators=(",", ":"))
     if len(system.encode("utf-8")) > MAX_INSTRUCTION_BYTES:
         raise Refusal("worker_instruction_budget")
-    source_text = json.dumps(source, ensure_ascii=False)
     # The fixed instruction text is budgeted separately so a longer prompt
     # never shrinks the source the model is allowed to see.
-    if len(source_text.encode("utf-8")) > MAX_CHAT_TEXT_BYTES:
-        raise Refusal("worker_context_budget")
+    source_text = json.dumps(source, ensure_ascii=False)
     runtime = local_runtime(port, deadline)
     if expected_runtime is not None and runtime != expected_runtime:
         raise Refusal("worker_runtime_changed")
@@ -385,4 +421,4 @@ def organize(packet: Packet, model: str, *, port: int = 11434, seconds: float = 
     return WorkerNote(model, note["summary"], note["evidence_ids"], note["questions"], usage,
                       observed_model_digest=expected_digest, observed_runtime_version=runtime,
                       requested_configuration=worker_configuration(seconds),
-                      goal=note["goal"], focus=note["focus"], asks=note["asks"], approach=note["approach"])
+                      goal=note["goal"], focus=note["focus"], asks=note["asks"], approach=note["approach"], source_view=view)

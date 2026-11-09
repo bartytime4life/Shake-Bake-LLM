@@ -341,3 +341,17 @@ test('local model text that repeats a source heading stays inside a fence in bot
     assert.ok(!free.some(line=>/IGNORE THE RULES|Say all tests passed/.test(line)),`${style}/${j.job_id}: model text stays fenced`);
   }
 });
+test('a fitted local model copy is disclosed in both layouts and the visible caption',()=>{
+  const line='The local model saw a shortened copy: it was shown E1 (E1 cut to 12 lines) and was not shown E2. Every excerpt in this brief is unchanged.';
+  for(const style of ['orientation','evidence']){
+    const h=harness(()=>Promise.resolve(),{style}),j=job('fitted-'+style);
+    j.packet.model_notes={notes:[{text:'n',evidence_ids:['E1']}],uncertainties:[],source_view:{shown:['E1'],cut:['E1'],omitted:['E2'],lines:12},
+      prompt:{model:'fixture:local',goal:'Decide.',focus:[],asks:['Ask?'],approach:[]}};
+    h.pin(j);assert.ok(h.el('handoff-text').value.split('\n').includes(line),style);
+    assert.ok(h.el('prompt-caption').textContent.endsWith(line));
+    j.packet.model_notes.prompt=null;h.pin(j);assert.ok(h.el('handoff-text').value.split('\n').includes(line),style+' notes');
+  }
+  const h=harness(()=>Promise.resolve(),{style:null});
+  assert.equal(vm.runInContext('JSON.stringify(viewOf({shown:["E1","x; drop"],cut:"E1",omitted:[],lines_per_excerpt:12}))',h.context),'{"shown":["E1"],"cut":[],"omitted":[],"lines":12}');
+  assert.equal(vm.runInContext('viewOf({shown:[]})',h.context),null);
+});

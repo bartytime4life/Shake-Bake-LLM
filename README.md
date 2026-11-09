@@ -121,7 +121,7 @@ PYTHONPATH=src python3 -B -m shake_bake brief \
   --model qwen3:8b
 ```
 
-That model is an example, not a detected installation. The client checks `/api/show` before sending source and refuses known cloud names and reported remote models. It ignores proxy/host environment variables and follows no redirects. A shared 30-second deadline, bounded responses, a 6,000-byte source-message cap plus a separately budgeted instruction prompt, 1,024 generated tokens and an 8,192-token requested context bound preparation. Add `--task-kind` to pass a hint to the drafted prompt.
+That model is an example, not a detected installation. The client checks `/api/show` before sending source and refuses known cloud names and reported remote models. It ignores proxy/host environment variables and follows no redirects. A shared 30-second deadline, bounded responses, a 6,000-byte source-message cap plus a separately budgeted instruction prompt (when a real request and its excerpts exceed the cap, the model gets a fitted copy that leaves out trailing records, and the brief says which it saw), 1,024 generated tokens and an 8,192-token requested context bound preparation. Add `--task-kind` to pass a hint to the drafted prompt.
 
 Configure the trusted Ollama daemon with cloud features disabled first: [official guidance](https://docs.ollama.com/faq#how-do-i-disable-ollamas-cloud-features). Ollama documents `OLLAMA_NO_CLOUD=1` or its daemon configuration setting, followed by a restart. Setting a variable on this client does not reconfigure an existing server. The client cannot attest model weights, enforce the daemon's network policy, prove every custom template fits, or guarantee GPU-work cancellation after disconnect.
 
