@@ -1,0 +1,47 @@
+{
+ "method": "git fetch --depth 1 at base_sha, copied without .git; 300 MiB cap per checkout",
+ "cases": [
+  {
+   "key": "eth-brownie__brownie__517__513",
+   "status": "ok",
+   "bytes_on_disk": 3429532
+  },
+  {
+   "key": "voxel51__fiftyone__2059__2057",
+   "status": "omitted_oversize",
+   "bytes_on_disk": 648509441
+  },
+  {
+   "key": "kevinmusgrave__pytorch-metric-learning__470__467",
+   "status": "ok",
+   "bytes_on_disk": 83135309
+  },
+  {
+   "key": "ericsson__codechecker__1266__1267",
+   "status": "ok",
+   "bytes_on_disk": 7749108
+  },
+  {
+   "key": "graphite-project__graphite-web__2660__2652",
+   "status": "ok",
+   "bytes_on_disk": 7135095
+  },
+  {
+   "key": "crossbario__autobahn-python__979__971",
+   "status": "ok",
+   "bytes_on_disk": 4700817
+  },
+  {
+   "key": "deepchem__deepchem__1769__1716",
+   "status": "omitted_oversize",
+   "bytes_on_disk": 453220996
+  },
+  {
+   "key": "microsoft__ptvs__3818__3800",
+   "status": "ok",
+   "bytes_on_disk": 151413416
+  }
+ ],
+ "omitted": 2,
+ "replacements": 0
+}
