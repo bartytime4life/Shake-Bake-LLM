@@ -1,0 +1,54 @@
+{
+ "kind": "preregistered_draft_comparison",
+ "schema": 1,
+ "date": "2026-11-08",
+ "status": "Registered and pushed before any row at dev offsets 1200 to 1699 was read.",
+ "question": "Does adding the local model's drafted prompt to the orientation brief help a Claude host, with tools and on the paste path?",
+ "candidate": {
+  "commit": "a49268a71f28976ad7a9d09fd0d71efb17045fa3",
+  "sources_sha256": {
+   "worker.py": "18971160f553882a1dca27350bcd5137d3d364744cb058064de5524ca2f514a7",
+   "briefing.py": "cbb6b9345437c0ea928f65ee7137d38283dc1be041e2af7ac52610b67ae9831d",
+   "search.py": "afd7d48fd9596a69c767efbe70d42048fb89060d05ebe16768b3b93ac5951bda"
+  },
+  "control_brief": "shake_bake brief --root <repo> --task <issue> (orientation layout, the default since 0.4.0.dev22)",
+  "draft_brief": "the same command with --model qwen3.5:4b against the loopback Ollama on this PC",
+  "worker_model": {
+   "name": "qwen3.5:4b",
+   "digest": "d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04",
+   "runtime": "Ollama 0.35.1",
+   "note": "digest checked before and after rendering; one render per case; settings are the worker's fixed requested settings"
+  }
+ },
+ "cases": {
+  "dataset": "JetBrains-Research/lca-bug-localization",
+  "revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+  "config": "py",
+  "split": "dev",
+  "pool": "dev rows at offsets 1200 to 1699 (never read), minus every text_id of the 50-row py test split (by id only), minus every repository used in any earlier run (external, frozen, host, paste, both orientation runs)",
+  "filters": "changed_files_count 2 to 6 and code_changed_files_count at least 2; permissive repository license (MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0); 50 to 1,500 non-test files; one case per repository",
+  "selection": "first 8 by sha256('shake-bake-draft-2026-11-08-v1:' + text_id), each repository represented by its lowest-hash row, no replacements",
+  "acquisition": "shallow git fetch at base_sha, copied without .git; caps 300 MiB per checkout, 2 GiB total; omissions disclosed",
+  "worker_failure": "if the worker refuses or fails on a case, its draft brief equals the control brief; the case stays in and is disclosed"
+ },
+ "arms": {
+  "orientation_tools": "tools + control brief (prompt identical to the orientation runs' orientation_tools arm)",
+  "draft_tools": "tools + draft brief (same prompt)",
+  "orientation_paste": "no tools, issue + control brief (prompt identical to the orientation runs' orientation_paste arm)",
+  "draft_paste": "no tools, issue + draft brief (same prompt)"
+ },
+ "host": "Claude Code subagent, general-purpose type, sonnet alias, one run per case and arm",
+ "measure": "hits at 5: files named in the final FILES line that the fixing pull request changed; also tool calls, tokens and seconds",
+ "decision_rules": {
+  "tools_path": "the draft helps only if total hits at 5 are higher than orientation_tools AND the draft arm wins more cases than it loses",
+  "paste_path": "the draft helps only if total hits at 5 are higher than orientation_paste AND the draft arm wins more cases than it loses",
+  "harm": "reported as harm on a path if total hits at 5 are lower AND the draft arm loses more cases than it wins",
+  "otherwise": "no effect shown; Local AI stays optional and the brief makes no claim for the draft"
+ },
+ "limits": [
+  "eight cases, one repeat",
+  "one local model at one setting",
+  "public issues may be in the host's training data",
+  "isolation by instruction, audited afterwards"
+ ]
+}
