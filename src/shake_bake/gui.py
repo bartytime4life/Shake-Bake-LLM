@@ -26,6 +26,8 @@ from .helper import HelperSession
 from .preferences import LocalPreferences, default_state_directory
 from .routing import eligible_profiles, pipeline_id, validate_policy
 from .shared import ConnectionPublication
+from .failure_runner import MAX_FAILURE_INPUT_BYTES
+from .failure_service import run_failure_location
 from .task_protocol import MAX_TASK_INPUT_BYTES
 from .worker import local_inventory, parse_json
 
@@ -40,6 +42,10 @@ class Controller:
 
     def __init__(self, projects, policy_path=DEFAULT_POLICY, port=11434, *, allow_trials=False, state_directory=None):
         self.projects = dict(projects)
+        self.project_labels = {name: name.replace("-", " ").title() for name in projects}
+        self._protected_paths = [Path(policy_path).resolve()]
+        if state_directory is not None:
+            self._protected_paths.append(Path(state_directory).resolve())
         self.policy_path = Path(policy_path)
         self.ollama_port = port
         self._preferences = LocalPreferences(state_directory, projects.values()) if state_directory is not None else None
@@ -167,6 +173,47 @@ class Controller:
     def _handle(self, operation, payload):
         if operation == "adapter":
             return self._adapter(payload)
+        if operation == "connect_project":
+            if (not isinstance(payload, dict) or set(payload) != {"label", "path"}
+                    or not isinstance(payload["label"], str) or not isinstance(payload["path"], str)):
+                raise Refusal("invalid_project_connection")
+            label = payload["label"].strip() or Path(payload["path"]).name
+            if not 1 <= len(label) <= 80 or any(ord(c) < 32 for c in label):
+                raise Refusal("invalid_project_label")
+            try:
+                path = Path(payload["path"]).expanduser()
+                if not path.is_absolute():
+                    raise Refusal("absolute_project_path_required")
+                resolved = path.resolve(strict=True)
+                if any(resolved == protected or resolved in protected.parents for protected in self._protected_paths):
+                    raise Refusal("project_contains_private_settings")
+            except Refusal:
+                raise
+            except (OSError, RuntimeError, ValueError):
+                raise Refusal("invalid_project_root") from None
+            name = re.sub(r"[^a-z0-9]+", "-", label.casefold()).strip("-")[:35] or "project"
+            if not name[0].isalpha():
+                name = "project-" + name
+            if name in self.projects:
+                name = name[:38] + "-" + secrets.token_hex(4)
+            descriptor = self._session.add_project(name, resolved, protected_paths=self._protected_paths)
+            self.projects[name] = Path(descriptor["path"])
+            self.project_labels[name] = label
+            return {**descriptor, "project_id": name, "label": label, "read_only": True,
+                    "persistent": False}
+        if operation == "troubleshoot":
+            if (not isinstance(payload, dict) or set(payload) != {"project_id", "error_output", "command"}
+                    or not isinstance(payload["project_id"], str) or payload["project_id"] not in self.projects):
+                raise Refusal("project_not_allowed")
+            for identifier in self.records:
+                try:
+                    if self._session.get_result(identifier)["state"] == "RUNNING":
+                        raise Refusal("helper_busy")
+                except Refusal as error:
+                    if error.code == "helper_busy":
+                        raise
+            return run_failure_location(self.projects[payload["project_id"]], payload["error_output"],
+                                        payload["command"], scratch=self._session._scratch)
         if operation == "state":
             recent = []
             for identifier, metadata in list(self.records.items()):
@@ -176,7 +223,7 @@ class Controller:
                     state = "EXPIRED"
                 recent.append({**metadata, "task_id": identifier, "state": state})
             policy = self._policy()
-            return {"version": __version__, "projects": [{"id": name, "label": name.replace("-", " ").title(), "path": str(root), "demo": root == DEMO} for name, root in self.projects.items()],
+            return {"version": __version__, "projects": [{"id": name, "label": self.project_labels.get(name, name), "path": str(root), "demo": root == DEMO} for name, root in self.projects.items()],
                     "local_ai_enabled": not self.disabled and policy["enabled"], "policy": policy,
                     "local_ai_preference_persistent": self._preferences is not None,
                     "recent": list(reversed(recent)), "inventory": self.inventory_status,
@@ -371,7 +418,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get("Host") not in self.server.hosts:
             self._send(403, {"error": "host_not_allowed"}); return
         path = urlsplit(self.path).path
-        static = {"/": ("index.html", "text/html; charset=utf-8"), "/styles.css": ("styles.css", "text/css; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8")}
+        static = {"/": ("index.html", "text/html; charset=utf-8"), "/styles.css": ("styles.css", "text/css; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/troubleshoot.js": ("troubleshoot.js", "text/javascript; charset=utf-8")}
         for name in ("folder", "clock", "document", "copy", "download", "chevron-down", "map-pin", "x-mark"):
             static[f"/icons/{name}.svg"] = (f"icons/{name}.svg", "image/svg+xml")
         if path in static:
@@ -408,7 +455,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.headers.get("Content-Type", "").split(";")[0] != "application/json":
                 raise Refusal("json_required")
             length = int(self.headers.get("Content-Length", "0"))
-            if not 0 < length <= MAX_TASK_INPUT_BYTES:
+            request_limit = MAX_FAILURE_INPUT_BYTES if urlsplit(self.path).path == "/api/troubleshoot" else MAX_TASK_INPUT_BYTES
+            if not 0 < length <= request_limit:
                 raise Refusal("request_size")
             self.connection.settimeout(3)
             raw = self.rfile.read(length)
@@ -426,6 +474,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, {"result": value})
             elif path == "/api/tasks":
                 self._send(202, self.server.controller.call("start", payload))
+            elif path == "/api/projects":
+                self._send(200, self.server.controller.call("connect_project", payload))
+            elif path == "/api/troubleshoot":
+                self._send(200, self.server.controller.call("troubleshoot", payload))
             elif path == "/api/settings":
                 self._send(200, self.server.controller.call("settings", payload))
             elif path == "/api/inventory" and payload == {}:
@@ -469,6 +521,8 @@ def main(argv=None):
     try:
         controller = Controller(projects, args.policy, args.ollama_port, allow_trials=args.allow_candidate_trials,
                                 state_directory=args.state_dir if args.state_dir is not None else default_state_directory())
+        if args.connection_file is not None:
+            controller._protected_paths.append(args.connection_file.resolve())
     except Refusal as error:
         print("The workbench could not start: "+error.code, file=sys.stderr)
         return 2

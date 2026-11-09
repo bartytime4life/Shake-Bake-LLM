@@ -22,6 +22,8 @@ def main(argv: list[str] | None = None) -> int:
     if argv and argv[0] == "doctor":
         from .doctor import main as doctor_main
         return doctor_main(argv[1:])
+    if argv and argv[0] == "diagnose":
+        return diagnose_main(argv[1:])
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--task", required=True)
@@ -101,3 +103,26 @@ def assist_main(argv: list[str]) -> int:
         print("# Why this model\n\n" + decision.why + "\n\nRouting status: " + decision.reason + "\n\n" + render(brief), end="")
     _warn(brief)
     return 0 if brief.worker is not None else 3
+
+
+def diagnose_main(argv):
+    from .troubleshoot import locate_failure
+    parser = argparse.ArgumentParser(description="Locate a pasted Python failure in current source; no commands or model calls.")
+    parser.add_argument("--root", required=True, type=Path)
+    parser.add_argument("--error-file", required=True, type=Path, help="UTF-8 saved error output, outside the inspected project if private")
+    parser.add_argument("--command", default="", help="Record the command that failed; never execute it")
+    args = parser.parse_args(argv)
+    try:
+        with args.error_file.open("rb") as stream:
+            raw = stream.read(65537)
+        if len(raw) > 65536:
+            raise Refusal("invalid_error_output")
+        report = locate_failure(args.root, raw.decode("utf-8"), args.command)
+    except (OSError, UnicodeError):
+        print(json.dumps({"outcome": "DENY", "code": "error_output_unavailable"}))
+        return 2
+    except Refusal as error:
+        print(json.dumps({"outcome": "DENY", "code": error.code}))
+        return 2
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0 if report["source_located"] else 3

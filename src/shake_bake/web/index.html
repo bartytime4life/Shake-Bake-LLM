@@ -7,6 +7,7 @@
   <link rel="icon" href="icons/folder.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
+  <script src="troubleshoot.js" defer></script>
 </head>
 <body>
   <noscript><p class="notice">JavaScript is needed to use the local workbench. Start Shake &amp; Bake with <code>./scripts/run-workbench</code> from its project folder, then open the local address it prints in a browser with JavaScript enabled.</p></noscript>
@@ -37,7 +38,52 @@
     </section>
     <main id="workspace" tabindex="-1">
       <div class="connection-controls"><span class="small muted" id="connection-status">Connecting to local session…</span><button type="button" id="retry-connection" class="secondary compact" hidden>Retry connection</button></div>
-      <h1>Prepare a brief for Claude or ChatGPT.</h1>
+      <h1>Start with the thing that failed.</h1>
+      <p class="workflow-intro muted">Paste an error, connect its project, and find the source line to inspect. Everything stays on this computer.</p>
+      <div class="workflow-choices" role="group" aria-label="Choose a job">
+        <button type="button" id="choose-failed-run" class="workflow-choice selected" aria-pressed="true" aria-controls="failed-run-workflow"><strong>Diagnose a failed run</strong><span>Match a Python traceback to your current source.</span></button>
+        <button type="button" id="choose-source-brief" class="workflow-choice" aria-pressed="false" aria-controls="source-brief-workflow"><strong>Prepare source brief</strong><span>Package source for an AI chat. Does not diagnose or fix it.</span></button>
+      </div>
+      <section id="failed-run-workflow" aria-labelledby="failed-run-heading">
+        <div class="workflow-heading"><h2 id="failed-run-heading">Where did it fail?</h2><button type="button" id="try-failure-example" class="text-button">Try a labelled example</button></div>
+        <p class="small muted">For now, this handles Python tracebacks. The command is recorded for context and is never run.</p>
+        <form id="failure-form" autocomplete="off">
+          <label for="failure-output" class="request-label">Paste the complete error output</label>
+          <textarea id="failure-output" name="error_output" rows="8" required spellcheck="false" aria-describedby="failure-privacy" placeholder="Traceback (most recent call last):&#10;  File &quot;/path/to/your/project/main.py&quot;, line 42, in run&#10;    ...&#10;ValueError: ..."></textarea>
+          <p id="failure-privacy" class="small muted">Kept in this open tab. Not saved as a browser draft or sent to a model.</p>
+          <div class="failure-context">
+            <div><label for="failure-command">Command that failed <span class="muted">(optional)</span></label><input id="failure-command" name="command" type="text" spellcheck="false" placeholder="For example: python3 main.py"></div>
+            <div><label for="failure-project">Project containing the failing code</label><select id="failure-project" name="project_id" required aria-describedby="failure-project-help"><option value="">Connecting to local session…</option></select></div>
+          </div>
+          <p id="failure-project-help" class="small muted">Choose a connected project, or connect its folder below. Source is read only after you ask for a diagnosis.</p>
+          <p id="failure-example-notice" class="notice" hidden>Labelled synthetic example. This traceback is invented for the bundled demo; it is not a failure observed on your computer.</p>
+          <div class="action-row"><button type="submit" id="diagnose-run" class="primary" disabled>Find failing source <span aria-hidden="true">→</span></button><span id="failure-progress" class="small muted" role="status" aria-live="polite"></span></div>
+        </form>
+        <details id="connect-project" class="connect-project">
+          <summary>Connect project folder</summary>
+          <p class="small muted">Choose the absolute folder path on the computer running this app. Connecting authorizes read-only inspection of that folder for this local session. It does not run project commands or change project files.</p>
+          <form id="connect-project-form" class="connect-project-form">
+            <div><label for="project-label">Project name <span class="muted">(optional)</span></label><input id="project-label" name="label" type="text" maxlength="80" placeholder="My project" autocomplete="off"></div>
+            <div><label for="project-path">Absolute folder path</label><input id="project-path" name="path" type="text" required maxlength="4096" spellcheck="false" placeholder="/home/you/projects/my-project" autocomplete="off"></div>
+            <button type="submit" id="connect-project-button" class="secondary compact" disabled>Connect folder</button>
+          </form>
+          <p id="project-connect-status" class="small muted" role="status" aria-live="polite"></p>
+        </details>
+        <p id="failure-notice" class="notice error" role="status" aria-live="polite" hidden></p>
+        <section id="failure-result" class="failure-result" aria-labelledby="failure-result-title" hidden>
+          <p id="failure-result-status" class="eyebrow"></p>
+          <h2 id="failure-result-title" tabindex="-1"></h2>
+          <p id="failure-exception" class="failure-exception"></p>
+          <p id="failure-result-context" class="small muted"></p>
+          <div id="failure-source"></div>
+          <section class="failure-next" aria-labelledby="failure-next-heading"><h3 id="failure-next-heading">What to check next</h3><div id="failure-guidance"></div></section>
+          <details id="failure-frames" class="technical"><summary>Traceback frames &amp; matching details</summary><ol id="failure-frame-list"></ol></details>
+          <details class="technical"><summary>Original error &amp; report</summary><p class="small muted">The output below is exactly what you pasted. A source match points to a place to inspect; it does not establish a cause or prove a fix.</p><pre id="failure-original"></pre><p id="failure-captured-command" class="small muted"></p><div class="export-actions"><button type="button" id="download-failure-text" class="secondary compact">Save report as .txt</button><button type="button" id="download-failure-json" class="text-button">Download JSON report</button></div></details>
+          <div id="failure-limits" class="failure-limits small muted"></div>
+        </section>
+      </section>
+      <div id="source-brief-workflow" hidden>
+      <h2 class="source-workflow-title">Prepare a brief for Claude or ChatGPT.</h2>
       <p class="workflow-intro muted">Describe what you need. Shake &amp; Bake gathers relevant parts of your project into a brief you can paste into your AI chat.</p>
       <form id="task-form">
         <label for="request" class="request-label">What do you need help with?</label>
@@ -124,6 +170,7 @@
           <div id="evidence" class="evidence-grid"></div>
         </details>
       </section>
+      </div>
       <footer class="workspace-footer"><span>Prepared on your computer.</span><span id="version" class="sr-only"></span></footer>
     </main>
   </div>

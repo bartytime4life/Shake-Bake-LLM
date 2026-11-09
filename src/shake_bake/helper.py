@@ -49,15 +49,7 @@ class HelperSession:
             raise Refusal("invalid_project_configuration")
         self._projects = {}
         for name, path in projects.items():
-            if not isinstance(name, str) or not re.fullmatch(r"[a-z][a-z0-9_-]{0,47}", name):
-                raise Refusal("invalid_project_id")
-            try:
-                root = Path(path).resolve(strict=True)
-                if not root.is_dir():
-                    raise OSError()
-            except (OSError, RuntimeError):
-                raise Refusal("invalid_project_root") from None
-            self._projects[name] = root
+            self._projects[name] = self._project_root(name, path)
         # Keep anonymous task I/O outside every inspected checkout, including
         # when the launch environment sets TMPDIR to a project directory.
         scratch_candidates = (Path(tempfile.gettempdir()), Path("/tmp"), Path("/var/tmp"))
@@ -82,7 +74,58 @@ class HelperSession:
         return "ollama_helper" if self.model is not None else "evidence_only_diagnostic"
 
     def list_projects(self) -> dict:
-        return {"mode": self.mode, "projects": sorted(self._projects), "max_active_tasks": 1}
+        with self._lock:
+            return {"mode": self.mode, "projects": sorted(self._projects), "max_active_tasks": 1}
+
+    @staticmethod
+    def _project_root(project_id: str, path: Path) -> Path:
+        if not isinstance(project_id, str) or not re.fullmatch(r"[a-z][a-z0-9_-]{0,47}", project_id):
+            raise Refusal("invalid_project_id")
+        try:
+            supplied = Path(path)
+            if not supplied.is_absolute():
+                raise OSError()
+            root = supplied.resolve(strict=True)
+            if not root.is_dir():
+                raise OSError()
+        except (OSError, RuntimeError, TypeError, ValueError):
+            raise Refusal("invalid_project_root") from None
+        return root
+
+    def add_project(self, project_id: str, path: Path, *, protected_paths=()) -> dict:
+        """Connect an explicit owner-selected folder without reading its contents.
+
+        This is an owner-controller operation, not an MCP/model tool. The caller
+        must authenticate the owner request; inspected source and model output
+        must never supply this method's arguments or expand adapter permissions.
+        Existing project IDs and captured jobs retain their original scope.
+        Protected owner paths must already be resolved by the controller. Check
+        them against this method's resolved root, even after a caller precheck.
+        """
+        with self._lock:
+            if self._closed:
+                raise Refusal("helper_closed")
+            for job in self._jobs.values():
+                self._refresh(job)
+            if any(job.state in ACTIVE for job in self._jobs.values()):
+                raise Refusal("helper_busy")
+            root = self._project_root(project_id, path)
+            if project_id in self._projects:
+                raise Refusal("duplicate_project_id")
+            if root in self._projects.values():
+                raise Refusal("duplicate_project_root")
+            if len(self._projects) >= 8:
+                raise Refusal("project_limit_reached")
+            if root == Path(root.anchor) or root == Path.home().resolve():
+                raise Refusal("project_root_too_broad")
+            if root == self._scratch or root in self._scratch.parents:
+                raise Refusal("external_task_scratch_required")
+            if self.policy_path is not None and (root == self.policy_path or root in self.policy_path.parents):
+                raise Refusal("routing_policy_inside_source")
+            if any(root == protected or root in protected.parents for protected in protected_paths):
+                raise Refusal("project_contains_private_settings")
+            self._projects[project_id] = root
+            return {"id": project_id, "path": str(root)}
 
     @staticmethod
     def _copy(value):

@@ -1,12 +1,12 @@
 # Shake and Bake LLM Assistant
 
-A standalone local preparation helper for Claude or ChatGPT, with an Ollama worker option. Ask a repository question and get a traceable source handoff. Claude or ChatGPT supplies the demanding judgment and final answer. The diagnostic evidence path needs no model, network connection or runtime package beyond Python 3.11+.
+A local workbench for checking a Python failure against the code on your computer. Paste a traceback, connect the project folder, and inspect the exact source line, version mismatches and relevant next checks. It needs no model or network connection. A separate source-brief workflow packages excerpts for Claude or ChatGPT, with an optional Ollama worker.
 
-**Current source: `0.4.0.dev23`, built on the recovered standalone `0.4.0.dev4` package.** This replaces the separate `0.1.0.dev0` repository bootstrap while preserving it in Git history. The original runtime, tests, fixtures and technical documentation have been recovered; see the [import and publication review](docs/import/2026-11-05.md). This is a development preview, not a qualified production release.
+**Current source: `0.4.0.dev24`, built on the recovered standalone `0.4.0.dev4` package.** This replaces the separate `0.1.0.dev0` repository bootstrap while preserving it in Git history. The original runtime, tests, fixtures and technical documentation have been recovered; see the [import and publication review](docs/import/2026-11-05.md). This is a development preview, not a qualified production release.
 
 | Status | Scope |
 | --- | --- |
-| Implemented | Exact evidence collection, bounded lexical retrieval, optional loopback Ollama preparation, local workbench, owner-record model gates, shared GUI/adapter job coordination, scoped project access and cancellation. |
+| Implemented | Python traceback source checks, in-app session-only project connection, exact evidence collection, bounded lexical retrieval, optional loopback Ollama preparation, local workbench, owner-record model gates, shared GUI/adapter job coordination, scoped project access and cancellation. |
 | Verified in development | Program, browser and installed-package checks are recorded in the [November 9 integration record](docs/publication-2026-11-09.md); the [initial improvement pass](docs/project-improvements-2026-11-09.md) retains its separate baseline results. Model-service tests use simulations. Official SDK 2.3.0 stdio/shared checks and actual Codex synthetic handoff/cancellation checks passed. |
 | Partially qualified | The [Codex smoke checks](docs/codex-host-handoff.md) cover an exposed synthetic task and cancellation of an explicitly stopped owned runner followed by a fresh successful task. Actual Claude/consumer ChatGPT, disconnect/deadline/restart, model-assisted host orchestration and private-source handoffs remain unqualified. |
 | Planned | Guided setup, automatic per-PC calibration, persistent profiles, durable job recovery and direct cloud-provider clients. Local AI on/off persistence is implemented. |
@@ -20,11 +20,11 @@ cd Shake-Bake-LLM
 ./scripts/run-workbench --help
 ```
 
-Use Linux and Python 3.11+ for development. Run the model-free demo below before approving any real source. For reproducible core tests, wheel installation and optional SDK checks, follow [CONTRIBUTING.md](CONTRIBUTING.md). No model weights or third-party runtime distributions are bundled.
+Use Linux and Python 3.11+ for development. The bundled example is optional; connect the folder you intend to inspect for a real failure. For reproducible core tests, wheel installation and optional SDK checks, follow [CONTRIBUTING.md](CONTRIBUTING.md). No model weights or third-party runtime distributions are bundled.
 
 The [documentation guide](docs/README.md) separates current instructions from dated experiments, acceptance records and research. The [prioritized to-do list](TODO.md) puts real-machine/model accuracy, host delegation and measured benefit first. Every pending item has a completion check; the [PC checklist](docs/PC-CHECKLIST.md) supplies the detailed runbook.
 
-**First time here?** Follow [Your first useful brief](docs/quickstart.md): open the app, try the synthetic demo, review and copy the result, then explicitly add a project. It also explains draft privacy, what expires and what to do after an interruption.
+**First time here?** Follow [Check a failed run](docs/quickstart.md): open the app, connect your project folder, paste its Python traceback and inspect the source. It also explains what stays saved and what the result proves.
 
 The [whole-workflow UX plan](docs/UX-WORKFLOW.md) connects first setup, shared job/policy state, local preparation, evidence review, handoff and recovery. It records current code-level gaps and planned implementation slices; browser/user-flow qualification remains pending.
 
@@ -58,11 +58,13 @@ On Linux, from the extracted `shake-and-bake` folder:
 
 The launcher chooses an installed Python 3.11+ even when the system `python3` is older. New launches start with Local AI off until explicitly enabled; that choice is saved in private local state across restarts. See [saved preference boundaries](docs/local-ai-preferences.md). Starting a task never resumes a paused service.
 
-This opens the loopback-only browser interface at `http://127.0.0.1:8421`. Describe the task, choose an approved project and select **Prepare brief**. The graphite/amber workbench keeps task type and optional Local AI controls under **Options**; no model installation or setting change is needed for the evidence-only demo. Recent briefs, captured source, model details and exports remain available on demand. Published benchmarks and owner-recorded local trials have separate labels.
+This opens the loopback-only browser interface at `http://127.0.0.1:8421`. The first workflow is **Diagnose a failed run**: connect a project folder, paste its complete Python traceback, then select **Find failing source**. The command field is context only. Source locations and suggested checks do not establish a root cause or a working fix. See [the failed-run guide](docs/failed-run-workflow.md).
+
+Choose **Prepare source brief** for repository questions: describe the task, choose an approved project and select **Prepare brief**. The graphite/amber workbench keeps task type and optional Local AI controls under **Options**; no model installation or setting change is needed for the evidence-only demo. Recent briefs, captured source, model details and exports remain available on demand. Published benchmarks and owner-recorded local trials have separate labels.
 
 Opening `src/shake_bake/web/index.html` directly shows a launch guide. Use the running local address to prepare evidence; opening the page file does not start the service. See [file-opening recovery and check boundaries](docs/file-launch-recovery-2026-11-05.md).
 
-Add an approved source folder at launch with `--project my-project=/absolute/project/folder`; choose it from the interface. Use `--policy /absolute/path/outside-the-project/routing.json` for an owner policy. `--no-browser` starts the service without opening a browser; `--port 8422` selects a different local port. Installed packages also provide `shake-bake-ui`.
+Use **Connect project folder** to approve a source folder for the running session. It becomes available to both browser workflows without a restart and does not expand any assistant adapter scope. You can also add a folder at launch with `--project my-project=/absolute/project/folder`; choose it from the interface. Use `--policy /absolute/path/outside-the-project/routing.json` for an owner policy. `--no-browser` starts the service without opening a browser; `--port 8422` selects a different local port. Installed packages also provide `shake-bake-ui`.
 
 The offline preview is a **recorded demo inspector**, with synthetic source and no model inference. It is a separate export; it does not run new jobs. Read [the workbench guide](docs/visual-workbench.md) for scope and setup. Current local Chrome interaction and comparison evidence is in [design-qa.md](design-qa.md). The earlier blocked cloud-browser attempt remains historical; current checks do not establish a formal accessibility audit.
 
