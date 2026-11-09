@@ -3,7 +3,6 @@
 from collections import Counter
 from dataclasses import asdict, dataclass
 import hashlib
-import itertools
 import math
 import os
 from pathlib import Path
@@ -17,8 +16,6 @@ EXTENSIONS = frozenset({".py", ".js", ".ts", ".tsx", ".jsx", ".rs", ".go", ".md"
 # `_vendor` is pip's convention for bundled third-party copies, the same thing as `vendor`.
 EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build", "vendor", "_vendor", "target", ".idea", ".vscode"})
 PROSE_EXTENSIONS = frozenset({".md", ".txt"})
-# Data and configuration files: never a source or a companion test.
-CONFIG_EXTENSIONS = frozenset({".toml", ".yaml", ".yml", ".json"})
 STOP_WORDS = frozenset("the and for this that with from into about find show code where how does what review please have source function files file inspect controlling check".split())
 # Words that carry little signal in a request: English function words and the
 # vocabulary of issue templates. They never become search terms. Deliberately
@@ -77,8 +74,6 @@ CONTEXT_WINDOWS = 4
 CONTEXT_USAGE_WINDOWS = 1
 CONTEXT_TEST_WINDOWS = 1
 CONTEXT_MAP_ENTRIES = 12
-# Companion test files listed after the map, by path only.
-COMPANION_TESTS = 4
 DEFINITION_INDEX_ENTRIES = 16384
 WINDOW_LINES = 7
 assert PRIMARY_FILES + CONTEXT_WINDOWS + CONTEXT_USAGE_WINDOWS + CONTEXT_TEST_WINDOWS <= MAX_FILES
@@ -132,47 +127,6 @@ def _is_test_path(path: str) -> bool:
     name = parts[-1].rsplit(".", 1)[0]
     return any(part in ("test", "tests", "spec", "specs") for part in parts[:-1]) or \
         bool(re.fullmatch(r"(tests?|specs?)(?:[_.].+)?|.+[_.](tests?|specs?)", name))
-
-
-def _compact(text: str) -> str:
-    return re.sub(r"[_\-. ]", "", text.casefold())
-
-
-def _test_subject(path: str) -> str | None:
-    """What a test file is named after: `test_option_parser.py` and `option_parser_test.py` give
-    `optionparser`; None for a file without a test affix or with nothing left."""
-    name = path.rsplit("/", 1)[-1].rsplit(".", 1)[0].casefold()
-    found = re.fullmatch(r"(?:tests?[_.\-]?)(.+)|(.+?)(?:[_.\-]tests?)", name)
-    subject = found and _compact(found.group(1) or found.group(2))
-    return subject or None
-
-
-def companion_tests(sources, examined, listed) -> list[tuple[str, str]]:
-    """(source, test) pairs: for each non-test source in order, the examined test file named after it,
-    by its stem or its parent directory plus stem (`models_containers_test.py` for `models/containers.py`).
-    Among several, the one sharing the longest directory prefix with the source, then the shortest path.
-    `__init__` files are skipped: a test named `test_init` says nothing about which package."""
-    by_subject: dict[str, list[str]] = {}
-    for path in examined:
-        if _is_test_path(path) and path not in listed and Path(path).suffix.casefold() not in PROSE_EXTENSIONS | CONFIG_EXTENSIONS:
-            subject = _test_subject(path)
-            if subject:
-                by_subject.setdefault(subject, []).append(path)
-    pairs, used = [], set()
-    for source in dict.fromkeys(sources):
-        parts = source.split("/")
-        stem = parts[-1].rsplit(".", 1)[0]
-        if _is_test_path(source) or stem.casefold() == "__init__" or Path(source).suffix.casefold() in PROSE_EXTENSIONS | CONFIG_EXTENSIONS:
-            continue
-        keys = [_compact(stem)] + ([_compact(parts[-2] + stem)] if len(parts) > 1 else [])
-        candidates = [test for key in keys for test in by_subject.get(key, ()) if test not in used]
-        if not candidates:
-            continue
-        shared = lambda test: sum(1 for _ in itertools.takewhile(lambda ab: ab[0] == ab[1], zip(parts[:-1], test.split("/")[:-1])))
-        best = min(candidates, key=lambda test: (-shared(test), len(test), test))
-        used.add(best)
-        pairs.append((source, best))
-    return pairs
 
 
 def _identifiers(text: str) -> tuple[str, ...]:
@@ -586,11 +540,6 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         if len(others) > CONTEXT_MAP_ENTRIES:
             cutoffs.add("context_map_budget")
         context_map = [{"path": path, "size_bytes": sizes[path], "first_line": first_lines[path]} for path in others[:CONTEXT_MAP_ENTRIES]]
-        # Test files named after an excerpted source file (`test_parser.py` for `parser.py`), which a fix
-        # often changes but which rarely repeat the request's words. Listed by path only, after the map.
-        listed = chosen | {item["path"] for item in context_map}
-        for source, test in companion_tests([s.path for s in selections] + [item["path"] for item in context_map], digests, listed)[:COMPANION_TESTS]:
-            context_map.append({"path": test, "size_bytes": sizes[test], "first_line": first_lines[test], "companion_of": source})
     # Matched lines no excerpt covers, most relevant files first, under byte and count bounds.
     line_index: list[dict] = []
     if selections:

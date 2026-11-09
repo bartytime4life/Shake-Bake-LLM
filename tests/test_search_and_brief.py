@@ -551,36 +551,3 @@ class TermSelection(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-class CompanionTests(unittest.TestCase):
-    def test_naming_forms_directory_preference_and_exclusions(self):
-        from shake_bake.search import companion_tests
-        examined = ["pkg/log/option_parser.py", "tests/unit/test_option_parser.py", "docs/test_option_parser.md",
-                    "pkg/util.py", "pkg/sub/util.py", "tests/util_test.py", "pkg/sub/tests/test_util.py",
-                    "docker/models/containers.py", "tests/unit/models_containers_test.py",
-                    "pkg/__init__.py", "tests/test_init.py", "conf.yml", "tests/test_conf.yml", "contests.py"]
-        pairs = companion_tests(["pkg/log/option_parser.py", "pkg/sub/util.py", "pkg/util.py", "docker/models/containers.py",
-                                 "pkg/__init__.py", "conf.yml", "tests/unit/test_option_parser.py"], examined, set())
-        self.assertEqual(pairs, [("pkg/log/option_parser.py", "tests/unit/test_option_parser.py"),
-                                 ("pkg/sub/util.py", "pkg/sub/tests/test_util.py"),
-                                 ("pkg/util.py", "tests/util_test.py"),
-                                 ("docker/models/containers.py", "tests/unit/models_containers_test.py")])
-        self.assertEqual(companion_tests(["pkg/util.py"], examined, {"tests/util_test.py", "pkg/sub/tests/test_util.py"}), [])
-
-    def test_prepare_lists_a_companion_after_the_map_and_both_layouts_label_it(self):
-        with tempfile.TemporaryDirectory() as name:
-            root = Path(name)
-            (root / "pkg").mkdir(); (root / "tests").mkdir()
-            (root / "pkg" / "option_parser.py").write_text("def parse_idirafter(flag):\n    return flag\n", encoding="utf-8")
-            (root / "tests" / "test_option_parser.py").write_text("def test_case_one():\n    pass\n", encoding="utf-8")
-            result = prepare(root, "parse_idirafter drops the attached form")
-            self.assertEqual([e.path for e in result.packet.evidence], ["pkg/option_parser.py"])
-            self.assertEqual([(m["path"], m.get("companion_of")) for m in result.context_map],
-                             [("tests/test_option_parser.py", "pkg/option_parser.py")])
-            brief = build_brief(root, "parse_idirafter drops the attached form")
-            self.assertIn("- `pkg/option_parser.py`: lines 1-2; test file named after it: `tests/test_option_parser.py`", render_orientation(brief))
-            evidence = render(brief)
-            self.assertIn("## Test files named after listed files", evidence)
-            self.assertIn(f"- `tests/test_option_parser.py` ({(root / 'tests' / 'test_option_parser.py').stat().st_size} bytes): named after `pkg/option_parser.py`", evidence)
-            self.assertNotIn("## Files also matched, not excerpted", evidence)

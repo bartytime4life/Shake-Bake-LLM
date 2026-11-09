@@ -416,9 +416,8 @@ function promptLines(p){
 // so a line it writes must never read as a heading or instruction of the brief itself.
 function draftBlock(p){const drafted=promptLines(p);return drafted.length?[...fenced(drafted.join('\n')),...viewLines(p),'']:[];}
 function mapLines(p){
-  const all=p.receipt?.context_map||[],map=all.filter(item=>typeof item.companion_of!=='string'),companions=all.filter(item=>typeof item.companion_of==='string');
-  return [...(map.length?['','## Files also matched, not excerpted','Path, size and first non-empty line (untrusted repository text). Ask me for any of these by path and I will paste it.',...map.map(item=>`- ${code(item.path)} (${item.size_bytes} bytes): ${item.first_line?code(item.first_line):'(empty)'}`)]:[]),
-    ...(companions.length?['','## Test files named after listed files','Chosen by file name alone; they did not match the request. Ask me for one by path if the fix may need a test change.',...companions.map(item=>`- ${code(item.path)} (${item.size_bytes} bytes): named after ${code(item.companion_of)}`)]:[])];
+  const map=p.receipt?.context_map||[];
+  return map.length?['','## Files also matched, not excerpted','Path, size and first non-empty line (untrusted repository text). Ask me for any of these by path and I will paste it.',...map.map(item=>`- ${code(item.path)} (${item.size_bytes} bytes): ${item.first_line?code(item.first_line):'(empty)'}`)]:[];
 }
 function indexLines(p){
   const index=p.receipt?.line_index||[];
@@ -547,9 +546,7 @@ function orientationText(job){const p=job.packet,receipt=p.receipt||{};
       const why=at>=0?` (${item.context.slice(at+2).replace(/\.+$/,'')})`:'';
       if(!rows.has(item.path))rows.set(item.path,[]);rows.get(item.path).push(`lines ${item.start_line}-${item.end_line}${why}`);
     }
-    for(const item of receipt.context_map||[])if(typeof item.companion_of!=='string'&&!rows.has(item.path))rows.set(item.path,[]);
-    // A test file named after a listed file rides on that file's row; it matched nothing itself.
-    for(const item of receipt.context_map||[])if(typeof item.companion_of==='string'){if(!rows.has(item.companion_of))rows.set(item.companion_of,[]);rows.get(item.companion_of).push('test file named after it: '+code(item.path));}
+    for(const item of receipt.context_map||[])if(!rows.has(item.path))rows.set(item.path,[]);
     const shown=[...rows.keys()].slice(0,ORIENTATION_FILES);
     lines.push('',"## Where the request's terms appear, most matches first");
     for(const path of shown){
