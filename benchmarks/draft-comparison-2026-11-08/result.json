@@ -1,0 +1,501 @@
+{
+ "kind": "draft_comparison_result",
+ "run": "drafted-prompt comparison",
+ "protocol": "protocol.json",
+ "gold_files_total": 13,
+ "summary": {
+  "orientation_tools": {
+   "total_hits_at_5": 8,
+   "median_tool_uses": 4.0,
+   "mean_tool_uses": 4.83,
+   "median_tokens": 87608.0,
+   "median_seconds": 10.87
+  },
+  "draft_tools": {
+   "total_hits_at_5": 8,
+   "median_tool_uses": 4.0,
+   "mean_tool_uses": 4.5,
+   "median_tokens": 88239.0,
+   "median_seconds": 12.78
+  },
+  "orientation_paste": {
+   "total_hits_at_5": 9,
+   "median_tool_uses": 2.0,
+   "mean_tool_uses": 2,
+   "median_tokens": 83811.5,
+   "median_seconds": 9.87
+  },
+  "draft_paste": {
+   "total_hits_at_5": 9,
+   "median_tool_uses": 2.0,
+   "mean_tool_uses": 2,
+   "median_tokens": 84863.0,
+   "median_seconds": 7.57
+  }
+ },
+ "tools_path": {
+  "wins": 1,
+  "losses": 1,
+  "rule_met": false
+ },
+ "paste_path": {
+  "wins": 1,
+  "losses": 1,
+  "rule_met": false
+ },
+ "runs": [
+  {
+   "case": "c1",
+   "arm": "orientation_tools",
+   "tokens": 96055,
+   "tool_uses": 11,
+   "ms": 48658,
+   "files": [
+    "brownie/convert/datatypes.py",
+    "brownie/convert/normalize.py",
+    "brownie/network/contract.py",
+    "brownie/network/transaction.py",
+    "brownie/convert/utils.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c1",
+   "arm": "draft_tools",
+   "tokens": 94605,
+   "tool_uses": 9,
+   "ms": 48645,
+   "files": [
+    "brownie/convert/datatypes.py",
+    "brownie/convert/normalize.py",
+    "brownie/convert/utils.py",
+    "brownie/network/contract.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c1",
+   "arm": "orientation_paste",
+   "tokens": 83443,
+   "tool_uses": 2,
+   "ms": 13232,
+   "files": [
+    "brownie/convert/normalize.py",
+    "brownie/convert/utils.py",
+    "brownie/network/contract.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c1",
+   "arm": "draft_paste",
+   "tokens": 84505,
+   "tool_uses": 2,
+   "ms": 11748,
+   "files": [
+    "brownie/convert/normalize.py",
+    "brownie/convert/utils.py",
+    "brownie/network/contract.py",
+    "brownie/convert/datatypes.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c2",
+   "arm": "orientation_tools",
+   "tokens": 85410,
+   "tool_uses": 3,
+   "ms": 7168,
+   "files": [
+    "src/pytorch_metric_learning/losses/vicreg_loss.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c2",
+   "arm": "draft_tools",
+   "tokens": 86587,
+   "tool_uses": 3,
+   "ms": 13807,
+   "files": [
+    "src/pytorch_metric_learning/losses/vicreg_loss.py",
+    "tests/losses/test_vicreg_loss.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c2",
+   "arm": "orientation_paste",
+   "tokens": 83846,
+   "tool_uses": 2,
+   "ms": 10836,
+   "files": [
+    "src/pytorch_metric_learning/losses/vicreg_loss.py",
+    "tests/losses/test_vicreg_loss.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c2",
+   "arm": "draft_paste",
+   "tokens": 84833,
+   "tool_uses": 2,
+   "ms": 7214,
+   "files": [
+    "src/pytorch_metric_learning/losses/vicreg_loss.py",
+    "tests/losses/test_vicreg_loss.py",
+    "docs/losses.md"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c3",
+   "arm": "orientation_tools",
+   "tokens": 90495,
+   "tool_uses": 3,
+   "ms": 7765,
+   "files": [
+    "libcodechecker/log/option_parser.py",
+    "libcodechecker/analyze/log_parser.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c3",
+   "arm": "draft_tools",
+   "tokens": 87462,
+   "tool_uses": 4,
+   "ms": 11216,
+   "files": [
+    "libcodechecker/log/option_parser.py",
+    "libcodechecker/analyze/log_parser.py",
+    "libcodechecker/analyze/analyzers/analyzer_clangsa.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c3",
+   "arm": "orientation_paste",
+   "tokens": 83703,
+   "tool_uses": 2,
+   "ms": 11002,
+   "files": [
+    "libcodechecker/analyze/log_parser.py",
+    "libcodechecker/log/option_parser.py",
+    "libcodechecker/analyze/analyzers/analyzer_clangsa.py",
+    "tests/functional/analyze/test_analyze.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c3",
+   "arm": "draft_paste",
+   "tokens": 84601,
+   "tool_uses": 2,
+   "ms": 6475,
+   "files": [
+    "libcodechecker/log/option_parser.py",
+    "libcodechecker/analyze/log_parser.py",
+    "libcodechecker/analyze/analyzers/analyzer_clangsa.py",
+    "libcodechecker/analyze/analyzers/analyzer_base.py",
+    "libcodechecker/analyze/analysis_manager.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "orientation_tools",
+   "tokens": 87799,
+   "tool_uses": 4,
+   "ms": 9855,
+   "files": [
+    "webapp/graphite/util.py",
+    "webapp/graphite/finders/remote.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "draft_tools",
+   "tokens": 89944,
+   "tool_uses": 3,
+   "ms": 11046,
+   "files": [
+    "webapp/graphite/util.py",
+    "webapp/graphite/finders/remote.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c4",
+   "arm": "orientation_paste",
+   "tokens": 85131,
+   "tool_uses": 2,
+   "ms": 7568,
+   "files": [
+    "webapp/graphite/util.py",
+    "webapp/graphite/finders/remote.py",
+    "webapp/graphite/readers/remote.py",
+    "webapp/tests/test_finders_remote.py",
+    "webapp/tests/test_util.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c4",
+   "arm": "draft_paste",
+   "tokens": 86248,
+   "tool_uses": 2,
+   "ms": 7202,
+   "files": [
+    "webapp/graphite/util.py",
+    "webapp/graphite/finders/remote.py",
+    "webapp/graphite/readers/remote.py",
+    "webapp/tests/test_finders_remote.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "orientation_tools",
+   "tokens": 86764,
+   "tool_uses": 4,
+   "ms": 13458,
+   "files": [
+    "autobahn/asyncio/wamp.py",
+    "autobahn/asyncio/websocket.py",
+    "autobahn/asyncio/component.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c5",
+   "arm": "draft_tools",
+   "tokens": 89016,
+   "tool_uses": 4,
+   "ms": 19205,
+   "files": [
+    "autobahn/asyncio/wamp.py",
+    "autobahn/asyncio/websocket.py",
+    "autobahn/asyncio/rawsocket.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c5",
+   "arm": "orientation_paste",
+   "tokens": 83782,
+   "tool_uses": 2,
+   "ms": 8153,
+   "files": [
+    "autobahn/asyncio/wamp.py",
+    "autobahn/asyncio/component.py",
+    "autobahn/wamp/test/test_runner.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c5",
+   "arm": "draft_paste",
+   "tokens": 85149,
+   "tool_uses": 2,
+   "ms": 10659,
+   "files": [
+    "autobahn/asyncio/wamp.py",
+    "autobahn/asyncio/component.py"
+   ],
+   "hits_at_5": 2
+  },
+  {
+   "case": "c6",
+   "arm": "orientation_tools",
+   "tokens": 87417,
+   "tool_uses": 4,
+   "ms": 11894,
+   "files": [
+    "Python/Product/PythonTools/ptvsd/repl/jupyter_client.py",
+    "Python/Product/PythonTools/ptvsd/util.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "draft_tools",
+   "tokens": 85431,
+   "tool_uses": 4,
+   "ms": 11752,
+   "files": [
+    "Python/Product/PythonTools/ptvsd/repl/jupyter_client.py",
+    "Python/Product/PythonTools/ptvsd/util.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "orientation_paste",
+   "tokens": 83841,
+   "tool_uses": 2,
+   "ms": 8908,
+   "files": [
+    "Python/Product/PythonTools/ptvsd/repl/jupyter_client.py",
+    "Python/Product/PythonTools/ptvsd/repl/ipython_client.py",
+    "Python/Product/PythonTools/ptvsd/repl/__init__.py",
+    "Python/Product/PythonTools/ptvsd/repl/jupyter_client-helpers.py"
+   ],
+   "hits_at_5": 1
+  },
+  {
+   "case": "c6",
+   "arm": "draft_paste",
+   "tokens": 84893,
+   "tool_uses": 2,
+   "ms": 7931,
+   "files": [
+    "Python/Product/PythonTools/ptvsd/repl/jupyter_client.py",
+    "Python/Product/PythonTools/ptvsd/repl/ipython_client.py",
+    "Python/Product/PythonTools/ptvsd/repl/__init__.py"
+   ],
+   "hits_at_5": 1
+  }
+ ],
+ "gold": [
+  {
+   "case": "c1",
+   "id": "eth-brownie/brownie/517/513",
+   "gold": [
+    "brownie/convert/datatypes.py",
+    "brownie/convert/utils.py",
+    "tests/convert/test_return_value.py"
+   ]
+  },
+  {
+   "case": "c2",
+   "id": "kevinmusgrave/pytorch-metric-learning/470/467",
+   "gold": [
+    "src/pytorch_metric_learning/losses/vicreg_loss.py",
+    "tests/losses/test_vicreg_loss.py"
+   ]
+  },
+  {
+   "case": "c3",
+   "id": "ericsson/codechecker/1266/1267",
+   "gold": [
+    "tests/unit/test_option_parser.py",
+    "libcodechecker/log/option_parser.py"
+   ]
+  },
+  {
+   "case": "c4",
+   "id": "graphite-project/graphite-web/2660/2652",
+   "gold": [
+    "webapp/graphite/util.py",
+    "webapp/tests/test_util.py"
+   ]
+  },
+  {
+   "case": "c5",
+   "id": "crossbario/autobahn-python/979/971",
+   "gold": [
+    "autobahn/asyncio/component.py",
+    "autobahn/asyncio/wamp.py"
+   ]
+  },
+  {
+   "case": "c6",
+   "id": "microsoft/ptvs/3818/3800",
+   "gold": [
+    "Python/Product/PythonTools/ptvsd/ipcjson.py",
+    "Python/Product/PythonTools/ptvsd/repl/jupyter_client.py"
+   ]
+  }
+ ],
+ "isolation": {
+  "method": "every tool call's arguments scanned for absolute paths outside the run's own case directory, non-read tools, and git, network or package commands; flagged commands re-checked for absolute paths",
+  "runs_checked": 24,
+  "violations": 0,
+  "flags_reviewed": 3,
+  "flag_causes": "relative paths after cd into the run's own case repository"
+ },
+ "briefs": [
+  {
+   "case": "c1",
+   "control_bytes": 3926,
+   "draft_bytes": 6591,
+   "control_sha256": "e220d60d005ecbe0f55e0e1d90beb6568c8984294b19bf4120f340e8049b42bf",
+   "draft_sha256": "21269bcd7b533f8526c6b0f4fdad48a876596e9916b7d406b830e5421ad36e9a",
+   "draft_present": true,
+   "worker_failure": null,
+   "fitted_copy": "The local model saw a shortened copy: it was shown E1, E2, E3, E4, E5, E6, E7 and was not shown E8, E9. Every excerpt in this brief is unchanged.",
+   "issue_sha256": "f869e2b373fd3e11d309a9ae40209a14dcb01529ed70c9881618c1da796cd375"
+  },
+  {
+   "case": "c2",
+   "control_bytes": 4069,
+   "draft_bytes": 7163,
+   "control_sha256": "9f310a9ebe85f05609ff72b16c70b9208f96b9e87264d8a0f81f59c0c3b72fa9",
+   "draft_sha256": "74d00c3fecd8d084024a5777163321679ec2cce95e8ce6e60ac4c42ce29abfdd",
+   "draft_present": true,
+   "worker_failure": null,
+   "fitted_copy": null,
+   "issue_sha256": "add2e9a2c4d955dbe285fb4cd544afa5c40e44a0454beef9bf4443da0169fd3c"
+  },
+  {
+   "case": "c3",
+   "control_bytes": 3695,
+   "draft_bytes": 7041,
+   "control_sha256": "319d06db80680d0eb779700947af577b33786f8fb8108dfe1e6f973c370e94d8",
+   "draft_sha256": "32091e115ec552f07a146e46f9357ac805eed8059ecd6af8056d1a4d74c4d771",
+   "draft_present": true,
+   "worker_failure": null,
+   "fitted_copy": "The local model saw a shortened copy: it was shown E1, E2, E3, E4, E5, E6, E7, E8 and was not shown E9, E10. Every excerpt in this brief is unchanged.",
+   "issue_sha256": "3232636be75db76cffbe6843bc70fbd4f6c899de3b62c5bac4c2ff368ecf795d"
+  },
+  {
+   "case": "c4",
+   "control_bytes": 5381,
+   "draft_bytes": 8887,
+   "control_sha256": "79cf875f503c03f89a5e5f8f805bc77b7e38d42ecd039cd9a8bad27a88ddea58",
+   "draft_sha256": "b40e05d89585e7ecd4f76039e6f7d339624116c63ebb58f95698f4f30f869840",
+   "draft_present": true,
+   "worker_failure": null,
+   "fitted_copy": "The local model saw a shortened copy: it was shown E1, E2, E3, E4 and was not shown E5, E6, E7, E8, E9, E10. Every excerpt in this brief is unchanged.",
+   "issue_sha256": "c8db208b997cca4aae5ecab26aab53f7ac3e503bac95bd2b9bc78d610c5eb186"
+  },
+  {
+   "case": "c5",
+   "control_bytes": 4291,
+   "draft_bytes": 7594,
+   "control_sha256": "59bf780077b2b680a505481415cd4e011a85c7375a8b1144fce549c3ef805680",
+   "draft_sha256": "cc3849e8828aac96cf0f2bb2d036d1d0e0af74065e3ce04cd35288a656be5d10",
+   "draft_present": true,
+   "worker_failure": null,
+   "fitted_copy": "The local model saw a shortened copy: it was shown E1, E2, E3, E4, E5, E6 and was not shown E7, E8, E9. Every excerpt in this brief is unchanged.",
+   "issue_sha256": "781d6133ea9ca6872f3b3303c72179ccd984c485c43e45fef9f1b87db89f0b1f"
+  },
+  {
+   "case": "c6",
+   "control_bytes": 4276,
+   "draft_bytes": 7548,
+   "control_sha256": "653172a6b106d2a1d54e966e70c623d2eb09d3febbd6a2812e261b8f9d32df0a",
+   "draft_sha256": "12a2ceab1f106308cf7dc920acbef5199dacb653959565397e126b9eadb2addb",
+   "draft_present": true,
+   "worker_failure": null,
+   "fitted_copy": "The local model saw a shortened copy: it was shown E1, E2, E3, E4, E5, E6, E7 and was not shown E8, E9. Every excerpt in this brief is unchanged.",
+   "issue_sha256": "ba5cded6b28b9b36aa97a674cd7b01ef6836f5de6f3ae07a2ad8e8f8e29a6b61"
+  }
+ ],
+ "gold_in_control_brief": {
+  "files": 9,
+  "of": 13
+ },
+ "gold_named_in_draft_section": {
+  "files": 5,
+  "of": 13,
+  "note": "the draft never named a changed file the control brief lacked"
+ },
+ "worker_model": {
+  "name": "qwen3.5:4b",
+  "digest": "d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04",
+  "digest_unchanged_after_rendering": true
+ }
+}
