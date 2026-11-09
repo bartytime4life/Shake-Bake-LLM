@@ -1,0 +1,185 @@
+{
+ "kind": "recall_check_result",
+ "protocol": "protocol.json",
+ "changed_files": 44,
+ "baseline_hits_with_map": 30,
+ "candidate_hits_with_map": 31,
+ "cases_gaining": [
+  "gitguardian/ggshield/392/391"
+ ],
+ "cases_losing": [],
+ "decision_rule_met": false,
+ "decision": "reverted",
+ "companions_listed": 31,
+ "companions_that_were_changed_files": 1,
+ "orientation_bytes_added": {
+  "min": 0,
+  "max": 285
+ },
+ "cases": [
+  {
+   "id": "juniper/py-junos-eznc/413/400",
+   "changed_files": 2,
+   "baseline_hits_with_map": 2,
+   "candidate_hits_with_map": 2,
+   "baseline_hits_excerpted": 2,
+   "candidate_hits_excerpted": 2,
+   "baseline_orientation_bytes": 4788,
+   "candidate_orientation_bytes": 5031
+  },
+  {
+   "id": "continualai/avalanche/668/657",
+   "changed_files": 4,
+   "baseline_hits_with_map": 1,
+   "candidate_hits_with_map": 1,
+   "baseline_hits_excerpted": 1,
+   "candidate_hits_excerpted": 1,
+   "baseline_orientation_bytes": 6105,
+   "candidate_orientation_bytes": 6105
+  },
+  {
+   "id": "python-discord/bot/530/299",
+   "changed_files": 2,
+   "baseline_hits_with_map": 2,
+   "candidate_hits_with_map": 2,
+   "baseline_hits_excerpted": 1,
+   "candidate_hits_excerpted": 1,
+   "baseline_orientation_bytes": 4331,
+   "candidate_orientation_bytes": 4439
+  },
+  {
+   "id": "gitguardian/ggshield/392/391",
+   "changed_files": 2,
+   "baseline_hits_with_map": 1,
+   "candidate_hits_with_map": 2,
+   "baseline_hits_excerpted": 0,
+   "candidate_hits_excerpted": 0,
+   "baseline_orientation_bytes": 4059,
+   "candidate_orientation_bytes": 4313
+  },
+  {
+   "id": "learningequality/kolibri/6739/6731",
+   "changed_files": 2,
+   "baseline_hits_with_map": 1,
+   "candidate_hits_with_map": 1,
+   "baseline_hits_excerpted": 1,
+   "candidate_hits_excerpted": 1,
+   "baseline_orientation_bytes": 8674,
+   "candidate_orientation_bytes": 8817
+  },
+  {
+   "id": "databiosphere/toil/1168/1127",
+   "changed_files": 3,
+   "baseline_hits_with_map": 3,
+   "candidate_hits_with_map": 3,
+   "baseline_hits_excerpted": 2,
+   "candidate_hits_excerpted": 2,
+   "baseline_orientation_bytes": 7600,
+   "candidate_orientation_bytes": 7600
+  },
+  {
+   "id": "dj-stripe/dj-stripe/502/416",
+   "changed_files": 2,
+   "baseline_hits_with_map": 2,
+   "candidate_hits_with_map": 2,
+   "baseline_hits_excerpted": 1,
+   "candidate_hits_excerpted": 1,
+   "baseline_orientation_bytes": 4308,
+   "candidate_orientation_bytes": 4409
+  },
+  {
+   "id": "khronosgroup/gltf-blender-io/214/213",
+   "changed_files": 2,
+   "baseline_hits_with_map": 2,
+   "candidate_hits_with_map": 2,
+   "baseline_hits_excerpted": 1,
+   "candidate_hits_excerpted": 1,
+   "baseline_orientation_bytes": 4673,
+   "candidate_orientation_bytes": 4673
+  },
+  {
+   "id": "piccolo-orm/piccolo/457/417",
+   "changed_files": 3,
+   "baseline_hits_with_map": 3,
+   "candidate_hits_with_map": 3,
+   "baseline_hits_excerpted": 3,
+   "candidate_hits_excerpted": 3,
+   "baseline_orientation_bytes": 5259,
+   "candidate_orientation_bytes": 5403
+  },
+  {
+   "id": "scons/scons/3833/3014",
+   "changed_files": 3,
+   "baseline_hits_with_map": 3,
+   "candidate_hits_with_map": 3,
+   "baseline_hits_excerpted": 3,
+   "candidate_hits_excerpted": 3,
+   "baseline_orientation_bytes": 4447,
+   "candidate_orientation_bytes": 4447
+  },
+  {
+   "id": "boto/botocore/711/708",
+   "changed_files": 3,
+   "baseline_hits_with_map": 0,
+   "candidate_hits_with_map": 0,
+   "baseline_hits_excerpted": 0,
+   "candidate_hits_excerpted": 0,
+   "baseline_orientation_bytes": 11865,
+   "candidate_orientation_bytes": 11919
+  },
+  {
+   "id": "yashaka/selene/207/206",
+   "changed_files": 2,
+   "baseline_hits_with_map": 2,
+   "candidate_hits_with_map": 2,
+   "baseline_hits_excerpted": 1,
+   "candidate_hits_excerpted": 1,
+   "baseline_orientation_bytes": 4802,
+   "candidate_orientation_bytes": 4874
+  },
+  {
+   "id": "pyocd/pyocd/987/986",
+   "changed_files": 4,
+   "baseline_hits_with_map": 3,
+   "candidate_hits_with_map": 3,
+   "baseline_hits_excerpted": 2,
+   "candidate_hits_excerpted": 2,
+   "baseline_orientation_bytes": 5223,
+   "candidate_orientation_bytes": 5390
+  },
+  {
+   "id": "alephdata/aleph/3092/2109",
+   "changed_files": 2,
+   "baseline_hits_with_map": 0,
+   "candidate_hits_with_map": 0,
+   "baseline_hits_excerpted": 0,
+   "candidate_hits_excerpted": 0,
+   "baseline_orientation_bytes": 4701,
+   "candidate_orientation_bytes": 4701
+  },
+  {
+   "id": "frictionlessdata/framework/1532/1520",
+   "changed_files": 6,
+   "baseline_hits_with_map": 3,
+   "candidate_hits_with_map": 3,
+   "baseline_hits_excerpted": 0,
+   "candidate_hits_excerpted": 0,
+   "baseline_orientation_bytes": 5937,
+   "candidate_orientation_bytes": 5998
+  },
+  {
+   "id": "quantecon/quantecon.py/705/704",
+   "changed_files": 2,
+   "baseline_hits_with_map": 2,
+   "candidate_hits_with_map": 2,
+   "baseline_hits_excerpted": 1,
+   "candidate_hits_excerpted": 1,
+   "baseline_orientation_bytes": 8127,
+   "candidate_orientation_bytes": 8412
+  }
+ ],
+ "receipt_sha256": {
+  "baseline": "e18e8da8b656257b547ccab8e5b7aa5f86f7a39b177fc74ca1a2eeccadbb57cc",
+  "candidate": "5c6c4313e46461815afaee6adcac22c132a83f2e7f15d0e36a1d7c5eaa191e99"
+ }
+}

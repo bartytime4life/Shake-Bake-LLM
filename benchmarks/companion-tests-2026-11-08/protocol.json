@@ -1,0 +1,37 @@
+{
+ "kind": "preregistered_recall_check",
+ "schema": 1,
+ "date": "2026-11-08",
+ "status": "Registered and pushed before any row at dev offsets 1700 to 2299 was read.",
+ "question": "Does listing test files named after listed files reach more of the files real fixes changed, on fresh cases?",
+ "baseline": {
+  "commit": "8f8fde9",
+  "search_py_sha256": "afd7d48fd9596a69c767efbe70d42048fb89060d05ebe16768b3b93ac5951bda"
+ },
+ "candidate": {
+  "commit": "285912856f3c95b8d29875debc89bcc39a528e33",
+  "search_py_sha256": "a8d620f08f421877331083facb586975fc0526e18ef77f52809eb12f3e1b62cb",
+  "change": "up to four test files named after excerpted or mapped code files, listed after the map; additive"
+ },
+ "cases": {
+  "dataset": "JetBrains-Research/lca-bug-localization",
+  "revision": "f2bb26a1c3320ccc1d7b02d2630077ff327a80f6",
+  "config": "py",
+  "split": "dev",
+  "pool": "dev rows at offsets 1700 to 2299 (never read), minus every text_id of the 50-row py test split (by id only), minus every repository used in any earlier run",
+  "filters": "changed_files_count 2 to 6 and code_changed_files_count at least 2; permissive license (MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0); 50 to 1,500 non-test files; one case per repository",
+  "selection": "first 16 by sha256('shake-bake-companion-2026-11-08-v1:' + text_id), lowest-hash row per repository, no replacements",
+  "acquisition": "shallow git fetch at base_sha; 300 MiB cap per checkout, 3 GiB total; omissions disclosed"
+ },
+ "measure": "benchmarks/external_recall.py at default limits for both commits: per case, changed files among excerpts plus map (hits_with_map)",
+ "decision_rule": "keep the change only if the candidate reaches more changed files than the baseline on at least two cases; otherwise revert it",
+ "also_reported": [
+  "companion entries listed and how many are changed files",
+  "orientation brief bytes, baseline against candidate"
+ ],
+ "limits": [
+  "mechanical file recall, not answer quality",
+  "no host run",
+  "public data may be in model training sets, irrelevant here since no model runs"
+ ]
+}
