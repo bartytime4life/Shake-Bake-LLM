@@ -183,6 +183,13 @@
       el('failure-frame-list').append(li);
     }
     el('failure-frames').hidden = !value.frames?.length;
+    // Warn-only, masked credential findings (screening.py); the report and its exports are unchanged.
+    const findings = Array.isArray(value.screening) ? value.screening.filter(item => item && typeof item.kind === 'string' && typeof item.where === 'string' && typeof item.preview === 'string').slice(0, 20) : [];
+    el('failure-credential-warning').textContent = findings.length
+      ? [`Possible credentials in what this report would share (${findings.length} found). Exact text is unchanged; remove or rotate before sharing if they are real:`,
+         ...findings.map(item => `- ${item.kind} in ${item.where}${typeof item.path === 'string' ? ' ' + item.path : ''}${Number.isInteger(item.line) ? ' line ' + item.line : ''}: ${item.preview}`)].join('\n')
+      : '';
+    el('failure-credential-warning').hidden = !findings.length;
     el('failure-original').textContent = value.error_output;
     el('failure-captured-command').textContent = value.command ? `Recorded command (not run): ${value.command}` : 'No command supplied.';
     el('failure-limits').replaceChildren(node('p', 'A source match identifies a place to inspect. It does not prove the cause, run the failing command, or apply a fix.'));

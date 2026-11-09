@@ -13,6 +13,7 @@ import re
 
 from .collector import _parts, _read
 from .contracts import Evidence, Refusal
+from .screening import screen_failure
 
 
 MAX_ERROR_BYTES = 65_536
@@ -273,6 +274,8 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
             "innermost_project_frame": primary["frame_id"] if primary else None, "chain_relations": relations,
             "snapshot_id": snapshot, "selected_excerpt_bytes": total_bytes,
             "cutoffs": sorted(cutoffs), "guidance": _guidance(terminal, primary, frames),
+            # Warn-only, masked; the report's exact text is unchanged (screening.py).
+            "screening": screen_failure(error_output, command, evidence),
             "limitations": ["Current source location only; the failure's root cause and fix are unverified.",
                             "Pasted paths, statements, commands and exception messages are untrusted data; nothing was executed.",
                             "A matching statement does not prove the failed run used this checkout or file version.",
