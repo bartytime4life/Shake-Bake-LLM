@@ -19,4 +19,6 @@ PYTHONPATH=src python3.12 -B -m shake_bake diagnose \
 
 It prints JSON. Exit status `0` means source was located, `3` means no source was located, and `2` means the request was refused. None means the bug has been fixed. Use UTF-8 input and keep private error files outside inspected source if they should not be included in future briefs.
 
+If the pasted output, the command or a captured excerpt looks like it holds a credential, the result shows a warn-only notice with masked previews, and `diagnose` prints it to standard error. Exports are unchanged. See [credential warnings](credential-screening-2026-11-09.md).
+
 Committed verification uses disposable synthetic source and Python errors. It covers exact line matching, source changes, chained errors, path confinement, input limits, real HTTP and browser exports. Those checks verify workflow mechanics; no private-project failure or general diagnostic accuracy is claimed.

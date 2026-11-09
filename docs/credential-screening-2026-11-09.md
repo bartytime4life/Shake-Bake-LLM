@@ -47,6 +47,12 @@ most twenty findings are reported.
   standard output stays the exact brief.
 - **JSON:** `--format json` and the helper's result carry the findings under
   `screening`.
+- **Failed-run reports:** the same screen covers the pasted error output, the
+  recorded command and the source excerpts. A notice appears in the result,
+  above the exception, and `diagnose` prints the warning to standard error.
+  Error output is a common place for tokens to appear, for example in request
+  URLs or environment dumps. The report's exact text and its downloads are
+  unchanged.
 
 ## What it deliberately does not do
 
@@ -62,10 +68,11 @@ most twenty findings are reported.
 
 ## Checks
 
-- **Python tests:** six new tests in `tests/test_screening.py` cover each
+- **Python tests:** seven new tests in `tests/test_screening.py` cover each
   format, placeholders and ordinary code that must not fire, masking, the
   excerpt line number, a finding in the request, the CLI's stderr-only warning
-  and silence for clean source. Fixture credentials are assembled at runtime,
+  and silence for clean source. One test covers a failure report with findings
+  in the pasted output, the command and an excerpt, plus `diagnose` on stderr. Fixture credentials are assembled at runtime,
   so no file in the repository holds a literal token.
 - **Workbench:** a clipboard test checks that the notice appears and that
   neither the preview nor the copied text contains it. It also checks that
