@@ -18,6 +18,13 @@ SLACK = "xo" + "xb-" + "1234567890-abcdefghij"
 
 
 class FailureScreeningTests(unittest.TestCase):
+    def test_legacy_three_argument_screening_remains_bounded_and_compatible(self):
+        findings = screen_failure("Error: " + AWS, "launch " + GITHUB, [])
+        self.assertEqual([(item["where"], item["line"]) for item in findings], [("error output", 1), ("command", None)])
+        with patch("shake_bake.screening._scan", side_effect=lambda text: iter(
+                [("synthetic", 1, "masked")] * 100)):
+            self.assertEqual(len(screen_failure("log", "command", [])), MAX_FINDINGS)
+
     def test_log_command_source_and_project_fields_are_masked_without_rewriting(self):
         report = {
             "format": "python", "command": "launch " + SLACK,

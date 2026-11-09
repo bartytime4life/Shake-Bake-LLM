@@ -70,6 +70,50 @@ class MultiruntimeFailureTests(unittest.TestCase):
         self.assertEqual(result["frames"][1]["column"], 7)
         self.assertEqual(result["error_output"], raw)
 
+    @unittest.skipUnless(shutil.which("node"), "optional development Node.js unavailable")
+    def test_actual_node_eof_keeps_reported_line_and_labels_preceding_context(self):
+        source = "function incomplete() {\n"
+        path = self.write("eof.js", source)
+        run = subprocess.run([shutil.which("node"), str(path)], cwd=self.root,
+                             capture_output=True, text=True, timeout=5)
+        result = locate_failure(self.root, run.stderr)
+        frame = next(item for item in result["frames"] if item["frame_id"] == result["innermost_project_frame"])
+        self.assertEqual(frame["line"], 2)
+        self.assertEqual(frame["context_line"], 1)
+        self.assertEqual(frame["location_kind"], "end_of_file")
+        self.assertEqual(result["error_output"], run.stderr)
+        self.assertEqual(result["evidence"][0]["text"], source)
+        self.assertEqual(result["evidence"][0]["end_line"], 1)
+
+    def test_other_out_of_range_node_locations_remain_unlocated(self):
+        self.write("main.js", "throw new TypeError('bad');\n")
+        result = locate_failure(self.root, "TypeError: bad\n    at main.js:2:1\n")
+        self.assertFalse(result["source_located"])
+        self.assertEqual(result["frames"][0]["status"], "line_out_of_range")
+
+    def test_eof_context_is_not_reused_as_an_out_of_range_stack_location(self):
+        source = "function incomplete() {\n"
+        path = self.write("main.js", source)
+        # The distinct spellings identify one file, but only the caret-less
+        # EOF header authorizes preceding context. The unrelated stack's
+        # column-bearing claim still points beyond the stored source.
+        for header_path, stack_path in ((str(path), "main.js"), ("main.js", str(path))):
+            with self.subTest(header_path=header_path, stack_path=stack_path):
+                raw = (f"{header_path}:2\n\n\n\nSyntaxError: Unexpected end of input\n"
+                       f"TypeError: unrelated later error\n    at run ({stack_path}:2:1)\n")
+                result = locate_failure(self.root, raw)
+                eof_frame, stack_frame = result["frames"]
+                self.assertEqual(eof_frame["status"], "located")
+                self.assertEqual((eof_frame["line"], eof_frame["context_line"]), (2, 1))
+                self.assertEqual(eof_frame["location_kind"], "end_of_file")
+                self.assertEqual(stack_frame["status"], "line_out_of_range")
+                self.assertIsNone(stack_frame["evidence_id"])
+                self.assertNotIn("location_kind", stack_frame)
+                self.assertNotIn("context_line", stack_frame)
+                self.assertEqual(result["error_output"], raw)
+                self.assertEqual(len(result["evidence"]), 1)
+                self.assertEqual(result["evidence"][0]["text"], source)
+
     def test_node_frame_without_bound_exception_does_not_borrow_another_message(self):
         self.write("main.js", "throw new Error('actual');\n")
         logs = ["    at main.js:1:1\nError: unrelated later message\n",

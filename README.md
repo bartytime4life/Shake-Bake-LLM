@@ -2,7 +2,7 @@
 
 Check a failed run against the code on your computer, then take a precise debugging brief into your AI chat. The workbench reads approved source folders, preserves the original error and shows the exact lines it found. No model is needed for this workflow.
 
-**Development preview: `0.4.0.dev26`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
+**Development preview: `0.4.0.dev27`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
 
 ## Open the app
 
@@ -17,7 +17,7 @@ The launcher chooses a supported installed Python and opens `http://127.0.0.1:84
 ## Check an actual failure
 
 1. Open **Connect project folder**, enter the absolute folder path containing the failing code, and select **Connect folder**. This approves read-only inspection for the running session.
-2. Paste the complete error output. Optionally record the command that failed; it is never executed.
+2. Paste the complete error output, or select **Load error file** for a saved UTF-8 `.txt` or `.log` up to 64 KiB. Optionally record the command that failed; it is never executed.
 3. Select **Find failing source**. Inspect the source, reported line and column, unmatched frames and suggested next checks.
 4. Select **Copy debugging brief** to take the captured error, project context and exact source into Claude or ChatGPT. If clipboard access fails, select and copy the provided text manually. Nothing is sent automatically.
 
@@ -30,6 +30,8 @@ The launcher chooses a supported installed Python and opens `http://127.0.0.1:84
 ANSI terminal colors are ignored only while recognizing locations; the original output remains unchanged. Browser URLs, runtime internals, outside-project files and missing files remain explicit. Source maps and container-to-local path mapping are not inferred. An unsupported log produces an incomplete result.
 
 Changing the project, error or recorded command invalidates the previous result. A late response cannot silently replace the result for newer input. Pasted errors and commands are not stored as browser drafts or sent to a model.
+
+Loading a file stays in the open tab until **Find failing source**. Original file text and line endings are preserved; editing the error uses the edited text instead. Invalid files leave the current error unchanged. **Connect project folder** is available from either workflow and keeps the other workflow's inputs unchanged.
 
 The optional **Try a labelled example** uses invented errors and bundled inert source. It does not demonstrate a failure on your computer. See [the quickstart](docs/quickstart.md) and [supported formats and limits](docs/failed-run-workflow.md).
 
@@ -69,7 +71,7 @@ PYTHONPATH=src python3.12 -B -m shake_bake diagnose \
   --command 'npm test'
 ```
 
-The JSON report preserves the error. Exit `0` means source was located, `3` means none was located, and `2` means the request was refused. None means the bug is fixed.
+The JSON report preserves the error. Text export contains the same complete debugging brief, including unmatched locations and partial-result limits. Exit `0` means source was located, `3` means none was located, and `2` means the request was refused. None means the bug is fixed.
 
 For a source question:
 

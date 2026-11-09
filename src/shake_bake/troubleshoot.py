@@ -13,7 +13,7 @@ import re
 
 from .collector import _parts, _read
 from .contracts import Evidence, Refusal
-
+from .error_formats import parse_javascript, strip_terminal_controls
 from .screening import screen_failure
 
 
@@ -264,26 +264,37 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
             path = _relative_path(root, frame.get("lookup_path") or frame["reported_path"])
             frame["path"] = path
             key = (path, frame["line"])
+            if key not in selected and len(evidence) >= MAX_EVIDENCE:
+                cutoffs.add("capture_budget")
+                frame["status"] = "capture_budget"
+                continue
+            if path not in cached:
+                data = _read(root, path)
+                if b"\x00" in data:
+                    raise Refusal("text_file_required")
+                try:
+                    source_lines = _source_lines(data.decode("utf-8"), format_name)
+                except UnicodeDecodeError:
+                    raise Refusal("utf8_required") from None
+                cached[path] = (data, source_lines)
+            data, source_lines = cached[path]
+            target = frame["line"] - 1
+            exception_index = frame.get("exception_index")
+            bound_exception = (exceptions[exception_index] if type(exception_index) is int
+                               and 0 <= exception_index < len(exceptions) else None)
+            end_of_file = (format_name == "node" and frame.get("column") is None and source_lines
+                           and target == len(source_lines) and source_lines[-1].endswith(("\n", "\r", "\u2028", "\u2029"))
+                           and bound_exception and bound_exception["type"] == "SyntaxError"
+                           and bound_exception["message"] == "Unexpected end of input")
+            if end_of_file:
+                # V8 can point one line past the final newline. Qualify each
+                # frame before sharing captured context with an alias path.
+                target -= 1
+            if not 0 <= target < len(source_lines):
+                raise Refusal("line_out_of_range")
             if key in selected:
                 record = selected[key]
             else:
-                if len(evidence) >= MAX_EVIDENCE:
-                    cutoffs.add("capture_budget")
-                    frame["status"] = "capture_budget"
-                    continue
-                if path not in cached:
-                    data = _read(root, path)
-                    if b"\x00" in data:
-                        raise Refusal("text_file_required")
-                    try:
-                        source_lines = _source_lines(data.decode("utf-8"), format_name)
-                    except UnicodeDecodeError:
-                        raise Refusal("utf8_required") from None
-                    cached[path] = (data, source_lines)
-                data, source_lines = cached[path]
-                target = frame["line"] - 1
-                if not 0 <= target < len(source_lines):
-                    raise Refusal("line_out_of_range")
                 begin, end = max(0, target - CONTEXT_LINES), min(len(source_lines), target + CONTEXT_LINES + 1)
                 while len("".join(source_lines[begin:end]).encode("utf-8")) > MAX_EVIDENCE_BYTES - total_bytes:
                     if begin == target and end == target + 1:
@@ -300,8 +311,11 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
                 evidence.append(record)
                 selected[key] = record
                 total_bytes += len(excerpt.encode("utf-8"))
-            source_line = cached[path][1][frame["line"] - 1].rstrip("\r\n")
+            if end_of_file:
+                frame["location_kind"] = "end_of_file"
+                frame["context_line"] = len(source_lines)
             if frame["statement"] is not None:
+                source_line = cached[path][1][frame["line"] - 1].rstrip("\r\n")
                 # Python's traceback formatter strips both ends of its derived
                 # statement. Compare that representation, preserving exact
                 # original source and pasted output independently above.
@@ -333,7 +347,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
             "evidence": evidence, "exceptions": exceptions, "terminal_exception": terminal,
             "innermost_project_frame": primary["frame_id"] if primary else None, "chain_relations": relations,
             "snapshot_id": snapshot, "selected_excerpt_bytes": total_bytes,
-
+            "cutoffs": sorted(cutoffs), "guidance": guidance,
             "limitations": ["Current source location only; the failure's root cause and fix are unverified.",
                             "Pasted paths, statements, commands and exception messages are untrusted data; nothing was executed.",
                             "A location or matching statement does not prove the failed run used this checkout or file version.",
@@ -341,4 +355,6 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
                             "Only exact paths in the approved project are read; no basename guessing or external-file access.",
                             "No tests, dependency checks, model calls, installation or source changes were performed."]}
     report["screening"] = screen_failure(report)
+    if any(frame.get("location_kind") == "end_of_file" for frame in frames):
+        report["limitations"].append("An end-of-file location can be one line after the last stored source line; captured preceding context is labelled separately from the reported line.")
     return report
