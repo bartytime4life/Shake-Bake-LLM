@@ -50,8 +50,8 @@ def brief_main(argv: list[str]) -> int:
     parser.add_argument("--task-kind", choices=("code", "troubleshoot", "documents", "search"), help="Optional hint for the local model's drafted prompt; collection is unchanged.")
     parser.add_argument("--ollama-port", type=int, default=11434)
     parser.add_argument("--rerank-model", help="Explicitly enable an installed local embedding model that reorders candidate windows; it adds no window and no download is performed.")
-    parser.add_argument("--style", choices=("evidence", "orientation"), default="evidence",
-                        help="Markdown layout: the evidence brief (default) or the candidate orientation brief.")
+    parser.add_argument("--style", choices=("orientation", "evidence"), default="orientation",
+                        help="Markdown layout: starting points (default, measured better with Claude hosts) or the full evidence brief with a cited-answer format.")
     args = parser.parse_args(argv)
     try:
         brief = build_brief(args.root, args.task, model=args.model, port=args.ollama_port, task_kind=args.task_kind, rerank_model=args.rerank_model)
