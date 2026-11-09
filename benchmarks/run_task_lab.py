@@ -14,6 +14,7 @@ from shake_bake import __version__
 from shake_bake.contracts import Refusal
 from shake_bake.collector import MAX_REQUEST_CHARS, _parts, _read
 from shake_bake.search import SearchLimits
+from shake_bake import worker as worker_module
 from shake_bake.worker import parse_json
 
 LAB = Path(__file__).resolve().parent / "task-lab"
@@ -126,7 +127,7 @@ def grade_coverage(brief, key):
             "mechanical_pass": not missing and hashes_valid and not missing_cutoffs}
 
 
-def run_cases(*, model=None, port=11434, case_ids=None, expected_digest=None, expected_runtime=None, dataset=None):
+def run_cases(*, model=None, port=11434, case_ids=None, expected_digest=None, expected_runtime=None, dataset=None, rerank_model=None):
     dataset_root, cases, keys, identity = load_dataset(dataset)
     if case_ids and set(case_ids) - {case["id"] for case in cases}:
         raise ValueError("unknown_case")
@@ -139,7 +140,7 @@ def run_cases(*, model=None, port=11434, case_ids=None, expected_digest=None, ex
         started = time.monotonic()
         try:
             # Grading keys are never passed into build_brief or the worker packet.
-            brief = build_brief(root, case["task"], model=model, port=port, limits=SearchLimits(**case["limits"]), expected_digest=expected_digest, expected_runtime=expected_runtime)
+            brief = build_brief(root, case["task"], model=model, port=port, limits=SearchLimits(**case["limits"]), expected_digest=expected_digest, expected_runtime=expected_runtime, rerank_model=rerank_model)
             coverage = grade_coverage(brief, keys[case["id"]])
             payload = brief.to_dict()
             error = None
@@ -160,6 +161,7 @@ def run_cases(*, model=None, port=11434, case_ids=None, expected_digest=None, ex
             "case_manifest_sha256": identity["manifest_sha256"],
             "grading_keys_sha256": identity["grading_keys_sha256"],
             "mode": "ollama_candidate" if model else "evidence_only_diagnostic",
+            "datamark_source": worker_module.DATAMARK_SOURCE, "rerank_model": rerank_model,
             "cases": results, "mechanical_passes": sum(r["coverage"]["mechanical_pass"] and r["fixture_unchanged"] and r["dataset_unchanged"] for r in results),
             "case_count": len(results), "semantic_model_accuracy": None,
             "worker_errors": worker_errors,
@@ -176,12 +178,18 @@ def main(argv=None):
     parser.add_argument("--case", action="append", dest="case_ids")
     parser.add_argument("--dataset", type=Path, help="Owner-selected private dataset directory; see docs/held-out-evaluation.md")
     parser.add_argument("--output", type=Path, help="Optional receipt path outside the fixture roots")
+    parser.add_argument("--datamark", action="store_true", help="Experiment: datamark the worker's copy of excerpt text; recorded in the receipt")
+    parser.add_argument("--rerank-model", help="Explicit installed local embedding model that reorders candidate windows; no automatic downloads")
     args = parser.parse_args(argv)
+    if args.datamark:
+        if not args.model:
+            parser.error("--datamark needs --model")
+        worker_module.DATAMARK_SOURCE = True
     try:
         dataset_root, _, _, _ = load_dataset(args.dataset)
         if args.output and dataset_root in (args.output.resolve(), *args.output.resolve().parents):
             parser.error("output must be outside the dataset")
-        result = run_cases(model=args.model, port=args.ollama_port, case_ids=args.case_ids, dataset=args.dataset)
+        result = run_cases(model=args.model, port=args.ollama_port, case_ids=args.case_ids, dataset=args.dataset, rerank_model=args.rerank_model)
     except ValueError as error:
         parser.error(str(error))
     except (Refusal, OSError, UnicodeError) as error:

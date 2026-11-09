@@ -1,5 +1,10 @@
 # Project improvement pass — November 9, 2026
 
+This initial pass was validated against the isolated `0.4.0.dev8` snapshot at
+`f9753fb`. The later [current-main integration and repository update](publication-2026-11-09.md)
+preserves these results as historical scope and records the combined checks
+separately.
+
 This pass improves the existing local evidence-preparation workbench. It keeps
 the owner's [standalone, read-only direction](planning/source-record.md), exact
 requests and source, optional local AI, and manual assistant handoff.
@@ -69,9 +74,9 @@ accessibility qualification remain open.
 
 The new scorer was checked with synthetic receipts only. Existing public trials
 were not regraded, and no model, cloud host or private-project workflow was activated by this pass. The optional official
-MCP SDK/real-host checks were not rerun; no MCP tool contract changed. All
-changes remain local and uncommitted; no push, merge, deployment or publication
-was performed.
+MCP SDK/real-host checks were not rerun; no MCP tool contract changed. At the end of this initial pass, changes were local and uncommitted; no push,
+merge, deployment or publication had been performed. The subsequent repository
+update is recorded separately in the integration record.
 
 Synthetic fixtures and simulated service responses establish only the stated
 contracts. Real model accuracy, independent security qualification and

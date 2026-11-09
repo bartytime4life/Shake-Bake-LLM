@@ -9,7 +9,8 @@ import stat
 from .contracts import Evidence, Packet, Refusal, Selection
 
 MAX_FILE_BYTES = 256 * 1024
-MAX_FILES = 4
+# Four primary windows plus up to six controlling-context windows (search.py).
+MAX_FILES = 10
 MAX_REQUEST_CHARS = 16_384
 DENIED_PARTS = frozenset({".git", ".ssh", ".aws", ".gnupg", ".env", ".netrc", ".npmrc", "credentials.json", "secrets.json", "id_rsa", "id_ed25519"})
 
@@ -24,7 +25,9 @@ def validate_request(request: str) -> None:
 
 
 def _parts(path: str) -> tuple[str, ...]:
-    if not isinstance(path, str) or not path or "\\" in path or ":" in path or "\x00" in path:
+    # Control characters (newlines, tabs, escapes) could let a filename pose as brief
+    # structure or an instruction once rendered; such paths are not allowed at all.
+    if not isinstance(path, str) or not path or "\\" in path or ":" in path or any(ord(ch) < 0x20 or ord(ch) == 0x7f for ch in path):
         raise Refusal("path_not_allowed")
     try:
         path.encode("utf-8")

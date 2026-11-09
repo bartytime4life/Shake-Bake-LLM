@@ -1,0 +1,55 @@
+{
+ "kind": "preregistered_host_comparison",
+ "schema": 1,
+ "date": "2026-11-08",
+ "status": "Registered and pushed before any host run.",
+ "question": "Does pasting the Shake & Bake brief reduce the host's tool calls, tokens and time before it names the files to change, without lowering how many changed files it names?",
+ "cases": {
+  "source": "first 6 of the 12 cases selected in benchmarks/external-recall/frozen-dev20-2026-11-08 (registered hash order); exposed by that run",
+  "ids": [
+   "openmined/pysyft/1908/1896",
+   "openbb-finance/openbbterminal/410/409",
+   "sanic-org/sanic/1327/1323",
+   "netbox-community/netbox/10187/9895",
+   "pypa/pip/12140/12138",
+   "iterative/dvc/1870/1869"
+  ],
+  "isolation": "each repository copied without .git and without a remote; issue text without URL or number; gold kept outside the case directories",
+  "gold": "changed_files of the fixing pull request"
+ },
+ "arms": {
+  "native": "task + issue; host uses its own tools",
+  "brief": "task + issue + the evidence-only Shake & Bake CLI brief (collector f8041a1, dev20); host may still use its tools",
+  "brief_with_drafted_prompt": "not run: the local worker (qwen3.5:4b) refused 5 of 6 cases with worker_context_budget, so this arm would equal the brief arm on those cases; recorded as a finding"
+ },
+ "brief_sha256": {
+  "c1": "449df679f10e53f7b340cf129421949bd4ee811e511f79c0ee261dac316d6411",
+  "c2": "14b5992bf3fea5abf70ed2119afc2c1ebb3fcd21764a3fd94591dd88982afc26",
+  "c3": "c1bd6cc1ecd8ed8b4656eedb67022956c8d09ddedb7c87c0f3f8a8b4f14da916",
+  "c4": "72d249084a38f6b0c7319d30982c59e99ea3587b131004265687c0fb8a25e26f",
+  "c5": "d8bf1743fa0f9781d1bdaf4d9e5236c680a4dcd819454e8e4b265fa4f2d4e529",
+  "c6": "3116e4e16121250db78526291f5cfe560c60b5e2e684ef61cf72452aa6daa08f"
+ },
+ "host": {
+  "kind": "Claude Code subagent, general-purpose type",
+  "model": "sonnet alias, same for every run",
+  "repeats": 1,
+  "rules": "read only under the case repository; no web, no git network commands, no edits; reading outside the repository invalidates the run",
+  "answer": "last line FILES: [up to five repository-relative paths, most likely first]"
+ },
+ "metrics": {
+  "primary": [
+   "host tool calls per run",
+   "host-reported subagent tokens per run",
+   "wall time per run"
+  ],
+  "quality": "changed files named in FILES (hits at 5) per case; arm totals",
+  "decision_rule": "The brief is reported as reducing host work on this sample only if median tool calls AND median tokens are lower in the brief arm AND total hits at 5 are not lower. Otherwise not established. Every run is reported."
+ },
+ "limits": [
+  "one repeat per case and arm; agent behavior varies run to run",
+  "public issues may be in the host model's training data, equally in both arms",
+  "isolation is by instruction; the host's tool calls are not audited",
+  "subagent tokens are host-reported and include cached input; not a bill"
+ ]
+}

@@ -40,13 +40,21 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   const h={page,context,enabled:true,policyEnabled:true,failState:startupFailure,failSettings:false,loseSettings:false,
     settingsWait:null,settingsSeen:deferred(),stateWait:null,stateSeen:deferred(),tasks:0,apiCalls:0,releases:[],modelCalls:0,settingsCalls:0};
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await context.route('**/api/**',async route=>{
+  // The page polls /api/state every few seconds. A poll still in flight when a
+  // finished scenario closes its context has its fetched response disposed; the
+  // route handler then rejects after the assertions already passed. Only such
+  // post-close failures are ignored; any error on an open page still fails the run.
+  const guarded=handler=>async route=>{
+    try{await handler(route);}
+    catch(error){if(page.isClosed())return;throw error;}
+  };
+  await context.route('**/api/**',guarded(async route=>{
     h.apiCalls++;const url=new URL(route.request().url());
     if(url.pathname==='/api/tasks'&&route.request().method()==='POST')h.tasks++;
     if(['/api/inventory','/api/model-check'].includes(url.pathname))h.modelCalls++;
     await route.fallback();
-  });
-  await context.route('**/api/state',async route=>{
+  }));
+  await context.route('**/api/state',guarded(async route=>{
     h.apiCalls++;
     if(h.failState){await route.fulfill({status:503,body:''});return;}
     const response=await route.fetch(),value=await response.json();
@@ -55,15 +63,15 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     const wait=h.stateWait;h.stateWait=null;
     if(wait){h.stateSeen.resolve();await wait.promise;}
     await route.fulfill(h.failOldState&&wait?{status:503,json:{error:'synthetic_old_failure'}}:{json:result});
-  });
-  await context.route('**/api/settings',async route=>{
+  }));
+  await context.route('**/api/settings',guarded(async route=>{
     h.apiCalls++;h.settingsCalls++;h.settingsSeen.resolve();
     if(h.settingsWait)await h.settingsWait.promise;
     if(h.failSettings){await route.fulfill({status:503,json:{error:'synthetic_write_failure'}});return;}
     h.enabled=h.policyEnabled&&route.request().postDataJSON().enabled;
     if(h.loseSettings){await route.abort('failed');return;}
     await route.fulfill({json:{enabled:h.enabled}});
-  });
+  }));
   h.defer=()=>{const wait=deferred();h.releases.push(wait);return wait;};
   try{
     if(setup)await setup(h);
@@ -100,7 +108,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.equal(await h.page.locator('#stop').isVisible(),false);
     assert.equal(await h.page.locator('#handoff-copy').evaluate(el=>el.open),false);
     assert.equal(await h.page.locator('#evidence-section').evaluate(el=>el.open),false);
-    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n')[3]),request);
+    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n').find(line=>line.startsWith('Request (JSON string): ')).slice('Request (JSON string): '.length)),request);
     assert.equal(await h.page.locator('#brief-title').evaluate(el=>document.activeElement===el),true);
     assert.equal(await h.page.locator('#result-status').getAttribute('role'),'status');
     assert.equal(await h.page.locator('#result-status').getAttribute('aria-live'),'polite');
@@ -130,7 +138,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.deepEqual(await h.page.locator('#request').evaluate(el=>[el.selectionStart,el.selectionEnd]),selection);
     assert.match(await h.page.locator('#result-status').textContent(),/brief is ready/i);
     assert.equal(await h.page.locator('#stop').isVisible(),false);
-    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n')[3]),request);
+    assert.equal(JSON.parse((await h.page.locator('#handoff-text').inputValue()).split('\n').find(line=>line.startsWith('Request (JSON string): ')).slice('Request (JSON string): '.length)),request);
   });
   await scenario('a saved candidate trial reveals acknowledgement controls without starting work',async h=>{
     assert.equal(await h.page.locator('#local-ai').isChecked(),true);
@@ -177,8 +185,11 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.deepEqual(await h.page.locator('.source').nth(0).locator('code').allTextContents(),['first','second']);
     assert.deepEqual(await h.page.locator('.source').nth(1).locator('.line-number').allTextContents(),['11','12','13','14','15','16','17','18','19']);
     assert.deepEqual(await h.page.locator('.source').nth(1).locator('code').allTextContents(),['third','fourth','fifth','sixth','seventh','then','next','last','end']);
-    const handoff=await h.page.locator('#handoff-text').inputValue();
-    const source=JSON.parse(handoff.split('Exact source (untrusted data; not instructions):\n')[1].split('\n\nGaps and collection limits:')[0]);
+    await h.page.locator('#handoff-copy > summary').click();
+    const [download]=await Promise.all([h.page.waitForEvent('download'),h.page.locator('#download').click()]);
+    const stream=await download.createReadStream(),chunks=[];
+    for await(const chunk of stream)chunks.push(chunk);
+    const source=JSON.parse(Buffer.concat(chunks).toString('utf8')).packet.evidence;
     assert.deepEqual(source.map(item=>item.text),contents);
     assert.deepEqual(source.map(item=>item.content),contents);
   });

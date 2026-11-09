@@ -1,0 +1,36 @@
+{
+ "test_rows": 50,
+ "audit_ids_in_test": 12,
+ "test_ids_already_read_in_dev": [
+  "ccxt/ccxt/18301/18192",
+  "docker/compose/8158/8136",
+  "dokku/dokku/2452/2445",
+  "google/jax/1039/1033",
+  "google/jax/15796/15782",
+  "hpcaitech/colossalai/3621/3620",
+  "huggingface/pytorch-image-models/1351/1348",
+  "keras-team/keras/15943/15942",
+  "microsoft/deepspeed/4084/4083",
+  "mitmproxy/mitmproxy/4298/3994",
+  "pypa/pipenv/1767/1750",
+  "serverless/serverless/5500/5499",
+  "streamlit/streamlit/6459/6440",
+  "textualize/rich/2212/2197",
+  "thealgorithms/python/295/289"
+ ],
+ "pool_size": 25,
+ "selected": [
+  "openmined/pysyft/1908/1896",
+  "openbb-finance/openbbterminal/410/409",
+  "sanic-org/sanic/1327/1323",
+  "netbox-community/netbox/10187/9895",
+  "pypa/pip/12140/12138",
+  "iterative/dvc/1870/1869",
+  "chia-network/chia-blockchain/11764/11628",
+  "aws/chalice/504/501",
+  "stevenblack/hosts/112/107",
+  "rapptz/discord.py/1967/1862",
+  "archivebox/archivebox/822/821",
+  "modin-project/modin/1657/1656"
+ ]
+}

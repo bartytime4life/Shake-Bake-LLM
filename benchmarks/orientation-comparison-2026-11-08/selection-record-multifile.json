@@ -1,0 +1,25 @@
+{
+ "rows_read": 500,
+ "offsets": [
+  700,
+  1199
+ ],
+ "excluded": {
+  "repo_used_before": 69,
+  "not_multi_file": 137,
+  "reserved_test_id": 7,
+  "size": 72
+ },
+ "eligible_repositories": 25,
+ "selected": [
+  "readthedocs/readthedocs.org/1688/1641",
+  "cupy/cupy/6948/6940",
+  "docker/docker-py/2186/2116",
+  "falconry/falcon/723/702",
+  "sqlfluff/sqlfluff/978/976",
+  "kivy/python-for-android/1515/1485",
+  "conan-io/conan/13631/13630",
+  "dbt-labs/dbt-core/1543/1533"
+ ],
+ "protocol": "protocol-multifile.json"
+}

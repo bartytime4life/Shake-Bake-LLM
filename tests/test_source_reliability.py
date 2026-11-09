@@ -104,7 +104,9 @@ class RunnerTextAcceptance(unittest.TestCase):
         source = "needle " + "\x01" * (4096 - len("needle \n")) + "\n"
         paths = []
         for index in range(4):
-            name = "\x01" * 240 + f"-{index}.py"
+            # Keep filename controls denied; escaping stress comes from the
+            # unchanged original request and captured source contents.
+            name = f"needle-{index}.py"
             paths.append(name)
             (self.root / name).write_bytes(source.encode("utf-8"))
         request = "needle " + "\x01" * (MAX_REQUEST_CHARS - len("needle "))

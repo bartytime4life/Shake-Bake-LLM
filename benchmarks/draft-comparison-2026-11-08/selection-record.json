@@ -1,0 +1,23 @@
+{
+ "rows_read": 500,
+ "offsets": [
+  1200,
+  1699
+ ],
+ "excluded": {
+  "not_multi_file": 239,
+  "size": 107
+ },
+ "eligible_repositories": 45,
+ "selected": [
+  "eth-brownie/brownie/517/513",
+  "voxel51/fiftyone/2059/2057",
+  "kevinmusgrave/pytorch-metric-learning/470/467",
+  "ericsson/codechecker/1266/1267",
+  "graphite-project/graphite-web/2660/2652",
+  "crossbario/autobahn-python/979/971",
+  "deepchem/deepchem/1769/1716",
+  "microsoft/ptvs/3818/3800"
+ ],
+ "protocol": "protocol.json"
+}

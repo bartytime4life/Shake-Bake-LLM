@@ -14,7 +14,7 @@ import threading
 import time
 import uuid
 
-from .collector import _parts, validate_request
+from .collector import MAX_FILES, _parts, validate_request
 from .contracts import Refusal
 from .task_protocol import MAX_TASK_INPUT_BYTES, MAX_TASK_RESULT_BYTES
 from .worker import parse_json, validate_settings
@@ -110,7 +110,7 @@ class HelperSession:
                     raise Refusal("invalid_runner_result")
                 packet = search.get("packet")
                 if packet:
-                    if packet.get("original_request") != job.request or not 1 <= len(packet["evidence"]) <= 4:
+                    if packet.get("original_request") != job.request or not 1 <= len(packet["evidence"]) <= MAX_FILES:
                         raise Refusal("invalid_runner_result")
                     for record in packet["evidence"]:
                         _parts(record["path"])
@@ -235,6 +235,9 @@ class HelperSession:
                 answer["matching_files"] = search["matching_files"]
                 answer["source_bytes_read"] = search["source_bytes_read"]
                 answer["selected_excerpt_bytes"] = search["selected_excerpt_bytes"]
+                answer["context"] = search.get("context", [])
+                answer["context_map"] = search.get("context_map", [])
+                answer["line_index"] = search.get("line_index", [])
             packet = search.get("packet")
             if packet:
                 answer["snapshot_id"] = packet["snapshot_id"]
@@ -254,10 +257,10 @@ class HelperSession:
                 raise Refusal("task_not_ready")
             records = (job.result or {}).get("search", {}).get("packet", {}) or {}
             records = records.get("evidence", [])
-            if not isinstance(evidence_id, str) or not re.fullmatch(r"E[1-4]", evidence_id):
+            if not isinstance(evidence_id, str) or not re.fullmatch(r"E[1-9][0-9]?", evidence_id):
                 raise Refusal("unknown_evidence")
             index = int(evidence_id[1:]) - 1
-            if index >= len(records):
+            if index >= min(len(records), MAX_FILES):
                 raise Refusal("unknown_evidence")
             return self._copy({"evidence_id": evidence_id, "freshness": "captured_snapshot_not_live_revalidation", **records[index]})
 

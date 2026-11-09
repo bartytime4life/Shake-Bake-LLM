@@ -31,7 +31,7 @@ PYTHONPATH=src python3 -B benchmarks/run_task_lab.py \
   --output /absolute/path/outside-fixtures/local-model-receipt.json
 ```
 
-`--case failure-triage` runs one case. There is no automatic model download or cloud-provider call. A model replay requests the current worker baseline; it is not a tuned profile or automatic model qualification. Current deadlines may reject a cold or reasoning-heavy model; retain that failure rather than silently widening budgets or retrying.
+`--case failure-triage` runs one case. There is no automatic model download or cloud-provider call. A model replay requests the current worker baseline (`handoff_prompt_v1`, 1,024 output tokens, thinking off); it is not a tuned profile or automatic model qualification. A model whose declared thinking controls cannot be switched off is refused before any source is sent and the receipt records the error for every case. Current deadlines may reject a cold or reasoning-heavy model; retain that failure rather than silently widening budgets or retrying.
 
 `manifest.json` contains model-facing tasks. `grading-keys.json` stays outside every fixture root and is never sent to the worker by the runner. Do not point the helper at the whole benchmark directory when measuring answer quality. Source fixtures are inert; their imports, network strings and hostile comments are not executed.
 

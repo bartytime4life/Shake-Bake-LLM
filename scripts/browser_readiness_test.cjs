@@ -34,7 +34,13 @@ async function scenario(label,run){
     await page.locator('#model-details-toggle').click();await page.locator('#ai-mode').selectOption('trial');
     await page.getByText('This computer & selected model',{exact:true}).click();
     await h.refresh();await h.choose(A);await run(h);assert.deepEqual(errors,[]);passed++;console.log('PASS '+label);
-  }finally{h.release.resolve();await context.close();}
+  }finally{
+    h.release.resolve();
+    // The page keeps polling /api/state; detach routes before closing so an
+    // in-flight handler cannot reject with a disposed response after a pass.
+    await context.unrouteAll({behavior:'ignoreErrors'});
+    await context.close();
+  }
 }
 let baseURL;
 (async()=>{

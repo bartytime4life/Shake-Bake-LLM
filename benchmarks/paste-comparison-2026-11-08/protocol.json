@@ -1,0 +1,25 @@
+{
+ "kind": "preregistered_paste_comparison",
+ "schema": 1,
+ "date": "2026-11-08",
+ "status": "Registered and pushed before any run.",
+ "question": "When the host has no repository access, as in pasting into Claude or ChatGPT chat, does the brief let it name more of the files that must change?",
+ "cases": "the same six cases and the same brief and issue files as benchmarks/host-comparison-2026-11-08 (hashes in its inputs-sha256.json)",
+ "arms": {
+  "issue_only": "directory holds only issue.md",
+  "with_brief": "directory holds issue.md and brief.md"
+ },
+ "host": {
+  "kind": "Claude Code subagent, general-purpose type",
+  "model": "sonnet alias",
+  "repeats": 1,
+  "rules": "read only the files in its directory (there is no repository); no web, no other paths; answer from that text"
+ },
+ "answer": "last line FILES: [up to five repository-relative paths, most likely first]",
+ "metric": "changed files named (hits at 5) per case and in total",
+ "decision_rule": "The brief is reported as helping on the paste path on this sample only if total hits at 5 are higher with the brief AND it wins more cases than it loses. Otherwise not established.",
+ "limits": [
+  "one repeat; public issues may be in training data, which inflates the issue-only arm equally or more",
+  "tokens and tool calls are recorded but are not the question here"
+ ]
+}

@@ -2,7 +2,7 @@
 
 Start with [current evaluation status](evaluation-status.md), the root
 [README](../README.md), [TODO](../TODO.md) and [Known Issues](../KNOWN_ISSUES.md).
-They describe the current `0.4.0.dev8` behavior and measured limits. Dated reports
+They describe the current `0.4.0.dev9` behavior and measured limits. Dated reports
 below retain the exact scope of earlier checks; an older test count or pending
 state is not a statement about the latest build.
 
@@ -11,6 +11,7 @@ state is not a statement about the latest build.
 | Topic | Documents |
 | --- | --- |
 | First useful brief | [Three-step getting-started guide](quickstart.md), including privacy, retention and common recovery actions |
+| November 9 integration | [Current-main integration and publication checks](publication-2026-11-09.md) |
 | November 9 improvements | [Changes, validation and next product priorities](project-improvements-2026-11-09.md), [draft privacy](draft-privacy.md), [source/transport reliability](source-boundary-reliability.md), [offline host review](host-review-scoring.md) |
 | Local setup and trials | [PC checklist](PC-CHECKLIST.md), [readiness and trial commands](pc-readiness-and-trials.md), [Task Lab](../benchmarks/task-lab/README.md) |
 | Interface and recovery | [Visual workbench](visual-workbench.md), [saved Local AI choice](local-ai-preferences.md), [shared coordinator](shared-coordinator.md) |
@@ -23,6 +24,29 @@ state is not a statement about the latest build.
 
 Read these as successive experiments with separate identities and preserved failures:
 
+- [Handoff-prompt design and two-model runs](handoff-prompt-2026-11-06.md), where the local model drafts the assistant's prompt.
+- [Where host context tokens go at the start of a task](host-context-cost-2026-11-06.md): turn count and broad reads dominate; the brief is cheap but incomplete.
+- [Controlling-context collection](controlling-context-2026-11-06.md): bounded definition, usage, test and map additions after the primary windows; measured on the four exposed comparison fixtures, no host run.
+- [Web research: what can add value to the brief](research-2026-11-06.md): ten external findings read against the project's thesis, with nine bounded candidates ranked by what can be measured without a cloud run.
+- [Retrieval scoring and external recall](retrieval-scoring-2026-11-07.md): BM25-style file scoring, the disclosed distractor exclusion, and the external file-recall adapter, with Task Lab, fixture and self-commit smoke measurements.
+- [Independent retrieval audit](independent-retrieval-2026-11-07.md): nine external cases, paired mean/total recall, two primary regressions, truncation, a relevant low-signal exclusion and an exposed-case filter ablation; no model or cost result.
+- [A brief Claude and ChatGPT can read directly](handoff-format-2026-11-07.md): the copied brief as Markdown with fenced excerpts, an answer format and verbatim values last; demo size before and after.
+- [Datamarking the worker's source](datamark-2026-11-07.md): an off-by-default marker for the local model's copy of excerpts; four Task Lab runs show it did not change the 8B injection draft.
+- [Embedding rerank of candidate windows](embedding-rerank-2026-11-07.md): an optional loopback embedding model reorders the top lexical candidates before selection, adding no window; the historical `qwen3-embedding:0.6b` trial had 10/10 Task Lab, one fixture gain, mixed self-commit recall and about seven seconds per case. Follow-up synthetic checks cover per-call failure receipts, batch mapping and scoring-copy truncation; a final-source real-model acceptance receipt remains pending. Off by default.
+- [Orientation brief on six fresh cases](orientation-comparison-2026-11-08.md): a reframed brief removes the anchoring harm (no losses in twelve paired comparisons against four for the evidence brief) but shows no clear gain or token saving.
+
+- [The local model's draft on six fresh cases](draft-comparison-2026-11-08.md): pre-registered. Adding the qwen3.5:4b draft to the orientation brief neither helped nor hurt a Claude host, 8 against 8 with tools and 9 against 9 pasted. No claim is made for the draft.
+- [The local model gets a fitted copy instead of refusing real tasks](worker-fit-2026-11-08.md): fixes BUG-023. Local AI now drafts on real repositories instead of refusing most of them (8 of 8 against 1 of 8 on exposed issues), and every brief says which records the model saw.
+- [The orientation brief is the default copy and CLI layout](workbench-orientation-2026-11-08.md): **Copy brief** and `brief` use the measured orientation layout, with the evidence layout one choice away. It also fixes BUG-022, where model text in the workbench copy was unfenced. The additions to the layout are unmeasured.
+- [Orientation brief on eight multi-file fixes](orientation-multifile-2026-11-08.md): a pre-registered gain on both paths, 11 against 9 of 19 files with tools (test files only) and 13 against 9 pasted. There was still no token saving.
+- [Paste-path comparison](paste-comparison-2026-11-08.md): no-tools hosts with and without the brief; 9 against 10 of 25 files named, no case won. Across four arms the brief anchors the host on its excerpts.
+- [Host comparison on six real issues](host-comparison-2026-11-08.md): Claude Code subagents with and without the brief; the brief added tokens every time, saved no tool calls on average, and halved the changed files named (7 against 14 of 25). Pre-registered rule not met.
+- [Frozen `dev20` collector on reserved cases](frozen-recall-2026-11-08.md): pre-registered paired run on twelve unread Long Code Arena `test` cases; 26 against 23 of 41 files reached, 3 wins and 2 losses, decision rule met; 13 rows still reserved.
+- [Primary selection on large trees](primary-selection-2026-11-08.md): a rejected test-and-prose prior, a per-case diagnosis of the external misses, and two path fixes (spaces, `_vendor/`) that take the external cases to 11/13 reached.
+- [Review pass: errors, logic, UI and UX](review-2026-11-07.md): ten code findings fixed, among them the GUI/MCP rejection of jobs with controlling-context windows (BUG-021), plus a headless-Chrome pass over the workbench and the scan-stop versus selection-cap wording.
+- [Request terms chosen by signal, and a wider walk](term-selection-2026-11-07.md): identifiers and first-line words first, URL and template words never, 1,000-file default and 5,000-file ceiling; external cases reached rose from 7/13 to 10/13 at the ceiling.
+- [External file recall on Long Code Arena cases](external-recall-2026-11-07.md): thirteen real bug-localization cases from the `dev` split; 5/13 reached at shipped limits, 7/13 at the ceiling; the walk ceiling and the 16-term request cap are the next collector candidates.
+- [Matched-line index](line-index-2026-11-07.md): request-term matches no excerpt covers, listed as line numbers and short texts under byte and count bounds; the log fixture's second failure and the publish contract sentence now reach the brief.
 - [Smaller-model screening](screening-2026-11-05.md) and [rejected 1.7B prompt](validation-0.4.0.dev8.md).
 - [Installed readiness](pc-readiness-2026-11-05.md), [readiness invalidation](readiness-invalidation-2026-11-05.md), and [copy recovery plus 8B baseline](copy-and-screening-2026-11-05.md).
 - [Workbench state and navigation fixes](workbench-fixes-2026-11-05.md) and [browser request recovery](request-recovery-2026-11-05.md), with scoped synthetic regression evidence.

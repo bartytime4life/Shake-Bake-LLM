@@ -1,0 +1,32 @@
+{
+ "rows_read": 600,
+ "offsets": [
+  1700,
+  2299
+ ],
+ "excluded": {
+  "repo_used_before": 19,
+  "size": 136,
+  "not_multi_file": 257
+ },
+ "eligible_repositories": 37,
+ "selected": [
+  "juniper/py-junos-eznc/413/400",
+  "continualai/avalanche/668/657",
+  "python-discord/bot/530/299",
+  "gitguardian/ggshield/392/391",
+  "learningequality/kolibri/6739/6731",
+  "databiosphere/toil/1168/1127",
+  "dj-stripe/dj-stripe/502/416",
+  "khronosgroup/gltf-blender-io/214/213",
+  "piccolo-orm/piccolo/457/417",
+  "scons/scons/3833/3014",
+  "boto/botocore/711/708",
+  "yashaka/selene/207/206",
+  "pyocd/pyocd/987/986",
+  "alephdata/aleph/3092/2109",
+  "frictionlessdata/framework/1532/1520",
+  "quantecon/quantecon.py/705/704"
+ ],
+ "protocol": "protocol.json"
+}

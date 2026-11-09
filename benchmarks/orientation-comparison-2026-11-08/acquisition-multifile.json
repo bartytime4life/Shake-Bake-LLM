@@ -1,0 +1,46 @@
+{
+ "method": "git fetch --depth 1 at base_sha, copied without .git",
+ "cases": [
+  {
+   "key": "readthedocs__readthedocs.org__1688__1641",
+   "status": "ok",
+   "bytes_on_disk": 52030049
+  },
+  {
+   "key": "cupy__cupy__6948__6940",
+   "status": "ok",
+   "bytes_on_disk": 11168599
+  },
+  {
+   "key": "docker__docker-py__2186__2116",
+   "status": "ok",
+   "bytes_on_disk": 1345736
+  },
+  {
+   "key": "falconry__falcon__723__702",
+   "status": "ok",
+   "bytes_on_disk": 1477738
+  },
+  {
+   "key": "sqlfluff__sqlfluff__978__976",
+   "status": "ok",
+   "bytes_on_disk": 2705373
+  },
+  {
+   "key": "kivy__python-for-android__1515__1485",
+   "status": "ok",
+   "bytes_on_disk": 7392016
+  },
+  {
+   "key": "conan-io__conan__13631__13630",
+   "status": "ok",
+   "bytes_on_disk": 6420183
+  },
+  {
+   "key": "dbt-labs__dbt-core__1543__1533",
+   "status": "ok",
+   "bytes_on_disk": 5297067
+  }
+ ],
+ "omitted": 0
+}

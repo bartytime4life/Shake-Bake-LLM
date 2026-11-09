@@ -93,10 +93,93 @@ class WorkerAcceptance(unittest.TestCase):
         payload = next(body for path, body in requests if path == "/api/chat")
         self.assertFalse(payload["stream"])
         self.assertNotIn("tools", payload)
-        self.assertEqual(payload["options"]["num_predict"], 512)
+        self.assertEqual(payload["options"]["num_predict"], 1024)
         self.assertEqual(json.loads(payload["messages"][1]["content"])["original_request"], self.packet.original_request)
+        self.assertNotIn("task_kind", json.loads(payload["messages"][1]["content"]))
         self.assertEqual(note.evidence_ids, ("E1",))
         self.assertEqual(note.label, "unverified_worker_interpretation")
+        # A legacy three-field note is still accepted; it just carries no drafted prompt.
+        self.assertFalse(note.has_prompt)
+        self.assertEqual((note.goal, note.focus, note.asks, note.approach), ("", (), (), ()))
+
+    def test_handoff_prompt_fields_are_requested_validated_and_exposed(self):
+        note = {"goal": "Decide whether the guard admits fewer reported slices than detected.",
+                "focus": [{"evidence_id": "E1", "why": " The comparison lives here. "}],
+                "asks": ["Does <= admit fewer reported slices?", "What stays unverified?"],
+                "approach": ["Trace len(reported)=1 and detected=2 through the comparison."],
+                "summary": "E1 compares counts with <=.", "evidence_ids": ["E1"], "questions": ["Is equality intended?"]}
+        with stub_server(content=json.dumps(note)) as (port, requests):
+            result = organize(self.packet, "fixture:local", port=port, task_kind="code")
+        chat = next(body for path, body in requests if path == "/api/chat")
+        self.assertEqual(set(chat["format"]["required"]), {"goal", "focus", "asks", "approach", "summary", "evidence_ids", "questions"})
+        self.assertFalse(chat["format"]["additionalProperties"])
+        self.assertEqual(chat["format"]["properties"]["focus"]["items"]["properties"]["evidence_id"]["enum"], ["E1"])
+        self.assertEqual(json.loads(chat["messages"][1]["content"])["task_kind"], "code")
+        self.assertIn("draft the best possible prompt", chat["messages"][0]["content"])
+        self.assertLessEqual(len(chat["messages"][0]["content"].encode()), 4096)
+        self.assertTrue(result.has_prompt)
+        self.assertEqual(result.goal, note["goal"])
+        self.assertEqual(result.focus, ({"evidence_id": "E1", "why": "The comparison lives here."},))
+        self.assertEqual(result.asks, tuple(note["asks"]))
+        self.assertEqual(result.approach, tuple(note["approach"]))
+        self.assertEqual(result.questions, ("Is equality intended?",))
+        self.assertEqual(result.requested_configuration["preparation_design"], "handoff_prompt_v1")
+        self.assertEqual(result.to_dict()["asks"], tuple(note["asks"]))
+        self.assertEqual(result.label, "unverified_worker_interpretation")
+
+    def test_blank_prompt_fields_leave_notes_without_a_drafted_prompt(self):
+        note = {"goal": "  ", "focus": [], "asks": ["   "], "approach": [], "summary": "Claim", "evidence_ids": ["E1"], "questions": []}
+        with stub_server(content=json.dumps(note)) as (port, _):
+            result = organize(self.packet, "fixture:local", port=port)
+        self.assertFalse(result.has_prompt)
+        self.assertEqual(result.asks, ())
+
+    def test_datamarked_source_marks_only_the_worker_copy_and_strips_leaks(self):
+        from shake_bake import worker
+        note = {"goal": "Decide" + worker.DATAMARK + "coverage.", "focus": [{"evidence_id": "E1", "why": "slice" + worker.DATAMARK + "guard"}],
+                "asks": ["Does <= admit fewer?"], "approach": [], "summary": "E1 compares counts.", "evidence_ids": ["E1"], "questions": []}
+        with stub_server(content=json.dumps(note)) as (port, requests):
+            with patch.object(worker, "DATAMARK_SOURCE", True):
+                result = organize(self.packet, "fixture:local", port=port)
+        chat = next(body for path, body in requests if path == "/api/chat")
+        sent = json.loads(chat["messages"][1]["content"])
+        self.assertEqual(sent["evidence"][0]["text"], "#" + worker.DATAMARK + "slice" + worker.DATAMARK + "coverage\n")
+        self.assertEqual(sent["original_request"], self.packet.original_request)
+        self.assertIn("datamarked", chat["messages"][0]["content"])
+        self.assertLessEqual(len(chat["messages"][0]["content"].encode()), 4096)
+        self.assertEqual(self.packet.evidence[0].text, "# slice coverage\n")
+        self.assertEqual((result.goal, result.focus[0]["why"]), ("Decide coverage.", "slice guard"))
+        self.assertEqual(result.usage["datamark_leaks"], 2)
+        self.assertTrue(result.requested_configuration["datamark_source"])
+        with stub_server(content=json.dumps(note)) as (port, requests):
+            plain = organize(self.packet, "fixture:local", port=port)
+        chat = next(body for path, body in requests if path == "/api/chat")
+        self.assertEqual(json.loads(chat["messages"][1]["content"])["evidence"][0]["text"], "# slice coverage\n")
+        self.assertNotIn("datamarked", chat["messages"][0]["content"])
+        self.assertNotIn("datamark_leaks", plain.usage)
+        self.assertFalse(plain.requested_configuration["datamark_source"])
+
+    def test_invalid_prompt_fields_are_refused(self):
+        base = {"summary": "Claim", "evidence_ids": ["E1"], "questions": []}
+        for extra, code in (({"focus": [{"evidence_id": "E9", "why": "x"}]}, "worker_invalid_evidence_reference"),
+                            ({"focus": [{"evidence_id": "E1", "why": "x"}, {"evidence_id": "E1", "why": "y"}]}, "worker_invalid_evidence_reference"),
+                            ({"focus": [{"evidence_id": "E1", "why": "x", "run": "rm -rf"}]}, "worker_invalid_note"),
+                            ({"focus": "E1"}, "worker_invalid_note"),
+                            ({"asks": ["q"] * 7}, "worker_invalid_note"),
+                            ({"asks": "not a list"}, "worker_invalid_note"),
+                            ({"goal": "g" * 601}, "worker_invalid_note"),
+                            ({"goal": ["list"]}, "worker_invalid_note"),
+                            ({"approach": [1]}, "worker_invalid_note"),
+                            ({"approach": ["s" * 401]}, "worker_invalid_note")):
+            with self.subTest(extra=extra), stub_server(content=json.dumps({**base, **extra})) as (port, _):
+                with self.assertRaisesRegex(Refusal, code):
+                    organize(self.packet, "fixture:local", port=port)
+
+    def test_unknown_task_kind_refuses_before_connecting(self):
+        with patch("socket.create_connection") as connect:
+            with self.assertRaisesRegex(Refusal, "invalid_task_kind"):
+                organize(self.packet, "fixture:local", task_kind="shell")
+        connect.assert_not_called()
 
     def test_remote_metadata_refuses_before_source_submission(self):
         with stub_server(remote=True) as (port, requests):
@@ -183,6 +266,47 @@ class WorkerAcceptance(unittest.TestCase):
             with self.assertRaisesRegex(Refusal, "worker_context_budget"):
                 organize(packet, "fixture:local", port=port)
         self.assertEqual(len(requests), 1)
+
+    def test_oversized_source_gets_a_fitted_copy_and_the_model_cites_only_what_it_saw(self):
+        selections = []
+        for index in range(8):
+            body = "".join(f"def coverage_step_{index}_{line}(value):  # slice coverage guard line {line}\n" for line in range(40))
+            (self.root / f"module_{index}.py").write_text(body, encoding="utf-8")
+            selections.append(Selection(f"module_{index}.py", 1, 40))
+        packet = build_packet(self.root, "Inspect coverage", tuple(selections))
+        self.assertGreater(len(json.dumps([r.text for r in packet.evidence]).encode()), 6000)
+        with stub_server() as (port, requests):
+            note = organize(packet, "fixture:local", port=port)
+        payload = next(body for path, body in requests if path == "/api/chat")
+        sent = json.loads(payload["messages"][1]["content"])
+        self.assertLessEqual(len(payload["messages"][1]["content"].encode()), 6000)
+        self.assertEqual(sent["original_request"], packet.original_request)
+        shown = [item["id"] for item in sent["evidence"]]
+        self.assertEqual(shown, [f"E{n}" for n in range(1, len(shown) + 1)], "records are left out from the end")
+        self.assertGreater(len(shown), 1)
+        self.assertEqual(sent["worker_view"]["omitted_evidence"], [f"E{n}" for n in range(len(shown) + 1, 9)])
+        for item in sent["evidence"]:
+            self.assertTrue(item["text_cut"])
+            self.assertEqual(item["text"].count("\n"), 12)
+            self.assertEqual(item["shown_end_line"], item["start_line"] + 11)
+        enum = payload["format"]["properties"]["evidence_ids"]["items"]["enum"]
+        self.assertEqual(enum, shown, "the model may cite only what it was shown")
+        self.assertEqual(note.source_view, {"lines_per_excerpt": 12, "shown": shown, "cut": shown,
+                                            "omitted": sent["worker_view"]["omitted_evidence"]})
+        self.assertEqual(len(packet.evidence[0].text.splitlines()), 40, "exact evidence is unchanged")
+
+    def test_source_that_fits_is_sent_whole(self):
+        from dataclasses import asdict
+        with stub_server() as (port, requests):
+            note = organize(self.packet, "fixture:local", port=port, task_kind="code", collection_context={"scope": "fixture"})
+        content = next(body for path, body in requests if path == "/api/chat")["messages"][1]["content"]
+        earlier = {"original_request": self.packet.original_request, "snapshot_id": self.packet.snapshot_id, "collection": {"scope": "fixture"},
+                   "evidence": [{"id": "E1", **asdict(self.packet.evidence[0])}], "task_kind": "code"}
+        self.assertEqual(content, json.dumps(earlier, ensure_ascii=False), "a copy that fits is byte-identical to the earlier construction")
+        sent = json.loads(content)
+        self.assertNotIn("worker_view", sent)
+        self.assertNotIn("text_cut", sent["evidence"][0])
+        self.assertIsNone(note.source_view)
 
     def test_chunked_http_response_is_supported(self):
         with stub_server(chunked=True) as (port, _):
