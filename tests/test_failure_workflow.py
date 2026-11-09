@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import test_gui
 from shake_bake.contracts import Refusal
+from shake_bake.gui import Controller
 
 
 class FailureWorkflowTests(unittest.TestCase):
@@ -38,6 +39,7 @@ class FailureWorkflowTests(unittest.TestCase):
         self.assertEqual(result["error_output"], error)
         self.assertEqual(result["command"], "DO NOT RUN THIS")
         self.assertEqual(result["frames"][0]["source_comparison"], "match")
+        self.assertEqual(result["project"], {"id": project, "label": "Actual chosen folder", "path": str(self.root)})
         self.assertEqual(result["evidence"][0]["text"], self.source)
         self.assertEqual((self.root / "parse.py").read_text(), self.source)
         self.assertEqual(list(self.root.iterdir()), [self.root / "parse.py"])
@@ -95,6 +97,42 @@ class FailureWorkflowTests(unittest.TestCase):
         status, _, raw = self.client.request("POST", "/api/projects", {"label": "Wrong root", "path": str(self.root)})
         self.assertEqual(status, 400)
         self.assertEqual(json.loads(raw)["error"], "project_contains_private_settings")
+
+
+class CanonicalStartupProjectTests(unittest.TestCase):
+    def test_symlink_startup_uses_one_validated_root_and_never_follows_pasted_aliases(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            original, replacement = parent / "original", parent / "replacement"
+            original.mkdir()
+            replacement.mkdir()
+            (original / "app.py").write_text("return missing  \n")
+            (replacement / "app.py").write_text("private_replacement = True\n")
+            alias = parent / "chosen-project"
+            alias.symlink_to(original, target_is_directory=True)
+            controller = Controller({"chosen": alias})
+            try:
+                state = controller.call("state")
+                self.assertEqual(controller.projects, {"chosen": original})
+                self.assertEqual(state["projects"][0]["path"], str(original))
+                # Retargeting the launch alias cannot change the approved root.
+                alias.unlink()
+                alias.symlink_to(replacement, target_is_directory=True)
+                for reported_path, located in ((original / "app.py", True), (alias / "app.py", False)):
+                    with self.subTest(reported_path=reported_path):
+                        error = (f'Traceback (most recent call last):\n  File "{reported_path}", line 1, in run\n'
+                                 '    return missing\nNameError: missing\n')
+                        result = controller.call("troubleshoot", {"project_id": "chosen", "error_output": error, "command": ""})
+                        self.assertEqual(result["source_located"], located)
+                        self.assertEqual(result["project"]["path"], str(original))
+                        if located:
+                            self.assertEqual(result["evidence"][0]["text"], "return missing  \n")
+                            self.assertEqual(result["frames"][0]["source_comparison"], "match")
+                        else:
+                            self.assertEqual(result["frames"][0]["status"], "outside_project")
+                            self.assertEqual(result["evidence"], [])
+            finally:
+                controller.close()
 
 
 if __name__ == "__main__":

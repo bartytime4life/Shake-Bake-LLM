@@ -60,6 +60,10 @@ class Controller:
             if self._preferences is not None:
                 self._preferences.close()
             raise
+        # The helper validates and resolves owner-selected roots once. Reuse
+        # those exact roots for browser state and failure checks too; retaining
+        # a launch-time symlink here would disagree with the source-brief scope.
+        self.projects = self._session.approved_project_roots()
         self._thread = threading.Thread(target=self._run, daemon=True, name="shake-bake-owner")
         self._thread.start()
 
@@ -212,8 +216,12 @@ class Controller:
                 except Refusal as error:
                     if error.code == "helper_busy":
                         raise
-            return run_failure_location(self.projects[payload["project_id"]], payload["error_output"],
-                                        payload["command"], scratch=self._session._scratch)
+            project_id = payload["project_id"]
+            result = run_failure_location(self.projects[project_id], payload["error_output"],
+                                          payload["command"], scratch=self._session._scratch)
+            result["project"] = {"id": project_id, "label": self.project_labels[project_id],
+                                 "path": str(self.projects[project_id])}
+            return result
         if operation == "state":
             recent = []
             for identifier, metadata in list(self.records.items()):

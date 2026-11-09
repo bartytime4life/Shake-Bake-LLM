@@ -41,12 +41,12 @@
       <h1>Start with the thing that failed.</h1>
       <p class="workflow-intro muted">Paste an error, connect its project, and find the source line to inspect. Everything stays on this computer.</p>
       <div class="workflow-choices" role="group" aria-label="Choose a job">
-        <button type="button" id="choose-failed-run" class="workflow-choice selected" aria-pressed="true" aria-controls="failed-run-workflow"><strong>Diagnose a failed run</strong><span>Match a Python traceback to your current source.</span></button>
+        <button type="button" id="choose-failed-run" class="workflow-choice selected" aria-pressed="true" aria-controls="failed-run-workflow"><strong>Diagnose a failed run</strong><span>Check Python, Node.js and TypeScript errors against current source.</span></button>
         <button type="button" id="choose-source-brief" class="workflow-choice" aria-pressed="false" aria-controls="source-brief-workflow"><strong>Prepare source brief</strong><span>Package source for an AI chat. Does not diagnose or fix it.</span></button>
       </div>
       <section id="failed-run-workflow" aria-labelledby="failed-run-heading">
         <div class="workflow-heading"><h2 id="failed-run-heading">Where did it fail?</h2><button type="button" id="try-failure-example" class="text-button">Try a labelled example</button></div>
-        <p class="small muted">For now, this handles Python tracebacks. The command is recorded for context and is never run.</p>
+        <p class="small muted">Supports Python tracebacks, Node.js stack traces and TypeScript compiler errors. The command is recorded for context and is never run.</p>
         <form id="failure-form" autocomplete="off">
           <label for="failure-output" class="request-label">Paste the complete error output</label>
           <textarea id="failure-output" name="error_output" rows="8" required spellcheck="false" aria-describedby="failure-privacy" placeholder="Traceback (most recent call last):&#10;  File &quot;/path/to/your/project/main.py&quot;, line 42, in run&#10;    ...&#10;ValueError: ..."></textarea>
@@ -72,9 +72,15 @@
         <p id="failure-notice" class="notice error" role="status" aria-live="polite" hidden></p>
         <section id="failure-result" class="failure-result" aria-labelledby="failure-result-title" hidden>
           <p id="failure-result-status" class="eyebrow"></p>
+          <p id="failure-stale" class="notice" role="status" hidden>Inputs changed. This result belongs to the captured project and error below. Find failing source again before copying or exporting.</p>
           <h2 id="failure-result-title" tabindex="-1"></h2>
+          <p id="failure-captured-project" class="small muted"></p>
+          <p id="failure-format" class="small muted"></p>
           <p id="failure-exception" class="failure-exception"></p>
           <p id="failure-result-context" class="small muted"></p>
+          <div class="failure-handoff"><button type="button" id="copy-failure-brief" class="primary" disabled>Copy debugging brief</button><p class="small muted">Take the original error and captured source into your existing AI chat to investigate the cause and a verifiable fix.</p></div>
+          <p id="failure-copy-status" class="small" role="status" aria-live="polite"></p>
+          <details id="failure-copy-review" class="handoff-copy" hidden><summary>Review debugging brief or copy manually</summary><label for="failure-copy-text" class="sr-only">Captured debugging brief</label><textarea id="failure-copy-text" rows="12" readonly spellcheck="false"></textarea><p class="small muted">This includes the original error, recorded command, project folder and captured source. Review before sharing. Clipboard and chat clients can change line endings; the JSON report preserves exact contents.</p></details>
           <div id="failure-source"></div>
           <section class="failure-next" aria-labelledby="failure-next-heading"><h3 id="failure-next-heading">What to check next</h3><div id="failure-guidance"></div></section>
           <details id="failure-frames" class="technical"><summary>Traceback frames &amp; matching details</summary><ol id="failure-frame-list"></ol></details>

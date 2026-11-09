@@ -21,7 +21,7 @@ def pipeline_id() -> str:
     root = Path(__file__).resolve().parent
     for name in ("__init__.py", "contracts.py", "collector.py", "search.py", "worker.py", "briefing.py", "routing.py",
                  "helper.py", "job_runner.py", "task_protocol.py", "gui.py", "shared.py", "mcp_server.py", "doctor.py", "capabilities.py", "preferences.py",
-                 "troubleshoot.py", "failure_runner.py", "failure_service.py"):
+                 "troubleshoot.py", "error_formats.py", "failure_runner.py", "failure_service.py"):
         digest.update(name.encode() + b"\0" + (root / name).read_bytes())
     return digest.hexdigest()
 
