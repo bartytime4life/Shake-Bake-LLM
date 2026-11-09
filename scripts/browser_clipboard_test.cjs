@@ -26,7 +26,7 @@ async function scenario(mode,run) {
   },mode);
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   try{
-    await page.goto(baseURL);await page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    await page.goto(baseURL);await page.locator('#choose-source-brief').click();await page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
     await run(page);assert.deepEqual(errors,[]);passed++;console.log('PASS '+mode);
   }finally{await page.unrouteAll({behavior:'ignoreErrors'});await context.close();}
 }
