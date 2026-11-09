@@ -1,0 +1,86 @@
+{
+ "method": "git fetch --depth 1 at base_sha; 300 MiB cap per checkout, 3 GiB total",
+ "cases": [
+  {
+   "key": "juniper__py-junos-eznc__413__400",
+   "status": "ok",
+   "bytes_on_disk": 833664
+  },
+  {
+   "key": "continualai__avalanche__668__657",
+   "status": "ok",
+   "bytes_on_disk": 13196527
+  },
+  {
+   "key": "python-discord__bot__530__299",
+   "status": "ok",
+   "bytes_on_disk": 1178152
+  },
+  {
+   "key": "gitguardian__ggshield__392__391",
+   "status": "ok",
+   "bytes_on_disk": 1128583
+  },
+  {
+   "key": "learningequality__kolibri__6739__6731",
+   "status": "ok",
+   "bytes_on_disk": 21692239
+  },
+  {
+   "key": "databiosphere__toil__1168__1127",
+   "status": "ok",
+   "bytes_on_disk": 3560867
+  },
+  {
+   "key": "dj-stripe__dj-stripe__502__416",
+   "status": "ok",
+   "bytes_on_disk": 922559
+  },
+  {
+   "key": "khronosgroup__gltf-blender-io__214__213",
+   "status": "ok",
+   "bytes_on_disk": 55154411
+  },
+  {
+   "key": "piccolo-orm__piccolo__457__417",
+   "status": "ok",
+   "bytes_on_disk": 1996290
+  },
+  {
+   "key": "scons__scons__3833__3014",
+   "status": "ok",
+   "bytes_on_disk": 41289078
+  },
+  {
+   "key": "boto__botocore__711__708",
+   "status": "ok",
+   "bytes_on_disk": 18291519
+  },
+  {
+   "key": "yashaka__selene__207__206",
+   "status": "ok",
+   "bytes_on_disk": 2075010
+  },
+  {
+   "key": "pyocd__pyocd__987__986",
+   "status": "ok",
+   "bytes_on_disk": 240430626
+  },
+  {
+   "key": "alephdata__aleph__3092__2109",
+   "status": "ok",
+   "bytes_on_disk": 185840749
+  },
+  {
+   "key": "frictionlessdata__framework__1532__1520",
+   "status": "ok",
+   "bytes_on_disk": 226777702
+  },
+  {
+   "key": "quantecon__quantecon.py__705__704",
+   "status": "ok",
+   "bytes_on_disk": 1363650
+  }
+ ],
+ "omitted": 0
+}
