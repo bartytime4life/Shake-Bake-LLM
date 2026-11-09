@@ -195,7 +195,12 @@ def render_orientation(brief: Brief) -> str:
         note = f"lines {record.start_line}-{record.end_line}" + (f" ({reasons[eid].split(': ', 1)[1].rstrip('.')})" if eid in context_ids and eid in reasons else "")
         rows.setdefault(record.path, []).append(note)
     for item in search.context_map:
-        rows.setdefault(item["path"], [])
+        if not item.get("companion_of"):
+            rows.setdefault(item["path"], [])
+    # A test file named after a listed file rides on that file's row; it matched nothing itself.
+    for item in search.context_map:
+        if item.get("companion_of"):
+            rows.setdefault(item["companion_of"], []).append("test file named after it: " + _code(item["path"]))
     shown = list(rows)[:ORIENTATION_FILES]
     lines.extend(["", "## Where the request's terms appear, most matches first"])
     for path in shown:
@@ -262,11 +267,17 @@ def render(brief: Brief) -> str:
             if f"E{index}" in reasons:
                 lines.append("Controlling context (software-selected, not an interpretation): " + reasons[f"E{index}"])
             lines.append(_quote(evidence.text))
-        if search.context_map:
+        matched_map = [item for item in search.context_map if not item.get("companion_of")]
+        companions = [item for item in search.context_map if item.get("companion_of")]
+        if matched_map:
             lines.extend(["", "## Files also matched, not excerpted",
                           "Path, size and first non-empty line (untrusted repository text); read these next if the excerpts above are not enough."])
             lines.extend(f"- {_code(item['path'])} ({item['size_bytes']} bytes): {_code(item['first_line']) if item['first_line'] else '(empty)'}"
-                         for item in search.context_map)
+                         for item in matched_map)
+        if companions:
+            lines.extend(["", "## Test files named after listed files",
+                          "Chosen by file name alone; they did not match the request. Read them if the fix may need a test change."])
+            lines.extend(f"- {_code(item['path'])} ({item['size_bytes']} bytes): named after {_code(item['companion_of'])}" for item in companions)
         if search.line_index:
             lines.extend(["", "## Other matching lines, not excerpted",
                           "Line numbers and short texts of request-term matches the excerpts above do not cover (untrusted repository text); ask for a range by path and lines instead of searching the file."])

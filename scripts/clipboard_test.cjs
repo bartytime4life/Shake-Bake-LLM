@@ -355,3 +355,17 @@ test('a fitted local model copy is disclosed in both layouts and the visible cap
   assert.equal(vm.runInContext('JSON.stringify(viewOf({shown:["E1","x; drop"],cut:"E1",omitted:[],lines_per_excerpt:12}))',h.context),'{"shown":["E1"],"cut":[],"omitted":[],"lines":12}');
   assert.equal(vm.runInContext('viewOf({shown:[]})',h.context),null);
 });
+test('a test file named after a listed file rides on its row in orientation and has its own section in evidence',()=>{
+  const j=job('companion');
+  j.packet.receipt.context_map=[{path:'docs/notes.md',size_bytes:3,first_line:'x'},{path:'tests/test_fixture.py',size_bytes:7,first_line:'y',companion_of:'fixture.txt'},
+    {path:'tests/test_bad.py',size_bytes:1,first_line:'z',companion_of:42}];
+  let h=harness(()=>Promise.resolve(),{style:null});h.pin(j);let lines=h.el('handoff-text').value.split('\n');
+  assert.ok(lines.includes('- `fixture.txt`: lines 1-2; test file named after it: `tests/test_fixture.py`'));
+  assert.ok(!lines.includes('- `tests/test_fixture.py`'),'a companion is not a row of its own');
+  assert.ok(lines.includes('- `docs/notes.md`'));assert.ok(lines.includes('- `tests/test_bad.py`'),'a malformed companion is listed as a plain map entry');
+  h=harness(()=>Promise.resolve(),{style:'evidence'});h.pin(j);lines=h.el('handoff-text').value.split('\n');
+  const section=lines.indexOf('## Test files named after listed files');
+  assert.ok(section>lines.indexOf('## Files also matched, not excerpted'));
+  assert.ok(lines.includes('- `tests/test_fixture.py` (7 bytes): named after `fixture.txt`'));
+  assert.ok(lines.indexOf('- `docs/notes.md` (3 bytes): `x`')<section);
+});
