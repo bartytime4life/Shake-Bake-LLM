@@ -1,6 +1,6 @@
 # Credential screening before you share a brief
 
-Recorded November 9, 2026 for `0.4.0.dev24`. This is a first, warn-only step
+Recorded November 9, 2026 for `0.4.0.dev25`. This is a first, warn-only step
 on TODO item 8 (private-data handling). It does not close that item.
 
 ## The gap
