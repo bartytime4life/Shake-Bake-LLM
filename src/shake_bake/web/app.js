@@ -8,6 +8,8 @@ let inventoryLoading = false, historySignature = '', serviceTimer = null, sessio
 let copyState = null;
 let settingsPending = false, connected = null, stateRevision = 0, pinRevision = 0;
 let draftInitialized = false, draftProjectId = '';
+const DRAFT_KEY = 'sb-workbench-draft', DRAFT_SAVING_KEY = 'sb-workbench-save-draft';
+let draftSaving = true, draftSavingPendingOff = false, draftPrivacyError = '';
 let focusPreparedBrief = false;
 const draftTouched = new Set(), taskKinds = ['code','troubleshoot','documents','search'];
 function message(text, error = false) { $('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text; }
@@ -145,6 +147,33 @@ function draftStatus(text){
   const warning=/could not|kept in this page/i.test(text);
   $('draft-status').classList.toggle('draft-warning',warning);
 }
+function draftPrivacyControls(){
+  $('save-draft').checked=draftSaving;
+  $('save-draft').disabled=!!preview||fileLaunch;
+  $('clear-draft').disabled=!!preview||fileLaunch;
+}
+function readDraftSaving(){
+  // Recheck before every write so an older tab cannot override a newer opt-out.
+  // A failed opt-out remains off in this page even if persistence was blocked.
+  if(localStorage.getItem(DRAFT_SAVING_KEY)==='off')draftSaving=false;
+  draftPrivacyControls();
+}
+function stopDraftSaving(){
+  draftSaving=false;draftPrivacyControls();
+  let preferenceSaved=false,draftRemoved=false;
+  try{localStorage.setItem(DRAFT_SAVING_KEY,'off');preferenceSaved=true;}catch{}
+  try{localStorage.removeItem(DRAFT_KEY);draftRemoved=true;}catch{}
+  draftSavingPendingOff=!preferenceSaved;
+  draftPrivacyError=!preferenceSaved||!draftRemoved
+    ? 'Draft saving is off in this page, but browser storage could not confirm '+(!preferenceSaved&&!draftRemoved?'the saved choice or removal of the older draft.':!preferenceSaved?'the saved choice.':'removal of the older draft.')+' Check browser storage before leaving.'
+    : '';
+  draftStatus(draftPrivacyError||'Draft saving is off. New task edits are not saved in browser storage.');
+}
+function initializeDraftPrivacy(){
+  if(preview||fileLaunch){draftPrivacyControls();return;}
+  try{readDraftSaving();if(!draftSaving)stopDraftSaving();}
+  catch{draftSaving=false;draftPrivacyError='Draft saving preference could not be read. New task edits are kept in this page and are not saved.';draftPrivacyControls();draftStatus(draftPrivacyError);}
+}
 function validDraftProject(){return state?.projects?.includes($('project').value)===true;}
 function draftContext(){
   const projectValid=validDraftProject(),kindValid=taskKinds.includes(taskKind());
@@ -159,18 +188,37 @@ function draftContext(){
 }
 function saveDraft(){
   if(preview||fileLaunch)return;
+  if(draftSavingPendingOff){stopDraftSaving();return;}
+  try{readDraftSaving();}
+  catch{draftStatus('Draft saving preference could not be checked. Task text is kept in this page; nothing new was saved.');return;}
+  if(!draftSaving){
+    // Retry removal if a previous storage failure left an older saved draft.
+    try{localStorage.removeItem(DRAFT_KEY);draftPrivacyError='';}
+    catch{draftPrivacyError='Draft saving is off, but the older saved draft could not be removed. Check browser storage before leaving.';}
+    draftStatus(draftPrivacyError||'Draft saving is off. New task edits are not saved in browser storage.');return;
+  }
   // Initial connection must resolve the saved context before replacing it.
   if(!draftInitialized){draftStatus('Draft kept in this page while the local session connects.');return;}
   if(validDraftProject())draftProjectId=$('project').value;
   try{
-    localStorage.setItem('sb-workbench-draft',JSON.stringify({task:$('request').value,kind:taskKind(),project:draftProjectId}));
-    draftStatus('Draft saved in this browser.');
-  }catch{draftStatus('Draft could not be saved in this browser. Keep this page open or copy your task text before leaving.');}
+    if($('request').value){
+      localStorage.setItem(DRAFT_KEY,JSON.stringify({task:$('request').value,kind:taskKind(),project:draftProjectId}));
+      // A tab can opt out between this page's first check and the task write.
+      // Recheck after writing so that interleaving cannot leave a saved draft.
+      readDraftSaving();
+      if(!draftSaving){localStorage.removeItem(DRAFT_KEY);draftStatus('Draft saving is off. New task edits are not saved in browser storage.');return;}
+      draftStatus('Draft saved in this browser.');
+    }else{
+      localStorage.removeItem(DRAFT_KEY);
+      draftStatus('No task draft is saved. Your next edit will save here.');
+    }
+  }catch{draftStatus($('request').value?'Draft could not be saved or confirmed in this browser. Keep this page open or copy your task text before leaving.':'Task text is empty, but the older saved draft could not be removed. Check browser storage before leaving.');}
 }
 function restoreDraft(prefs){
   let draft=null,storageProblem=false;
-  if(!preview)try{
-    const raw=localStorage.getItem('sb-workbench-draft');
+  if(!preview&&draftSaving)try{
+    readDraftSaving();
+    const raw=draftSaving?localStorage.getItem(DRAFT_KEY):null;
     if(raw!==null){const value=JSON.parse(raw);if(value&&typeof value.task==='string'&&value.task.length<=16384)draft=value;else storageProblem=true;}
   }catch{storageProblem=true;}
   // The draft owns its project/type; separate preferences may describe another task.
@@ -184,12 +232,14 @@ function restoreDraft(prefs){
   document.querySelectorAll('input[name="task-kind"]').forEach(input=>{input.checked=input.value===kind;});
   draftInitialized=true;draftContext();
   if(preview)draftStatus('Recorded preview. Drafts are not saved.');
+  else if(!draftSaving)draftStatus(draftPrivacyError||'Draft saving is off. New task edits are not saved in browser storage.');
   else if(draftTouched.size)saveDraft();
   else draftStatus(storageProblem?'Saved draft could not be read. New edits will replace it if browser storage is available.':draft?'Draft saved in this browser.':'Your draft saves here as you type.');
 }
 function preferences() { return {project_id:$('project').value, task_kind:taskKind(), ai_mode:mode(), ...selectedModel()}; }
 async function savePreferences() { saveDraft();if(!draftInitialized)return;try { await api('/api/preferences', preferences()); } catch(error) { message(error.message, true); } }
 function controls() {
+  draftPrivacyControls();
   $('prepare').disabled = !!active || !state || !connected || settingsPending || !!preview || !validDraftProject() || !taskKinds.includes(taskKind());
   $('stop').disabled = !active?.job_id || !!preview;
   $('stop').hidden = !active || !!preview;
@@ -253,7 +303,11 @@ function renderBrief(previous = false) {
     const range=document.createElement('span'); range.className='source-meta'; range.textContent=`Lines ${item.start_line}–${item.end_line}`; header.append(icon,name,range);
     if(item.context){const why=document.createElement('p'); why.className='source-context small muted'; why.textContent=`Controlling context (software-selected): ${item.context}`; header.append(why);}
     const pre=document.createElement('pre'); pre.tabIndex=0;pre.setAttribute('role','region');pre.setAttribute('aria-label',`Exact source from ${item.path}`);
-    const lines=item.content.split('\n'); if(item.content.endsWith('\n')) lines.pop();
+    // Match Python str.splitlines(), which defines the collector's line ranges.
+    // Only the display is split; handoff/export retains the captured original.
+    const lineBreak=/\r\n|[\n\r\v\f\x1c-\x1e\x85\u2028\u2029]/;
+    const lines=item.content?item.content.split(lineBreak):[];
+    if(/[\n\r\v\f\x1c-\x1e\x85\u2028\u2029]$/.test(item.content))lines.pop();
     lines.forEach((text,index)=>{const row=document.createElement('span'); row.className='line'; const number=document.createElement('span'); number.className='line-number'; number.setAttribute('aria-hidden','true'); number.textContent=String(item.start_line+index); const code=document.createElement('code'); code.textContent=text; row.append(number,code); pre.append(row);});
     const hash=document.createElement('div'); hash.className='hash'; hash.textContent=`SHA-256 ${item.file_sha256}`; article.append(header,pre,hash); grid.append(article);
   }
@@ -360,6 +414,36 @@ $('local-ai').addEventListener('change',async()=>{
 $('model-details-toggle').addEventListener('click',()=>{const open=$('model-details').hidden;$('model-details').hidden=!open;$('model-details-toggle').setAttribute('aria-expanded',String(open));});
 $('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{modelView();savePreferences();});
 $('project').addEventListener('change',()=>{draftTouched.add('project');draftContext();savePreferences();controls();});
+$('save-draft').addEventListener('change',()=>{
+  if(preview||fileLaunch)return;
+  if(!$('save-draft').checked){stopDraftSaving();return;}
+  try{localStorage.setItem(DRAFT_SAVING_KEY,'on');}
+  catch{draftSaving=false;draftPrivacyControls();draftStatus('Draft saving could not be enabled in browser storage. Task text is kept in this page.');return;}
+  draftSaving=true;draftSavingPendingOff=false;draftPrivacyError='';draftPrivacyControls();saveDraft();
+});
+$('clear-draft').addEventListener('click',()=>{
+  if(preview||fileLaunch)return;
+  $('request').value='';draftTouched.add('task');
+  try{localStorage.removeItem(DRAFT_KEY);draftStatus('Task draft cleared. Prepared briefs and your other choices are unchanged.');}
+  catch{draftStatus('Task text cleared in this page, but the saved draft could not be removed. Check browser storage before leaving.');}
+  $('request').focus();
+});
+window.addEventListener('storage',event=>{
+  if(preview||fileLaunch||event.storageArea!==localStorage||event.key!==DRAFT_SAVING_KEY&&event.key!==null)return;
+  if(event.key===null){
+    // Clearing browser storage must not make an open tab start saving again.
+    draftSaving=false;draftSavingPendingOff=true;draftPrivacyControls();
+    draftStatus('Browser storage was cleared in another tab. Draft saving is off in this page; current text is unchanged.');return;
+  }
+  try{
+    const savedChoice=localStorage.getItem(DRAFT_SAVING_KEY);
+    if(savedChoice==='off')draftSaving=false;
+    else if(savedChoice==='on'&&!draftSavingPendingOff)draftSaving=true;
+    draftPrivacyControls();
+    if(!draftSaving)saveDraft();
+    else draftStatus('Draft saving was enabled in another tab. Your next edit will save here.');
+  }catch{draftStatus('Draft saving preference could not be checked. Task text is kept in this page; nothing new was saved.');}
+});
 document.querySelectorAll('input[name="task-kind"]').forEach(input=>input.addEventListener('change',()=>{draftTouched.add('kind');draftContext();savePreferences();controls();}));
 $('refresh-models').addEventListener('click',async()=>{
   if(inventoryLoading)return;
@@ -658,6 +742,7 @@ function syncSession(announce=true){
 }
 $('retry-connection').addEventListener('click',async()=>{await syncSession();if(connected)message('Local session reconnected. Your task draft and pinned brief are unchanged.');else message('The local session is still unavailable. Check the workbench is running. If it restarted, save any pinned brief, then reload this page.',true);});
 async function initialize(){
+  initializeDraftPrivacy();
   clearInterval(timer);clearInterval(serviceTimer);controls();
   if(fileLaunch){
     $('workbench-shell').hidden=true;$('skip-workspace').hidden=true;$('file-launch').hidden=false;

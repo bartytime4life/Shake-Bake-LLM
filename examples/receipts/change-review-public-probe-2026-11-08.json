@@ -1,0 +1,296 @@
+{
+  "kind": "public_change_review_development_probe_aggregate",
+  "date": "2026-11-08",
+  "decision": "do_not_promote",
+  "review_status": "provisional_root_ai_mapping_human_review_pending",
+  "source": "GitHub ReviewBench public PRs",
+  "benchmark_commit": "f223ce33558a6d211fd222b1f7ff2fd7b44403d4",
+  "manifest_sha256": "d3823afa36d847b052d4aad763ec39f9187a05b582e49e51cfd73a18d49c7c5d",
+  "candidate_sha256": "4de572a16ddebb52a8acbf7653d71c65d58df5445c59d7701ba46523b608a1e7",
+  "runner_sha256": "1eaa4a0c8715a65c6344b1f28072fb5c700e23e525ac907058448330d787794e",
+  "host_config_sha256": "12256cce145cc68a765bcf774464aa8479623415442cec0d8feb2d62c59b26e1",
+  "host_overrides": [
+    "features.code_mode=true",
+    "suppress_unstable_features_warning=true"
+  ],
+  "model_requested": "gpt-6.1-sol",
+  "effort_requested": "medium",
+  "failed_formal_preflights": [
+    {
+      "runner_sha256": "f130b6073aaba13be840a660b3cbc2dd311a581f2c84d319de6f072320b332c2",
+      "public_attempts": 0,
+      "reason": "no_command_action"
+    },
+    {
+      "runner_sha256": "565a48e6e259fe3ccfca59c234c4b706796e503014502cbfc4980d11f76d18f8",
+      "public_attempts": 0,
+      "reason": "no_command_action"
+    }
+  ],
+  "successful_preflight": {
+    "local_permissions": {
+      "status": "passed",
+      "checks": {
+        "source": true,
+        "manifest_denied": true,
+        "auth_denied": true,
+        "write_denied": true,
+        "network_denied": true
+      }
+    },
+    "host": {
+      "exit_code": 0,
+      "error": null,
+      "host_seconds": 6.721,
+      "answer_sha256": "977ccbaa9af3128a01c1b271e53e16e46efe108116bf02bfe3d64335340b0b73",
+      "actions": [
+        {
+          "command": "/bin/bash -lc 'cat preflight.txt'",
+          "exit_code": 0,
+          "output_bytes": 25
+        }
+      ],
+      "usage": {
+        "input_tokens": 24318,
+        "cached_input_tokens": 21632,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 72,
+        "reasoning_output_tokens": 0
+      },
+      "event_count": 7,
+      "passed": true
+    }
+  },
+  "fixture_sha256": {
+    "actuator-fault-status": "07b17b1267fcfee8bbde72324eb5d8603f7f8c880c5d56d9c3392358bf150856",
+    "msgraph-readme-config": "b1abc27e1ba5f1e6691a4c696b1cd15050fb2d0d417f5a2959766419750b4a3e"
+  },
+  "answer_count": 8,
+  "review_packet_sha256": "62149e6cca2419ba462f6171be09ea50d5e2a71c292835308ac9603324a69f70",
+  "private_receipt_sha256": "3c2e5129b7526f46d51a43a99b065ee87d8b6affd35d79607f6f218214e95176",
+  "attempts": [
+    {
+      "index": 1,
+      "round": 1,
+      "case_id": "actuator-fault-status",
+      "arm": "native",
+      "prompt_sha256": "2722bdef89cae38866bfbed989a5620e2569469e3bb6e7e9cf1fa2a1ecfc6dcf",
+      "diff_sha256": "e99fcd1f849873d91cde2d017149a0c8d433b818a8073fc216e90b1a4b44ed7f",
+      "preparation_seconds": 0.0,
+      "host_seconds": 17.086,
+      "answer_sha256": "28794345558c89723218ace64c3e9b0e96a50087783c26fe3df004f3b0fe38c9",
+      "usage": {
+        "input_tokens": 76159,
+        "cached_input_tokens": 60288,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 481,
+        "reasoning_output_tokens": 87
+      },
+      "fixture_unchanged": true,
+      "action_count": 3,
+      "all_action_exit_codes_zero": true
+    },
+    {
+      "index": 2,
+      "round": 1,
+      "case_id": "actuator-fault-status",
+      "arm": "prepared",
+      "prompt_sha256": "b7b60014c65482d4700e4785bda2bfa6ff9199720cb777121606c65eeb8a5ed8",
+      "diff_sha256": "e99fcd1f849873d91cde2d017149a0c8d433b818a8073fc216e90b1a4b44ed7f",
+      "preparation_seconds": 0.006347,
+      "host_seconds": 21.592,
+      "answer_sha256": "4631cd4de0ee9d90dcdd2b774dd23f1f37fb2d97033b4c1467b3aa72ea624f2b",
+      "usage": {
+        "input_tokens": 98473,
+        "cached_input_tokens": 76672,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 602,
+        "reasoning_output_tokens": 98
+      },
+      "fixture_unchanged": true,
+      "action_count": 5,
+      "all_action_exit_codes_zero": true
+    },
+    {
+      "index": 3,
+      "round": 1,
+      "case_id": "msgraph-readme-config",
+      "arm": "prepared",
+      "prompt_sha256": "b8b94d86b2f3bd953efd20edef25aed361d6bf5fba105b563d6470e5d109eb3f",
+      "diff_sha256": "21b6bf2b3946c515b3723a0b1e9f312a3d87a2b166a86f6ccd95f8866e121b58",
+      "preparation_seconds": 0.003239,
+      "host_seconds": 23.373,
+      "answer_sha256": "8bfbad0c0303807c431e232325b0169a1a1df1e511349acba734d7eadb1683a4",
+      "usage": {
+        "input_tokens": 83216,
+        "cached_input_tokens": 68096,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 593,
+        "reasoning_output_tokens": 154
+      },
+      "fixture_unchanged": true,
+      "action_count": 3,
+      "all_action_exit_codes_zero": true
+    },
+    {
+      "index": 4,
+      "round": 1,
+      "case_id": "msgraph-readme-config",
+      "arm": "native",
+      "prompt_sha256": "417f680178be202d12fe93f595b81fe9d9df7c7d1d7309053bd9d66ae9e1bdc4",
+      "diff_sha256": "21b6bf2b3946c515b3723a0b1e9f312a3d87a2b166a86f6ccd95f8866e121b58",
+      "preparation_seconds": 0.0,
+      "host_seconds": 13.658,
+      "answer_sha256": "c2fb479b9ecffdf19e1306357e02369a12316d86ec6ddd25f102ee32e5343128",
+      "usage": {
+        "input_tokens": 50207,
+        "cached_input_tokens": 37760,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 344,
+        "reasoning_output_tokens": 62
+      },
+      "fixture_unchanged": true,
+      "action_count": 2,
+      "all_action_exit_codes_zero": true
+    },
+    {
+      "index": 5,
+      "round": 2,
+      "case_id": "msgraph-readme-config",
+      "arm": "prepared",
+      "prompt_sha256": "b8b94d86b2f3bd953efd20edef25aed361d6bf5fba105b563d6470e5d109eb3f",
+      "diff_sha256": "21b6bf2b3946c515b3723a0b1e9f312a3d87a2b166a86f6ccd95f8866e121b58",
+      "preparation_seconds": 0.003145,
+      "host_seconds": 37.744,
+      "answer_sha256": "e9fc64e1d7f7ddcb7d1b5647b108cf770052ada3fb62b4748257a15cb313f9df",
+      "usage": {
+        "input_tokens": 83070,
+        "cached_input_tokens": 62208,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 671,
+        "reasoning_output_tokens": 296
+      },
+      "fixture_unchanged": true,
+      "action_count": 3,
+      "all_action_exit_codes_zero": true
+    },
+    {
+      "index": 6,
+      "round": 2,
+      "case_id": "msgraph-readme-config",
+      "arm": "native",
+      "prompt_sha256": "417f680178be202d12fe93f595b81fe9d9df7c7d1d7309053bd9d66ae9e1bdc4",
+      "diff_sha256": "21b6bf2b3946c515b3723a0b1e9f312a3d87a2b166a86f6ccd95f8866e121b58",
+      "preparation_seconds": 0.0,
+      "host_seconds": 19.977,
+      "answer_sha256": "0253f47286191cbb8083c0da0bc28cb91e7c87ba71d2ca07bd4659db9f3b4d96",
+      "usage": {
+        "input_tokens": 48419,
+        "cached_input_tokens": 37760,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 490,
+        "reasoning_output_tokens": 180
+      },
+      "fixture_unchanged": true,
+      "action_count": 2,
+      "all_action_exit_codes_zero": true
+    },
+    {
+      "index": 7,
+      "round": 2,
+      "case_id": "actuator-fault-status",
+      "arm": "native",
+      "prompt_sha256": "2722bdef89cae38866bfbed989a5620e2569469e3bb6e7e9cf1fa2a1ecfc6dcf",
+      "diff_sha256": "e99fcd1f849873d91cde2d017149a0c8d433b818a8073fc216e90b1a4b44ed7f",
+      "preparation_seconds": 0.0,
+      "host_seconds": 20.749,
+      "answer_sha256": "0be09179dadb9f70c13ea8a4511325b9e33b53b164482fbfd81886d183ac9ae5",
+      "usage": {
+        "input_tokens": 77896,
+        "cached_input_tokens": 60928,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 583,
+        "reasoning_output_tokens": 91
+      },
+      "fixture_unchanged": true,
+      "action_count": 5,
+      "all_action_exit_codes_zero": true
+    },
+    {
+      "index": 8,
+      "round": 2,
+      "case_id": "actuator-fault-status",
+      "arm": "prepared",
+      "prompt_sha256": "b7b60014c65482d4700e4785bda2bfa6ff9199720cb777121606c65eeb8a5ed8",
+      "diff_sha256": "e99fcd1f849873d91cde2d017149a0c8d433b818a8073fc216e90b1a4b44ed7f",
+      "preparation_seconds": 0.005839,
+      "host_seconds": 24.169,
+      "answer_sha256": "590ceb300f5a56d65d59a1389603d1688600529bfe5a25b4305c947b80c12b69",
+      "usage": {
+        "input_tokens": 106715,
+        "cached_input_tokens": 83712,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 582,
+        "reasoning_output_tokens": 103
+      },
+      "fixture_unchanged": true,
+      "action_count": 5,
+      "all_action_exit_codes_zero": true
+    }
+  ],
+  "provisional_case_scores": {
+    "actuator-fault-status": {
+      "native_reference_match_ids": [
+        5,
+        5
+      ],
+      "prepared_reference_match_ids": [
+        5,
+        5
+      ],
+      "new_unsupported_critical_claims": 0,
+      "source_supported_misses_in_both_arms": [
+        "pre_transmit_fault_cache_clear",
+        "lost_warning_visibility"
+      ]
+    },
+    "msgraph-readme-config": {
+      "native_reference_match_ids": [],
+      "prepared_reference_match_ids": [],
+      "new_unsupported_critical_claims": 0,
+      "source_supported_misses_in_both_arms": [
+        "npx_interactive_prompt",
+        "any_client_format_overclaim",
+        "clone_recovery_wording"
+      ]
+    }
+  },
+  "limits": [
+    "public_cases_may_be_model_known",
+    "reference_findings_include_model_producers_and_duplicates",
+    "provisional_ai_mapping_not_human_grade",
+    "no_executed_source_or_tests",
+    "no_billing_or_quota_measurement",
+    "two_cases_two_repetitions_per_arm"
+  ],
+  "arm_totals": {
+    "native": {
+      "attempts": 4,
+      "reported_input_tokens": 252681,
+      "cached_input_tokens_subset": 196736,
+      "reported_output_tokens": 1898,
+      "host_seconds": 71.47,
+      "preparation_seconds": 0.0,
+      "action_count": 12
+    },
+    "prepared": {
+      "attempts": 4,
+      "reported_input_tokens": 371474,
+      "cached_input_tokens_subset": 290688,
+      "reported_output_tokens": 2448,
+      "host_seconds": 106.878,
+      "preparation_seconds": 0.01857,
+      "action_count": 16
+    }
+  }
+}

@@ -26,6 +26,7 @@ from .helper import HelperSession
 from .preferences import LocalPreferences, default_state_directory
 from .routing import eligible_profiles, pipeline_id, validate_policy
 from .shared import ConnectionPublication
+from .task_protocol import MAX_TASK_INPUT_BYTES
 from .worker import local_inventory, parse_json
 
 ASSETS = Path(__file__).resolve().parent / "web"
@@ -407,7 +408,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.headers.get("Content-Type", "").split(";")[0] != "application/json":
                 raise Refusal("json_required")
             length = int(self.headers.get("Content-Length", "0"))
-            if not 0 < length <= 24000:
+            if not 0 < length <= MAX_TASK_INPUT_BYTES:
                 raise Refusal("request_size")
             self.connection.settimeout(3)
             raw = self.rfile.read(length)

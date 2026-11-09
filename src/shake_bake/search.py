@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 import time
 
-from .collector import MAX_FILES, MAX_REQUEST_CHARS, _parts, _read, build_packet
+from .collector import MAX_FILES, _parts, _read, build_packet, validate_request
 from .contracts import Packet, Refusal, Selection
 
 EXTENSIONS = frozenset({".py", ".js", ".ts", ".tsx", ".jsx", ".rs", ".go", ".md", ".toml", ".yaml", ".yml", ".json", ".txt", ".c", ".h", ".cpp", ".java", ".sh", ".sql"})
@@ -196,8 +196,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
     candidates before primary selection; it never adds a window the scan did not find."""
     limits = limits or SearchLimits()
     limits.validate()
-    if not isinstance(request, str) or not request.strip() or len(request) > MAX_REQUEST_CHARS:
-        raise Refusal("invalid_request")
+    validate_request(request)
     all_terms, terms = request_terms(request)
     if not terms:
         raise Refusal("search_terms_required")

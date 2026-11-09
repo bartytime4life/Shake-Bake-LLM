@@ -10,6 +10,9 @@ state is not a statement about the latest build.
 
 | Topic | Documents |
 | --- | --- |
+| First useful brief | [Three-step getting-started guide](quickstart.md), including privacy, retention and common recovery actions |
+| November 9 integration | [Current-main integration and publication checks](publication-2026-11-09.md) |
+| November 9 improvements | [Changes, validation and next product priorities](project-improvements-2026-11-09.md), [draft privacy](draft-privacy.md), [source/transport reliability](source-boundary-reliability.md), [offline host review](host-review-scoring.md) |
 | Local setup and trials | [PC checklist](PC-CHECKLIST.md), [readiness and trial commands](pc-readiness-and-trials.md), [Task Lab](../benchmarks/task-lab/README.md) |
 | Interface and recovery | [Visual workbench](visual-workbench.md), [saved Local AI choice](local-ai-preferences.md), [shared coordinator](shared-coordinator.md) |
 | Continue in Claude or ChatGPT | [Manual handoff, text-file export and verification scope](assistant-handoff.md) |
@@ -74,6 +77,22 @@ implemented pieces. A proposed control is not an available feature.
 retain their dated external observations. Recheck upstream product features,
 licenses, model tags and resource requirements before acting on a new candidate.
 Published rankings and example tags are not local inventory or owner-PC results.
+
+The [November 8 concept and evidence review](concept-evidence-review-2026-11-08.md)
+combines a fresh synthetic validation pass with primary-source research and a
+task-specific next experiment. It does not change release or model qualification.
+The [exposed change-review candidate check](change-review-candidate-2026-11-08.md)
+records the first deterministic implementation and its packet-level limits.
+The [frozen paired host diagnostic](change-review-host-trial-2026-11-08.md)
+records the corrected two-case comparison, retained setup failure and failed
+answer-quality gate. Its synthetic [receipt](../examples/receipts/change-review-host-trial-2026-11-08.json)
+contains the reviewed answers and command/usage summaries.
+The [public change-review probe](change-review-public-result-2026-11-08.md)
+records two pinned ReviewBench PRs, two retained preflight failures, eight
+completed paired host answers and the unchanged candidate's lack of demonstrated
+benefit. Its [aggregate receipt](../examples/receipts/change-review-public-probe-2026-11-08.json)
+contains hashes and metrics without raw public source or answer text; independent
+human scoring remains open.
 
 ## Historical records and fixed inputs
 

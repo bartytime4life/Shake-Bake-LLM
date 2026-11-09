@@ -1,6 +1,6 @@
 # Shake and Bake: prioritized to-do list
 
-Updated November 8, 2026 for `0.4.0.dev21`. The application baseline has 238 passing tests. [Current evaluation status](docs/evaluation-status.md) records the retained model, browser, installed and host evidence. The latest [forty-attempt budget comparison](docs/thinking-budget-2026-11-05.md) produced 6/10 supported handoffs with thinking off and 6/10 at each larger thinking budget. Both larger budgets completed only nine answers, lost the concurrency case and retained two critical unsupported claims; both are rejected. No model is promoted, no new reserved cohort was started, and production settings are unchanged. Missing original `.dev6` outputs, human qualification, broader host behavior and whole-task savings remain open.
+Updated November 9, 2026 for `0.4.0.dev23`. The isolated starting snapshot passed 191 program tests; [the initial improvement record](docs/project-improvements-2026-11-09.md) retains that pass and the [integration record](docs/publication-2026-11-09.md) covers reconciliation with current main. [Current evaluation status](docs/evaluation-status.md) records the retained model, browser, installed and host evidence. The latest [forty-attempt budget comparison](docs/thinking-budget-2026-11-05.md) produced 6/10 supported handoffs with thinking off and 6/10 at each larger thinking budget. Both larger budgets completed only nine answers, lost the concurrency case and retained two critical unsupported claims; both are rejected. No model is promoted, no new reserved cohort was started, and production settings are unchanged. Missing original `.dev6` outputs, human qualification, broader host behavior and whole-task savings remain open.
 
 The subsequent [host-note diagnostic](docs/host-note-diagnostic-2026-11-05.md) completed all twenty answers. Evidence alone met the rubric on 9/10 cases; adding retained local notes met it on 8/10. Neither arm made a counted false claim, but the assisted arm omitted one uncertainty present in baseline, so its no-regression gate failed. This does not qualify local notes or complete a native-host benefit study.
 
@@ -12,7 +12,7 @@ The focused workbench review fixes setting-confirmation and stale-result races, 
 
 The [request-recovery follow-up](docs/request-recovery-2026-11-05.md) adds browser request deadlines, uncertain-start reconciliation and connection recovery during active polling. Jobs still belong to the running session; this does not complete durable recovery or actual-model interruption qualification.
 
-The [draft-context follow-up](docs/draft-context-2026-11-05.md) keeps restored text with its saved project/task type, requires explicit replacement of unavailable choices, preserves edits made during connection and exposes browser saving failures. Draft opt-out/clear controls, cross-tab coordination and durable jobs remain open.
+The [draft-context follow-up](docs/draft-context-2026-11-05.md) keeps restored text with its saved project/task type, requires explicit replacement of unavailable choices, preserves edits made during connection and exposes browser saving failures. [Draft opt-out and clear controls](docs/draft-privacy.md) now preserve current text and respect another tab's opt-out. Concurrent draft editing and durable jobs remain open.
 
 The [page-file follow-up](docs/file-launch-recovery-2026-11-05.md) fixes missing assets and provides a launch guide when the HTML file is opened directly. HTTP browser acceptance and file-path/VM checks are recorded separately; direct-file visual acceptance remains unverified.
 
@@ -33,6 +33,10 @@ The November 6 [handoff-prompt follow-up](docs/handoff-prompt-2026-11-06.md) cha
 - [ ] **4. Compare correctness on unseen tasks (partial).** External datasets, frozen identities and separate review are implemented. Ten separately authored cases were kept out of prompt tuning and then evaluated with original/experimental prompts; the cohort is now exposed. See [the retained comparison](docs/reasoning-screening-2026-11-05.md). The latest budget candidates failed development, so a new reserved cohort has not begun. Once a candidate passes, freeze it before authoring/reserving fresh cases, then compare the same native host/settings with deterministic evidence and local-model-assisted evidence. Review final outcomes, critical misses, unsupported claims and useful abstention. AI assessment, repeated known cases and instruction-masked labels are not independent human qualification or promotion authority.
 
 
+
+  The [first change-review candidate](docs/change-review-candidate-2026-11-08.md) is development-only. Its exposed synthetic packet found 5/5 predefined source anchors versus 2/5 for the unchanged generic brief. It was frozen for a [two-case paired host diagnostic](docs/change-review-host-trial-2026-11-08.md): the corrected native and prepared arms each met 6/8 strict answer criteria, so the quality gate failed. The initial no-retrieval setup group and corrected attempts are retained. No efficiency benefit or normal UI/adapter promotion is established.
+
+  The next [public change-review probe](docs/change-review-public-result-2026-11-08.md) pinned two ReviewBench PRs and completed eight host answers after two retained preflight failures. Both arms found the same actuator issue and both missed several source-backed findings; the prepared arm used 47.0% more reported input and 49.5% more summed host time in this small run. The AI mapping is provisional and public cases are now exposed. Redesign on new development material, obtain separate human review, and keep the candidate out of normal routes.
 
 ## Product and release work
 
@@ -56,7 +60,7 @@ Steps 1–2 require the actual local model/PC. Host-dependent steps need the sup
 - New owner-PC exposed screening with a retained timeout, ten reviewed smaller-model notes and a checksummed portable review packet; no model promotion.
 - Tested pre-source thinking-mode refusal with exact evidence retained; rejected prompt experiment and portable comparison records.
 - Shared local GUI/adapter jobs, routed policy, scoped project access and session pause/cancel verified through native clients.
-- Selected local connection/queued-expiry regressions; 183 offline program tests passed on the local PC, including the owned-runner process gate without a skip.
+- Selected local connection/queued-expiry regressions and owned-runner process checks; the [integration record](docs/publication-2026-11-09.md) records the current source and installed validation.
 - Installed-package PC readiness and actual local metadata/UI checks; successful synthetic JSON export and selectable handoff text, with one exact native/manual clipboard transfer verified and remaining qualification gaps retained explicitly.
 - Actual Codex evidence-only synthetic handoff and injected cancellation/recovery, with opt-in replay and sanitized receipts; full host qualification remains open.
 - Paired final-host diagnostics: 9/10 versus 8/10 with local notes, and 8/8 in both native-search/deterministic-preparation conditions. Timings, usage, separate AI grades and failed setup are retained; useful whole-task savings remain unproved.

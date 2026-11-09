@@ -1,11 +1,12 @@
 """Execute only our trusted preparation code in a bounded Linux child."""
 
 import ctypes
-import json
 import os
 import resource
 import signal
 import sys
+
+from .task_protocol import MAX_TASK_INPUT_BYTES, MAX_TASK_RESULT_BYTES, encode_result
 
 
 def main() -> int:
@@ -19,13 +20,13 @@ def main() -> int:
         if os.getppid() != expected_parent:
             return 1
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-        resource.setrlimit(resource.RLIMIT_FSIZE, (256 * 1024, 256 * 1024))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_TASK_RESULT_BYTES, MAX_TASK_RESULT_BYTES))
         resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
         resource.setrlimit(resource.RLIMIT_CPU, (10, 10))
         signal.signal(signal.SIGALRM, signal.SIG_DFL)
         signal.alarm(45)
-        raw = sys.stdin.buffer.read(128 * 1024 + 1)
-        if len(raw) > 128 * 1024:
+        raw = sys.stdin.buffer.read(MAX_TASK_INPUT_BYTES + 1)
+        if len(raw) > MAX_TASK_INPUT_BYTES:
             raise RuntimeError("oversized request")
         from .briefing import build_brief
         from .contracts import Refusal
@@ -53,10 +54,7 @@ def main() -> int:
                 result = build_brief(Path(request["root"]), request["task"], model=request["model"], port=request["port"]).to_dict()
         except Refusal as refusal:
             result = {"outcome": "DENY", "code": refusal.code}
-        text = json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-        if len(text) > 256 * 1024:
-            raise RuntimeError("oversized result")
-        sys.stdout.buffer.write(text + b"\n")
+        sys.stdout.buffer.write(encode_result(result))
         sys.stdout.buffer.flush()
         return 0
     except Exception:
