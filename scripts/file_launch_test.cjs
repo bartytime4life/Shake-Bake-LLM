@@ -12,14 +12,15 @@ function harness({preview=null,initialize=true}={}){
     {hidden:id==='file-launch',textContent:'',events:{},classList:{toggle(){}},
       setAttribute(){},addEventListener(name,fn){this.events[name]=fn;}}
   );
-  const context={window:{location:{protocol:'file:'},__SB_RECORDED_PREVIEW__:preview},
+  const windowEvents={};
+  const context={window:{location:{protocol:'file:'},__SB_RECORDED_PREVIEW__:preview,addEventListener(name,fn){windowEvents[name]=fn;}},
     document:{getElementById:el,querySelectorAll:()=>[]},
     localStorage:{getItem(){calls.read++;return null;},setItem(){calls.write++;}},
     fetch(){calls.fetch++;throw new Error('Unexpected network request');},
     setInterval(){calls.interval++;},clearInterval(){},setTimeout(){calls.timeout++;},clearTimeout(){}};
   vm.createContext(context);
   vm.runInContext(initialize?source:source.replace(';initialize();',';'),context);
-  return {el,calls,context};
+  return {el,calls,context,windowEvents};
 }
 
 test('opening the page file shows launch guidance without requests, storage or polling',async()=>{

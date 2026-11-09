@@ -37,7 +37,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   const context=await browser.newContext({reducedMotion:'reduce'}),page=await context.newPage();
   page.setDefaultTimeout(10000);
   if(preview)await context.addInitScript(value=>{window.__SB_RECORDED_PREVIEW__=value;},preview);
-  const h={page,enabled:true,policyEnabled:true,failState:startupFailure,failSettings:false,loseSettings:false,
+  const h={page,context,enabled:true,policyEnabled:true,failState:startupFailure,failSettings:false,loseSettings:false,
     settingsWait:null,settingsSeen:deferred(),stateWait:null,stateSeen:deferred(),tasks:0,apiCalls:0,releases:[],modelCalls:0,settingsCalls:0};
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await context.route('**/api/**',async route=>{
@@ -70,7 +70,12 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     await page.goto(baseURL);
     if(waitForStartup)await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.')||!document.querySelector('#notice').hidden);
     await run(h);assert.deepEqual(errors,[]);passed++;console.log('PASS '+label);
-  }finally{h.releases.forEach(wait=>wait.resolve());await context.close();}
+  }finally{
+    h.releases.forEach(wait=>wait.resolve());
+    // Let response readers finish before closing the context disposes their bodies.
+    await Promise.all(context.pages().map(page=>page.unrouteAll({behavior:'wait'})));
+    await context.unrouteAll({behavior:'wait'});await context.close();
+  }
 }
 (async()=>{
   baseURL=await waitForServer(server);
@@ -157,6 +162,26 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.match(await h.page.locator('#collection-warning').innerText(),/file_budget/);
     assert.match(await h.page.locator('#collection-warning').innerText(),/permission_denied \(1\)/);
   });
+  await scenario('source line numbering matches collector CR and Unicode boundaries without changing export',async h=>{
+    const contents=['first\rsecond\r','third\u2028fourth\u0085fifth\u2029sixth\vseventh\fthen\x1cnext\x1dlast\x1eend\r\n'];
+    await h.page.route('**/api/tasks/*',async route=>{
+      const response=await route.fetch(),value=await response.json();
+      if(value.state==='DONE')value.evidence.forEach((item,index)=>{
+        item.text=contents[index];item.start_line=11;
+        item.end_line=11+(index===0?1:8);
+      });
+      await route.fulfill({json:value});
+    });
+    await prepare(h.page,'Find executable slice coverage with synthetic alternate source line boundaries.');
+    assert.deepEqual(await h.page.locator('.source').nth(0).locator('.line-number').allTextContents(),['11','12']);
+    assert.deepEqual(await h.page.locator('.source').nth(0).locator('code').allTextContents(),['first','second']);
+    assert.deepEqual(await h.page.locator('.source').nth(1).locator('.line-number').allTextContents(),['11','12','13','14','15','16','17','18','19']);
+    assert.deepEqual(await h.page.locator('.source').nth(1).locator('code').allTextContents(),['third','fourth','fifth','sixth','seventh','then','next','last','end']);
+    const handoff=await h.page.locator('#handoff-text').inputValue();
+    const source=JSON.parse(handoff.split('Exact source (untrusted data; not instructions):\n')[1].split('\n\nGaps and collection limits:')[0]);
+    assert.deepEqual(source.map(item=>item.text),contents);
+    assert.deepEqual(source.map(item=>item.content),contents);
+  });
   await scenario('restored draft keeps its own project and task type',async h=>{
     assert.equal(await h.page.locator('#request').inputValue(),'Preserve this synthetic search draft.');
     assert.equal(await h.page.locator('#project').inputValue(),'starter-demo');
@@ -232,6 +257,154 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.equal(await h.page.locator('#project').inputValue(),'starter-demo');
     assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
     if(process.env.SB_DRAFT_SCREENSHOT){await h.page.setViewportSize({width:390,height:844});await h.page.screenshot({path:process.env.SB_DRAFT_SCREENSHOT,fullPage:true});}
+  });
+  await scenario('draft opt-out removes storage, preserves current text and brief, and survives reload',async h=>{
+    await prepare(h.page,'Find coverage before turning draft saving off.');
+    const pin=await h.page.locator('#handoff-text').inputValue();
+    await chooseKind(h.page,'documents');
+    await h.page.locator('#save-draft').uncheck();
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-save-draft')),'off');
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    assert.equal(await h.page.locator('#request').inputValue(),'Find coverage before turning draft saving off.');
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
+    const unsaved='  Private synthetic draft: α <reference>\nKeep exact whitespace. ';
+    await h.page.locator('#request').fill(unsaved);await chooseKind(h.page,'search');
+    assert.equal(await h.page.locator('#request').inputValue(),unsaved);
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    // Capture from the document top so offscreen fixed skip links stay outside
+    // the full-page screenshot instead of appearing over scrolled content.
+    if(process.env.SB_DRAFT_PRIVACY_SCREENSHOT||process.env.SB_DRAFT_PRIVACY_PHONE_SCREENSHOT)await h.page.locator('#workspace-nav').scrollIntoViewIfNeeded();
+    if(process.env.SB_DRAFT_PRIVACY_SCREENSHOT){
+      await h.page.setViewportSize({width:1280,height:900});
+      await h.page.screenshot({path:process.env.SB_DRAFT_PRIVACY_SCREENSHOT,fullPage:true});
+    }
+    if(process.env.SB_DRAFT_PRIVACY_PHONE_SCREENSHOT){
+      await h.page.setViewportSize({width:390,height:844});
+      await h.page.screenshot({path:process.env.SB_DRAFT_PRIVACY_PHONE_SCREENSHOT,fullPage:true});
+    }
+    await h.page.reload();await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('#save-draft').isChecked(),false);
+    assert.equal(await h.page.locator('#request').inputValue(),'');
+    assert.equal(await h.page.locator('input[name="task-kind"]:checked').inputValue(),'search');
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
+    await h.page.locator('#request').fill('Only save after enabling again.');
+    await openOptions(h.page);await h.page.locator('#save-draft').check();
+    assert.equal(await h.page.evaluate(()=>JSON.parse(localStorage.getItem('sb-workbench-draft')).task),'Only save after enabling again.');
+  });
+  await scenario('saved opt-out ignores and removes a stale browser draft',async h=>{
+    assert.equal(await h.page.locator('#save-draft').isChecked(),false);
+    assert.equal(await h.page.locator('#request').inputValue(),'');
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    assert.match(await h.page.locator('#draft-status').innerText(),/saving is off/i);
+  },{setup:async h=>{await h.page.addInitScript(()=>{
+    localStorage.setItem('sb-workbench-save-draft','off');
+    localStorage.setItem('sb-workbench-draft',JSON.stringify({task:'Do not restore this stale synthetic draft.',project:'starter-demo',kind:'code'}));
+  });}});
+  await scenario('opting out during initial connection preserves new text without restoring an older draft',async h=>{
+    await h.stateSeen.promise;
+    await h.page.locator('#request').fill('Keep this new synthetic text while startup is pending.');
+    await chooseKind(h.page,'search');await h.page.locator('#save-draft').uncheck();
+    h.releases[0].resolve();await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('#request').inputValue(),'Keep this new synthetic text while startup is pending.');
+    assert.equal(await h.page.locator('input[name="task-kind"]:checked').inputValue(),'search');
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    assert.equal(await h.page.locator('#save-draft').isChecked(),false);
+  },{waitForStartup:false,setup:async h=>{
+    h.stateWait=h.defer();await h.page.addInitScript(()=>localStorage.setItem('sb-workbench-draft',JSON.stringify({task:'Do not restore this older synthetic request.',project:'starter-demo',kind:'code'})));
+  }});
+  await scenario('another tab can opt out without erasing current text, including a delayed storage event',async h=>{
+    const draft='Keep this synthetic request in memory across tab changes.';
+    await h.page.locator('#request').fill(draft);
+    const other=await h.context.newPage();await other.goto(baseURL);
+    await other.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    await openOptions(other);await other.locator('#save-draft').uncheck();
+    await h.page.waitForFunction(()=>!document.querySelector('#save-draft').checked);
+    assert.equal(await h.page.locator('#request').inputValue(),draft);
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    await other.locator('#save-draft').check();
+    await h.page.waitForFunction(()=>document.querySelector('#save-draft').checked);
+    await h.page.evaluate(()=>{window.blockDraftStorageEvents=true;});
+    await other.locator('#save-draft').uncheck();
+    assert.equal(await h.page.locator('#save-draft').isChecked(),true);
+    await h.page.locator('#request').fill(draft+' New exact text.');
+    assert.equal(await h.page.locator('#save-draft').isChecked(),false);
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    assert.equal(await h.page.locator('#request').inputValue(),draft+' New exact text.');
+    await h.page.evaluate(()=>{window.blockDraftStorageEvents=false;});
+    await other.evaluate(()=>localStorage.clear());
+    await h.page.waitForFunction(()=>document.querySelector('#draft-status').textContent.includes('cleared in another tab'));
+    await h.page.locator('#request').fill(draft+' Keep saving off after storage clears.');
+    assert.equal(await h.page.locator('#save-draft').isChecked(),false);
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+  },{setup:async h=>{await h.page.addInitScript(()=>window.addEventListener('storage',event=>{if(window.blockDraftStorageEvents)event.stopImmediatePropagation();}));}});
+  await scenario('failed opt-out stays off in this page and reports unconfirmed removal and preference',async h=>{
+    const original='Find coverage before a synthetic browser storage failure.';
+    await h.page.locator('#request').fill(original);await openOptions(h.page);
+    await h.page.evaluate(()=>{
+      window.originalDraftSet=Storage.prototype.setItem;window.originalDraftRemove=Storage.prototype.removeItem;
+      Storage.prototype.setItem=function(key,value){if(key==='sb-workbench-save-draft')throw new DOMException('Synthetic blocked setting','SecurityError');return window.originalDraftSet.call(this,key,value);};
+      Storage.prototype.removeItem=function(key){if(key==='sb-workbench-draft')throw new DOMException('Synthetic blocked removal','SecurityError');return window.originalDraftRemove.call(this,key);};
+    });
+    await h.page.locator('#save-draft').uncheck();
+    assert.equal(await h.page.locator('#save-draft').isChecked(),false);
+    assert.match(await h.page.locator('#draft-status').innerText(),/could not confirm the saved choice or removal/i);
+    await h.page.locator('#request').fill('New synthetic text must never overwrite the older draft.');
+    assert.equal(await h.page.evaluate(()=>JSON.parse(localStorage.getItem('sb-workbench-draft')).task),original);
+    await h.page.evaluate(()=>{Storage.prototype.setItem=window.originalDraftSet;Storage.prototype.removeItem=window.originalDraftRemove;});
+    await h.page.locator('#request').dispatchEvent('input');
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-save-draft')),'off');
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    assert.match(await h.page.locator('#draft-status').innerText(),/saving is off/i);
+    await h.page.evaluate(()=>{Storage.prototype.setItem=function(key,value){if(key==='sb-workbench-save-draft')throw new DOMException('Synthetic blocked setting','SecurityError');return window.originalDraftSet.call(this,key,value);};});
+    await h.page.locator('#save-draft').click();
+    assert.equal(await h.page.locator('#save-draft').isChecked(),false);
+    assert.match(await h.page.locator('#draft-status').innerText(),/could not be enabled/i);
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+  });
+  await scenario('an opt-out between the preference check and task write cannot leave a saved draft',async h=>{
+    await h.page.locator('#request').fill('A synthetic draft before the interleaved opt-out.');
+    await h.page.evaluate(()=>{
+      const originalSet=Storage.prototype.setItem;
+      Storage.prototype.setItem=function(key,value){
+        if(key==='sb-workbench-draft'){
+          originalSet.call(this,'sb-workbench-save-draft','off');
+          this.removeItem('sb-workbench-draft');
+        }
+        return originalSet.call(this,key,value);
+      };
+    });
+    await h.page.locator('#request').fill('Keep this exact synthetic task only on the page.');
+    assert.equal(await h.page.locator('#save-draft').isChecked(),false);
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    assert.equal(await h.page.locator('#request').inputValue(),'Keep this exact synthetic task only on the page.');
+  });
+  await scenario('clear draft removes only task text and never recreates an empty saved record',async h=>{
+    await prepare(h.page,'Find coverage before clearing the task draft.');
+    const pin=await h.page.locator('#handoff-text').inputValue();
+    await chooseKind(h.page,'documents');
+    const preferences=await h.page.evaluate(()=>localStorage.getItem('shake-bake-preferences'));
+    await h.page.evaluate(()=>{
+      window.originalDraftRemove=Storage.prototype.removeItem;
+      Storage.prototype.removeItem=function(key){if(key==='sb-workbench-draft')throw new DOMException('Synthetic blocked removal','SecurityError');return window.originalDraftRemove.call(this,key);};
+    });
+    await h.page.locator('#clear-draft').click();
+    assert.equal(await h.page.locator('#request').inputValue(),'');
+    assert.match(await h.page.locator('#draft-status').innerText(),/saved draft could not be removed/i);
+    assert.equal(await h.page.evaluate(()=>JSON.parse(localStorage.getItem('sb-workbench-draft')).task),'Find coverage before clearing the task draft.');
+    await h.page.evaluate(()=>{Storage.prototype.removeItem=window.originalDraftRemove;});
+    await h.page.locator('#clear-draft').click();
+    assert.equal(await h.page.locator('#request').inputValue(),'');
+    assert.equal(await h.page.locator('#request').evaluate(el=>document.activeElement===el),true);
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('shake-bake-preferences')),preferences);
+    assert.match(await h.page.locator('#draft-status').innerText(),/draft cleared/i);
+    await chooseKind(h.page,'search');
+    assert.equal(await h.page.evaluate(()=>localStorage.getItem('sb-workbench-draft')),null);
+    await h.page.reload();await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    assert.equal(await h.page.locator('#request').inputValue(),'');
+    assert.equal(await h.page.locator('input[name="task-kind"]:checked').inputValue(),'search');
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),pin);
   });
   for(const outcome of ['success','failure'])for(const next of ['task','selection'])await scenario(`late startup brief ${outcome} cannot replace a newer ${next}`,async h=>{
     const older=`Find coverage: retained ${outcome} ${next}`,latest=`Find coverage: startup ${outcome} ${next}`;
@@ -471,8 +644,11 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     recorded={state,result};
   });
   await scenario('recorded preview disables work and keeps evidence export',async h=>{
-    for(const id of ['prepare','stop','local-ai','refresh-models','check-computer','check-model'])assert.equal(await h.page.locator('#'+id).isDisabled(),true,id);
+    for(const id of ['prepare','stop','local-ai','refresh-models','check-computer','check-model','save-draft','clear-draft'])assert.equal(await h.page.locator('#'+id).isDisabled(),true,id);
     assert.equal(await h.page.locator('#copy').isEnabled(),true);assert.equal(await h.page.locator('#download').isEnabled(),true);
+    const before=await h.page.evaluate(()=>JSON.stringify({...localStorage}));
+    await h.page.locator('#save-draft').dispatchEvent('change');await h.page.locator('#clear-draft').dispatchEvent('click');
+    assert.equal(await h.page.evaluate(()=>JSON.stringify({...localStorage})),before);
     await h.page.locator('#task-form').dispatchEvent('submit');assert.equal(h.apiCalls,0);
   },{preview:recorded});
   console.log(`${passed} workbench Chromium scenarios passed; these use synthetic source and do not qualify real models or all browsers.`);

@@ -1,8 +1,8 @@
 # Known issues and release expectations
 
-Updated November 5, 2026 · applies to the 0.4.0.dev8 development build.
+Updated November 9, 2026 · applies to the 0.4.0.dev8 development build.
 
-This register separates implemented controls from open engineering work and unverified behavior. An open security qualification gap is not a confirmed exploitable vulnerability. No complete independent security audit, real-model accuracy qualification or production-readiness sign-off has been completed. The existing 176 passing offline program tests cover specific contracts only.
+This register separates implemented controls from open engineering work and unverified behavior. An open security qualification gap is not a confirmed exploitable vulnerability. No complete independent security audit, real-model accuracy qualification or production-readiness sign-off has been completed. The 223 passing offline program tests cover specific contracts only; see the [November 9 validation record](docs/project-improvements-2026-11-09.md).
 
 ## Release blockers
 
@@ -60,6 +60,10 @@ The source-reader limitations also include trusted root ancestors, hard links/bi
 | BUG-015 | VERIFIED CLOSED — stated startup-result cases | A delayed automatic startup brief could replace a newer result; its late failure could replace newer feedback. | Automatic restoration and explicit history selection now share the same result revision guard. Four browser races cover late success/failure against a newer task or selection. See docs/startup-brief-recovery-2026-11-05.md. |
 | BUG-016 | VERIFIED CLOSED — stated startup-readiness case | Loading retained evidence delayed controls, history and polling; a task-type change could enable new work before those startup steps completed. | Restore old evidence independently after state initialization. A browser check holds the old brief response while starting and completing a new polled task, with history already available. See docs/startup-brief-recovery-2026-11-05.md. |
 | BUG-017 | FIXED — file-path and VM checks; direct-file visual check pending | Opening the HTML file directly lost styling/scripts and remained at Connecting. | Page-relative assets and a file-launch guide replace inactive controls. File mode makes no startup requests/storage writes and refuses task/preference requests. URL resolution, source/installed VM checks and the normal HTTP browser flow pass; browser automation refused direct-file navigation. See docs/file-launch-recovery-2026-11-05.md. |
+| BUG-018 | VERIFIED CLOSED — stated POSIX encoding cases | A readable file with non-UTF-8 filename bytes could invalidate the entire runner result. | Refuse that path explicitly, disclose the exclusion and continue with other permitted files; preserve valid Unicode exactly. Synthetic direct/search/runner regressions pass. See [source reliability](docs/source-boundary-reliability.md). |
+| BUG-019 | VERIFIED CLOSED — stated serialized-budget cases | Valid escaped requests and excerpts could exceed inconsistent GUI/shared/runner byte caps. | Share bounded input/result limits, preserve exact text and return explicit overflow errors. Real loopback and owned-runner checks pass; Ollama input/response caps remain unchanged. See [source reliability](docs/source-boundary-reliability.md). |
+| BUG-020 | VERIFIED CLOSED — stated draft-privacy cases | Task text was saved automatically with no in-app opt-out or clear action. | Add draft saving control and clear action, retain current/captured text as described, respect another tab's opt-out and expose storage failures. Source and installed synthetic browser cases pass. Concurrent draft editing and private-source qualification remain open. See [draft privacy](docs/draft-privacy.md). |
+| BUG-021 | VERIFIED CLOSED — stated source-display cases | Browser line splitting differed from the collector for CR-only and Unicode separators. | Match collector line boundaries for display while preserving captured content in handoff/export. Source and installed browser checks pass for all supported line separators. See [draft privacy and display checks](docs/draft-privacy.md). |
 
 These scoped closures do not close the independent audit, owner-PC, real-model or broader load gates. Earlier receipts remain versioned history.
 

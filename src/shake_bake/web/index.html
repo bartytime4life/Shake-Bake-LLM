@@ -56,6 +56,11 @@
               <label><input type="radio" name="task-kind" value="documents"><span>Documents</span></label>
               <label><input type="radio" name="task-kind" value="search"><span>Search</span></label>
             </fieldset>
+            <fieldset class="draft-privacy"><legend>Task draft</legend>
+              <label class="check-label"><input id="save-draft" type="checkbox" checked aria-describedby="draft-privacy-help">Save this task draft in this browser</label>
+              <p id="draft-privacy-help" class="small muted">Turning this off removes the saved draft and keeps your current text here. Clear draft empties this task; prepared briefs stay available.</p>
+              <button type="button" id="clear-draft" class="secondary compact">Clear draft</button>
+            </fieldset>
             <div class="model-strip">
               <label class="switch-label"><input type="checkbox" id="local-ai" disabled><span>Local AI <small class="muted">optional</small></span></label>
               <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="icons/chevron-down.svg" alt=""></button>
@@ -96,7 +101,7 @@
           <button type="button" class="primary" id="copy" disabled><img src="icons/copy.svg" alt="">Copy brief</button>
           <p>Paste into <a id="open-claude" href="https://claude.ai/" target="_blank" rel="noopener noreferrer" aria-label="Open Claude in a new tab" aria-describedby="handoff-privacy">Claude</a> or <a id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-label="Open ChatGPT in a new tab" aria-describedby="handoff-privacy">ChatGPT</a>, then send.</p>
         </div>
-        <p id="handoff-privacy" class="small muted">Only share source you intend to send. Nothing is sent automatically.</p>
+        <p id="handoff-privacy" class="small muted">Only share source you intend to send. Nothing is sent automatically. Session history is temporary; use Review &amp; export to save a copy.</p>
         <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>
         <p id="worker-status" class="notice" hidden></p>
         <section id="gaps-section" class="supplement gaps" hidden><h2>Gaps &amp; collection limits</h2><ul id="gaps"></ul><p id="collection-warning" class="small muted"></p></section>

@@ -75,11 +75,17 @@ class _BufferSocket:
         return io.BytesIO(self.data)
 
 
-def _request(method: str, path: str, payload: dict | None, port: int, deadline: float, *, authorization: str | None = None) -> dict:
+def _request(method: str, path: str, payload: dict | None, port: int, deadline: float, *, authorization: str | None = None,
+             response_limit: int = MAX_RESPONSE_BYTES, request_limit: int = MAX_INPUT_BYTES) -> dict:
+    if type(response_limit) is not int or not 1 <= response_limit <= 2 * 1024 * 1024:
+        raise Refusal("invalid_local_response_limit")
+    if type(request_limit) is not int or not 1 <= request_limit <= 2 * 1024 * 1024:
+        raise Refusal("invalid_local_request_limit")
+    wire_limit = response_limit + (MAX_WIRE_BYTES - MAX_RESPONSE_BYTES)
     if authorization is not None and (not isinstance(authorization, str) or not re.fullmatch(r"Bearer [A-Za-z0-9_-]{43,128}", authorization)):
         raise Refusal("invalid_local_authorization")
     body = b"" if payload is None else json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    if len(body) > MAX_INPUT_BYTES:
+    if len(body) > request_limit:
         raise Refusal("worker_input_too_large")
     auth = "" if authorization is None else "Authorization: " + authorization + "\r\n"
     request = (f"{method} {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n" + auth +
@@ -107,11 +113,11 @@ def _request(method: str, path: str, payload: dict | None, port: int, deadline: 
                             if sent == len(request):
                                 selector.modify(sock, selectors.EVENT_READ)
                         else:
-                            chunk = sock.recv(min(65536, MAX_WIRE_BYTES + 1 - len(wire)))
+                            chunk = sock.recv(min(65536, wire_limit + 1 - len(wire)))
                             if not chunk:
                                 break
                             wire.extend(chunk)
-                            if len(wire) > MAX_WIRE_BYTES:
+                            if len(wire) > wire_limit:
                                 raise Refusal("worker_response_too_large")
                     except BlockingIOError:
                         continue
@@ -121,8 +127,8 @@ def _request(method: str, path: str, payload: dict | None, port: int, deadline: 
             raise Refusal("worker_http_error")
         if response.getheader("Content-Type", "").split(";")[0].strip().lower() != "application/json":
             raise Refusal("worker_invalid_response")
-        raw = response.read(MAX_RESPONSE_BYTES + 1)
-        if len(raw) > MAX_RESPONSE_BYTES:
+        raw = response.read(response_limit + 1)
+        if len(raw) > response_limit:
             raise Refusal("worker_response_too_large")
         result = parse_json(raw.decode("utf-8"))
         if not isinstance(result, dict):

@@ -12,6 +12,8 @@ import stat
 import time
 
 from .contracts import Refusal
+from .collector import validate_request
+from .task_protocol import MAX_SHARED_RESPONSE_BYTES, MAX_TASK_INPUT_BYTES
 from .worker import _request, parse_json
 
 
@@ -130,12 +132,13 @@ class SharedClient:
         if self._closed:
             raise Refusal("shared_client_closed")
         payload = {"method": method, "arguments": arguments}
-        if len(json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()) > 24000:
+        if len(json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()) > MAX_TASK_INPUT_BYTES:
             raise Refusal("shared_request_too_large")
         try:
             response = _request("POST", "/api/helper", payload, self._connection["port"],
                                 time.monotonic() + 10,
-                                authorization="Bearer " + self._connection["token"])
+                                authorization="Bearer " + self._connection["token"],
+                                response_limit=MAX_SHARED_RESPONSE_BYTES, request_limit=MAX_TASK_INPUT_BYTES)
         except Refusal:
             raise Refusal("shared_service_unavailable_or_request_refused") from None
         if set(response) != {"result"} or not isinstance(response["result"], dict):
@@ -146,6 +149,7 @@ class SharedClient:
         return self._call("list_projects", {})
 
     def start_task(self, project_id, task, *, task_kind="code"):
+        validate_request(task)
         return self._call("start_task", {"project_id": project_id, "task": task, "task_kind": task_kind})
 
     def get_result(self, task_id):

@@ -14,9 +14,22 @@ MAX_REQUEST_CHARS = 16_384
 DENIED_PARTS = frozenset({".git", ".ssh", ".aws", ".gnupg", ".env", ".netrc", ".npmrc", "credentials.json", "secrets.json", "id_rsa", "id_ed25519"})
 
 
+def validate_request(request: str) -> None:
+    if not isinstance(request, str) or not request.strip() or len(request) > MAX_REQUEST_CHARS:
+        raise Refusal("invalid_request")
+    try:
+        request.encode("utf-8")
+    except UnicodeEncodeError:
+        raise Refusal("request_utf8_required") from None
+
+
 def _parts(path: str) -> tuple[str, ...]:
     if not isinstance(path, str) or not path or "\\" in path or ":" in path or "\x00" in path:
         raise Refusal("path_not_allowed")
+    try:
+        path.encode("utf-8")
+    except UnicodeEncodeError:
+        raise Refusal("path_utf8_required") from None
     parsed = PurePosixPath(path)
     parts = parsed.parts
     if parsed.is_absolute() or not parts or ".." in parts:
@@ -68,8 +81,7 @@ def _read(root: Path, path: str) -> bytes:
 
 
 def build_packet(root: Path, original_request: str, selections: tuple[Selection, ...]) -> Packet:
-    if not isinstance(original_request, str) or not original_request.strip() or len(original_request) > MAX_REQUEST_CHARS:
-        raise Refusal("invalid_request")
+    validate_request(original_request)
     if not 1 <= len(selections) <= MAX_FILES:
         raise Refusal("selection_count_not_allowed")
     records: list[Evidence] = []

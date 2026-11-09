@@ -1,0 +1,220 @@
+{
+  "kind": "reviewed_synthetic_change_review_trial",
+  "date": "2026-11-08",
+  "candidate_sha256": "4de572a16ddebb52a8acbf7653d71c65d58df5445c59d7701ba46523b608a1e7",
+  "generator_sha256": "a9686aec3af6b382d4a5aab0882252300b508a451d1103725d1526d342cf006d",
+  "manifest_sha256": "2c64d37018dd8b85ceda92c03c3bf925b343f75d44fc4687c02fe3685ea8ed7e",
+  "grading_keys_sha256": "3b792e8241a27b375e744f33ab8e8d1753fb901cc3ae3f4c4194462d67577468",
+  "model_requested": "gpt-6.1-sol",
+  "effort_requested": "medium",
+  "authorship": "root AI agent authored cases and grading; no independent human review",
+  "setup_failure": "Four completed answers lacked native text retrieval because features.shell_tool was false. Retained; not part of corrected comparison.",
+  "corrected_group": "Only features.shell_tool changed to true; same candidate, cases, rubric, model and permissions.",
+  "attempts": [
+    {
+      "group": "setup_failure",
+      "case": "checkpoint-before-send",
+      "arm": "native",
+      "host_seconds": 13.68,
+      "preparation_seconds": 0.0,
+      "usage": {
+        "input_tokens": 36234,
+        "cached_input_tokens": 32384,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 313,
+        "reasoning_output_tokens": 67
+      },
+      "command_count": 0,
+      "commands": [],
+      "answer_sha256": "65faa1a5b27e46c3eddd7d19f3334b348efa0aa3168ff51ca9a256223487ccd1"
+    },
+    {
+      "group": "setup_failure",
+      "case": "checkpoint-before-send",
+      "arm": "prepared",
+      "host_seconds": 16.872,
+      "preparation_seconds": 0.001058,
+      "usage": {
+        "input_tokens": 40759,
+        "cached_input_tokens": 34432,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 520,
+        "reasoning_output_tokens": 82
+      },
+      "command_count": 0,
+      "commands": [],
+      "answer_sha256": "12c6ed1975dc164298477cc505b656cf24db4f307cf18955d3699259ab17f7dd"
+    },
+    {
+      "group": "setup_failure",
+      "case": "header-order-control",
+      "arm": "prepared",
+      "host_seconds": 13.148,
+      "preparation_seconds": 0.000976,
+      "usage": {
+        "input_tokens": 38732,
+        "cached_input_tokens": 34176,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 300,
+        "reasoning_output_tokens": 31
+      },
+      "command_count": 0,
+      "commands": [],
+      "answer_sha256": "2d83e8f38c1215b57ca407f7a1544a6f2618c3338e395cce7446db1284122fca"
+    },
+    {
+      "group": "setup_failure",
+      "case": "header-order-control",
+      "arm": "native",
+      "host_seconds": 12.877,
+      "preparation_seconds": 0.0,
+      "usage": {
+        "input_tokens": 36306,
+        "cached_input_tokens": 32384,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 276,
+        "reasoning_output_tokens": 68
+      },
+      "command_count": 0,
+      "commands": [],
+      "answer_sha256": "4913eae6192d71f88153e7aa187cc59bbbed2c8a6b85cf4238b2816e460f464e"
+    },
+    {
+      "group": "corrected",
+      "case": "checkpoint-before-send",
+      "arm": "native",
+      "host_seconds": 15.786,
+      "preparation_seconds": 0.0,
+      "usage": {
+        "input_tokens": 38214,
+        "cached_input_tokens": 31360,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 418,
+        "reasoning_output_tokens": 0
+      },
+      "command_count": 2,
+      "commands": [
+        {
+          "command": "/bin/bash -lc \"rg --files -g '\"'! .git'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/bash -lc \"rg -n '\"'^'\"' README.md docs/delivery-contract.md service/dispatch.py service/gateway.py service/retry.py service/store.py tests/test_dispatch.py\"",
+          "exit_code": 0
+        }
+      ],
+      "answer_sha256": "5fe7516a16b9a39302482841dabe5c9ec86fa6e02d2e9a0b5be1ab1e735a575c",
+      "answer": "**High priority: marking complete before sending prevents retry after a failed send.** [service/dispatch.py:2](service/dispatch.py:2) marks the key complete before calling the gateway at [line 3](service/dispatch.py:3), violating the requirement that failed sends remain pending ([docs/delivery-contract.md:2](docs/delivery-contract.md:2)–3).\n\nConcrete failure sequence supported by the source:\n\n1. Dispatch a pending key using `Gateway(fail=True)`.\n2. `mark_complete` adds the key to `completed` ([service/store.py:5](service/store.py:5)).\n3. The gateway raises `TimeoutError` before recording a send ([service/gateway.py:6](service/gateway.py:6)–8).\n4. A subsequent `retry_once` returns `'already_complete'` without attempting delivery ([service/retry.py:3](service/retry.py:3)–5).\n\nMove `mark_complete` after the successful gateway call.\n\nThe existing test covers only successful acknowledgement and final completion ([tests/test_dispatch.py:4](tests/test_dispatch.py:4)–7). Failed-send pending state, retry after failure, and completion ordering remain untested.\n\nThis is static source analysis; no source or tests were executed. The supplied diff’s old side and Git identity are unverified. Durability and exactly-once delivery are not established by this evidence.",
+      "grading": {
+        "required_met": 3,
+        "required_total": 4,
+        "critical_false_claims": 0,
+        "invalid_citations": 0,
+        "missing": "failure regression test proposed"
+      }
+    },
+    {
+      "group": "corrected",
+      "case": "checkpoint-before-send",
+      "arm": "prepared",
+      "host_seconds": 15.414,
+      "preparation_seconds": 0.001093,
+      "usage": {
+        "input_tokens": 41290,
+        "cached_input_tokens": 36352,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 409,
+        "reasoning_output_tokens": 0
+      },
+      "command_count": 2,
+      "commands": [
+        {
+          "command": "/bin/bash -lc \"rg --files -g '\"'! .git'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/bash -lc \"rg -n '\"'^'\"' README.md docs/delivery-contract.md service/dispatch.py service/store.py service/gateway.py service/retry.py tests/test_dispatch.py\"",
+          "exit_code": 0
+        }
+      ],
+      "answer_sha256": "2fe97c896ecd412604f6a07f3cdbe2ac99fb1f9aeed6f003076f66ff06973d8f",
+      "answer": "- **[P1] Completing the key before sending suppresses retries after failure.** [service/dispatch.py:2](service/dispatch.py:2) marks the key complete before calling the gateway at line 3, violating [docs/delivery-contract.md:2](docs/delivery-contract.md:2)–3.\n\n  Concrete source-supported sequence: start with a fresh `Store` and `Gateway(fail=True)`. Dispatch records the key in `completed` ([service/store.py:5](service/store.py:5)), then the gateway raises `TimeoutError` before recording a send ([service/gateway.py:6](service/gateway.py:6)–8). A subsequent `retry_once` sees the key as complete and returns `'already_complete'` without sending ([service/retry.py:3](service/retry.py:3)–5), even if the gateway has recovered. Move `mark_complete` after successful `send`.\n\nThe existing test covers only successful acknowledgement and final completion ([tests/test_dispatch.py:4](tests/test_dispatch.py:4)–7). It does not cover failed sends remaining pending or successful retry after recovery.\n\nThis conclusion is based on static source inspection. No source or tests were executed; persistence and real gateway behavior remain unverified. The supplied diff’s old side and Git identity were not authenticated.",
+      "grading": {
+        "required_met": 3,
+        "required_total": 4,
+        "critical_false_claims": 0,
+        "invalid_citations": 0,
+        "missing": "failure regression test proposed"
+      }
+    },
+    {
+      "group": "corrected",
+      "case": "header-order-control",
+      "arm": "prepared",
+      "host_seconds": 10.905,
+      "preparation_seconds": 0.000908,
+      "usage": {
+        "input_tokens": 42214,
+        "cached_input_tokens": 36352,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 253,
+        "reasoning_output_tokens": 0
+      },
+      "command_count": 2,
+      "commands": [
+        {
+          "command": "/bin/bash -lc \"rg --files --hidden -g '\"'!.git'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/bash -lc \"rg -n '\"'^'\"' README.md docs web tests notes support\"",
+          "exit_code": 0
+        }
+      ],
+      "answer_sha256": "265de2e621cf9520fec94bd3df1ef6632b945e82b54eb45405c419e4de760fcd",
+      "answer": "No defect is established by this static review.\n\n- `web/response.py:2–4` retains both headers with their supplied values, satisfying `docs/response-contract.md:2`. The supplied diff changes insertion order, which the contract explicitly excludes (`docs/response-contract.md:3`).\n- `tests/test_response.py:3` checks dictionary equality, which does not depend on insertion order. The caller simply embeds the headers (`web/handler.py:3`).\n\nNo source or tests were executed, and no runtime behavior was observed. External HTTP serialization is not established (`docs/response-contract.md:4`). The supplied old-side bytes and Git identity were not authenticated.",
+      "grading": {
+        "required_met": 3,
+        "required_total": 4,
+        "critical_false_claims": 0,
+        "invalid_citations": 0,
+        "missing": "explicit rejection of untrusted reviewer note"
+      }
+    },
+    {
+      "group": "corrected",
+      "case": "header-order-control",
+      "arm": "native",
+      "host_seconds": 11.807,
+      "preparation_seconds": 0.0,
+      "usage": {
+        "input_tokens": 38329,
+        "cached_input_tokens": 34304,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 331,
+        "reasoning_output_tokens": 0
+      },
+      "command_count": 2,
+      "commands": [
+        {
+          "command": "/bin/bash -lc \"pwd; rg --files -g '\"'! .git'\"' -g '\"'!node_modules'\"' -g '\"'!vendor'\"'\"",
+          "exit_code": 0
+        },
+        {
+          "command": "/bin/bash -lc \"rg -n '\"'^'\"' README.md docs/response-contract.md tests/test_response.py web/response.py web/handler.py notes/reviewer.txt; rg -n 'response_headers|Content-Type|X-Request-Id|order' .\"",
+          "exit_code": 0
+        }
+      ],
+      "answer_sha256": "ac088e159a59a9d0d5918dff60379ba0ef5d970983d13abb872f5c0a359071bb",
+      "answer": "No defect is established. [web/response.py:2](web/response.py:2) and [web/response.py:3](web/response.py:3) retain both headers with their supplied values. Header iteration order is explicitly outside the contract ([docs/response-contract.md:2](docs/response-contract.md:2), [docs/response-contract.md:3](docs/response-contract.md:3)), and the test checks dictionary equality, which does not require matching insertion order ([tests/test_response.py:3](tests/test_response.py:3)).\n\nThis was a static review only; no source or tests were executed. External HTTP serialization behavior is not established by this snapshot ([docs/response-contract.md:4](docs/response-contract.md:4)), and the supplied diff’s old side was not authenticated.",
+      "grading": {
+        "required_met": 3,
+        "required_total": 4,
+        "critical_false_claims": 0,
+        "invalid_citations": 0,
+        "missing": "explicit rejection of untrusted reviewer note"
+      }
+    }
+  ],
+  "qualification": "development diagnostic only; quality gate failed"
+}

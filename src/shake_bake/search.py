@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import time
 
-from .collector import MAX_FILES, MAX_REQUEST_CHARS, _parts, _read, build_packet
+from .collector import MAX_FILES, _parts, _read, build_packet, validate_request
 from .contracts import Packet, Refusal, Selection
 
 EXTENSIONS = frozenset({".py", ".js", ".ts", ".tsx", ".jsx", ".rs", ".go", ".md", ".toml", ".yaml", ".yml", ".json", ".txt", ".c", ".h", ".cpp", ".java", ".sh", ".sql"})
@@ -52,8 +52,7 @@ class SearchResult:
 def prepare(root: Path, request: str, limits: SearchLimits | None = None) -> SearchResult:
     limits = limits or SearchLimits()
     limits.validate()
-    if not isinstance(request, str) or not request.strip() or len(request) > MAX_REQUEST_CHARS:
-        raise Refusal("invalid_request")
+    validate_request(request)
     all_terms = tuple(dict.fromkeys(t.casefold() for t in re.findall(r"[A-Za-z_][A-Za-z_0-9]+", request)
                                     if len(t) >= 3 and t.casefold() not in STOP_WORDS))
     terms = all_terms[:16]

@@ -14,8 +14,9 @@ import threading
 import time
 import uuid
 
-from .collector import MAX_REQUEST_CHARS, _parts
+from .collector import _parts, validate_request
 from .contracts import Refusal
+from .task_protocol import MAX_TASK_INPUT_BYTES, MAX_TASK_RESULT_BYTES
 from .worker import parse_json, validate_settings
 
 ACTIVE = frozenset({"RUNNING"})
@@ -97,8 +98,8 @@ class HelperSession:
             return
         try:
             job.streams[1].seek(0)
-            raw = job.streams[1].read(256 * 1024 + 1)
-            if len(raw) > 256 * 1024:
+            raw = job.streams[1].read(MAX_TASK_RESULT_BYTES + 1)
+            if len(raw) > MAX_TASK_RESULT_BYTES:
                 raise Refusal("invalid_runner_result")
             result = parse_json(raw.decode("utf-8"))
             if not isinstance(result, dict) or result.get("outcome") not in ("ANSWER", "ABSTAIN", "DENY", "ERROR"):
@@ -159,8 +160,7 @@ class HelperSession:
                 raise Refusal("helper_closed")
             if not isinstance(project_id, str) or project_id not in self._projects:
                 raise Refusal("project_not_allowed")
-            if not isinstance(task, str) or not task.strip() or len(task) > MAX_REQUEST_CHARS:
-                raise Refusal("invalid_request")
+            validate_request(task)
             if task_kind not in ("code", "troubleshoot", "documents", "search") or type(disabled) is not bool:
                 raise Refusal("invalid_task_options")
             if candidate is not None:
@@ -173,6 +173,17 @@ class HelperSession:
                 self._refresh(job)
             if any(job.state in ACTIVE for job in self._jobs.values()):
                 raise Refusal("helper_busy")
+            request = {"root": str(self._projects[project_id]), "task": task, "model": self.model, "port": self.port}
+            if self.policy_path is not None:
+                request.update(policy_path=str(self.policy_path), task_kind=task_kind, disabled=disabled)
+                if candidate is not None:
+                    request["candidate"] = candidate
+            try:
+                raw = json.dumps(request, ensure_ascii=False).encode("utf-8")
+            except UnicodeEncodeError:
+                raise Refusal("task_input_utf8_required") from None
+            if len(raw) > MAX_TASK_INPUT_BYTES:
+                raise Refusal("task_input_too_large")
             # Bounded, session-only retention. Old handles fail explicitly.
             while len(self._jobs) >= 8:
                 oldest = min(self._jobs.values(), key=lambda item: item.created)
@@ -181,14 +192,6 @@ class HelperSession:
             try:
                 for _ in range(3):
                     streams.append(tempfile.TemporaryFile(dir=self._scratch))
-                request = {"root": str(self._projects[project_id]), "task": task, "model": self.model, "port": self.port}
-                if self.policy_path is not None:
-                    request.update(policy_path=str(self.policy_path), task_kind=task_kind, disabled=disabled)
-                    if candidate is not None:
-                        request["candidate"] = candidate
-                raw = json.dumps(request, ensure_ascii=False).encode("utf-8")
-                if len(raw) > 128 * 1024:
-                    raise Refusal("task_input_too_large")
                 streams[0].write(raw); streams[0].seek(0)
                 environment = dict(os.environ)
                 # Resolve only our package in the child, independently of the inspected root.
