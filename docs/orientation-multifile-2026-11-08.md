@@ -96,7 +96,8 @@ with four losses.
 The evidence now supports making the orientation framing the layout the
 workbench copies. The evidence brief lost four of its twelve paired
 comparisons. Across both orientation runs, the orientation brief lost one of
-twenty-eight. That port is an owner decision. The brief should still not be
+twenty-eight. The owner said to proceed, and the port shipped in `0.4.0.dev22`
+([record](workbench-orientation-2026-11-08.md)). The brief should still not be
 described as saving tokens, and any claim that it improves answers should be
 limited to this measurement.
 
