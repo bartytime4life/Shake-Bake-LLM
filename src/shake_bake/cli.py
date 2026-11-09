@@ -107,7 +107,7 @@ def assist_main(argv: list[str]) -> int:
 
 def diagnose_main(argv):
     from .troubleshoot import locate_failure
-    parser = argparse.ArgumentParser(description="Locate a pasted Python failure in current source; no commands or model calls.")
+    parser = argparse.ArgumentParser(description="Locate a Python, Node.js or TypeScript failure in current source; no commands or model calls.")
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--error-file", required=True, type=Path, help="UTF-8 saved error output, outside the inspected project if private")
     parser.add_argument("--command", default="", help="Record the command that failed; never execute it")

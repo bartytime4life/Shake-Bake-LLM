@@ -1,249 +1,94 @@
-# Shake and Bake LLM Assistant
+# Shake & Bake
 
-A local workbench for checking a Python failure against the code on your computer. Paste a traceback, connect the project folder, and inspect the exact source line, version mismatches and relevant next checks. It needs no model or network connection. A separate source-brief workflow packages excerpts for Claude or ChatGPT, with an optional Ollama worker.
+Check a failed run against the code on your computer, then take a precise debugging brief into your AI chat. The workbench reads approved source folders, preserves the original error and shows the exact lines it found. No model is needed for this workflow.
 
-**Current source: `0.4.0.dev24`, built on the recovered standalone `0.4.0.dev4` package.** This replaces the separate `0.1.0.dev0` repository bootstrap while preserving it in Git history. The original runtime, tests, fixtures and technical documentation have been recovered; see the [import and publication review](docs/import/2026-11-05.md). This is a development preview, not a qualified production release.
+**Development preview: `0.4.0.dev26`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
 
-| Status | Scope |
-| --- | --- |
-| Implemented | Python traceback source checks, in-app session-only project connection, exact evidence collection, bounded lexical retrieval, optional loopback Ollama preparation, local workbench, owner-record model gates, shared GUI/adapter job coordination, scoped project access and cancellation. |
-| Verified in development | Program, browser and installed-package checks are recorded in the [November 9 integration record](docs/publication-2026-11-09.md); the [initial improvement pass](docs/project-improvements-2026-11-09.md) retains its separate baseline results. Model-service tests use simulations. Official SDK 2.3.0 stdio/shared checks and actual Codex synthetic handoff/cancellation checks passed. |
-| Partially qualified | The [Codex smoke checks](docs/codex-host-handoff.md) cover an exposed synthetic task and cancellation of an explicitly stopped owned runner followed by a fresh successful task. Actual Claude/consumer ChatGPT, disconnect/deadline/restart, model-assisted host orchestration and private-source handoffs remain unqualified. |
-| Planned | Guided setup, automatic per-PC calibration, persistent profiles, durable job recovery and direct cloud-provider clients. Local AI on/off persistence is implemented. |
-| Unverified or unmeasured | Full owner-PC workflows, unseen final-host model accuracy, controlled runtime performance and peak memory, broader host delivery, wider accessibility/device qualification, Windows support, independent security qualification and whole-task cloud savings. |
-
-## Get the source
+## Open the app
 
 ```bash
 git clone https://github.com/bartytime4life/Shake-Bake-LLM.git
 cd Shake-Bake-LLM
-./scripts/run-workbench --help
-```
-
-Use Linux and Python 3.11+ for development. The bundled example is optional; connect the folder you intend to inspect for a real failure. For reproducible core tests, wheel installation and optional SDK checks, follow [CONTRIBUTING.md](CONTRIBUTING.md). No model weights or third-party runtime distributions are bundled.
-
-The [documentation guide](docs/README.md) separates current instructions from dated experiments, acceptance records and research. The [prioritized to-do list](TODO.md) puts real-machine/model accuracy, host delegation and measured benefit first. Every pending item has a completion check; the [PC checklist](docs/PC-CHECKLIST.md) supplies the detailed runbook.
-
-**First time here?** Follow [Check a failed run](docs/quickstart.md): open the app, connect your project folder, paste its Python traceback and inspect the source. It also explains what stays saved and what the result proves.
-
-The [whole-workflow UX plan](docs/UX-WORKFLOW.md) connects first setup, shared job/policy state, local preparation, evidence review, handoff and recovery. It records current code-level gaps and planned implementation slices; browser/user-flow qualification remains pending.
-
-The [focused workbench fixes](docs/workbench-fixes-2026-11-05.md) confirm Local AI changes before allowing new work, protect the selected brief from delayed responses, add connection retry, and improve mobile history and keyboard source scrolling. [Startup restoration](docs/startup-brief-recovery-2026-11-05.md) also respects newer results and leaves task controls and polling available while old evidence loads. Status messages stay beside the task controls without covering them. Wider accessibility and real-model qualification remain open.
-
-The [request-recovery follow-up](docs/request-recovery-2026-11-05.md) bounds stalled browser requests, checks session state after an uncertain task start and restores connection status during active-job polling. If a start response is lost, check Recent briefs before starting again; the app does not automatically repeat the task.
-
-[Draft recovery](docs/draft-context-2026-11-05.md) restores the request with its saved project and task type. An unavailable saved choice requires an explicit replacement before preparation. Text entered during connection is preserved, and a visible status reports browser saving failures.
-
-The [local PC readiness walkthrough](docs/pc-readiness-2026-11-05.md) verifies installed-package identity, real model metadata and selected in-app-browser flows. It also corrects a refresh message that stayed in progress after completion. That walkthrough was metadata-only. The [subsequent copy and screening review](docs/copy-and-screening-2026-11-05.md) adds persistent copy status and selectable exact handoff text, and records a cloud-disabled Qwen 3 8B run: six of ten exposed handoffs met the assistant-review rubric. A final installed synthetic brief passed both native and manual clipboard readback; independent accuracy and wider browser qualification remain open.
-
-Shake and Bake is a standalone app with its own configuration, test fixtures and data. Its bundled code evaluations use self-contained synthetic projects; no other application is required.
-
-The original app uses the existing [MIT license](LICENSE), which permits commercial reuse and resale with its required notice retained. External dependencies and model weights have separate terms. Read [the licensing plan](docs/LICENSING.md), [third-party notices](THIRD_PARTY_NOTICES.md) and [model-license registry](MODEL_LICENSES.json). Exact model-artifact redistribution review remains pending. Building a wheel requires setuptools 77+; running the source app adds no runtime dependency.
-
-Before release or feature promotion, review [Known Issues and release expectations](KNOWN_ISSUES.md) and the security/bug gates in the [PC checklist](docs/PC-CHECKLIST.md). Unverified security, accuracy and integration checks remain pending; the program-test count is not a security certification.
-
-The local web server now caps active connections, expires stalled requests and cancels expired queued operations. See [connection limits and regression evidence](docs/connection-limits.md); broader load/security qualification remains pending.
-
-## Shared GUI and assistant work
-
-The [shared-coordinator guide](docs/shared-coordinator.md) connects the workbench and prepared adapter to the same routed jobs, captured evidence and session pause state. Private connection files and explicit project scopes are tested. The interface adds first-run help, job-origin labels and pinned completed-result identity. One actual Codex evidence-only handoff now has [scoped evidence and a repeatable check](docs/codex-host-handoff.md); broader host qualification remains pending. SDK/browser development checks are recorded separately in [validation](docs/validation-0.4.0.dev6.md).
-
-## Open the visual workbench
-
-On Linux, from the extracted `shake-and-bake` folder:
-
-```bash
 ./scripts/run-workbench
 ```
 
-The launcher chooses an installed Python 3.11+ even when the system `python3` is older. New launches start with Local AI off until explicitly enabled; that choice is saved in private local state across restarts. See [saved preference boundaries](docs/local-ai-preferences.md). Starting a task never resumes a paused service.
+The launcher chooses a supported installed Python and opens `http://127.0.0.1:8421`. Keep its terminal running; stop it with **Ctrl+C**. Opening the HTML file directly shows launch instructions rather than starting the service. No model, package installation or download happens automatically.
 
-This opens the loopback-only browser interface at `http://127.0.0.1:8421`. The first workflow is **Diagnose a failed run**: connect a project folder, paste its complete Python traceback, then select **Find failing source**. The command field is context only. Source locations and suggested checks do not establish a root cause or a working fix. See [the failed-run guide](docs/failed-run-workflow.md).
+## Check an actual failure
 
-Choose **Prepare source brief** for repository questions: describe the task, choose an approved project and select **Prepare brief**. The graphite/amber workbench keeps task type and optional Local AI controls under **Options**; no model installation or setting change is needed for the evidence-only demo. Recent briefs, captured source, model details and exports remain available on demand. Published benchmarks and owner-recorded local trials have separate labels.
+1. Open **Connect project folder**, enter the absolute folder path containing the failing code, and select **Connect folder**. This approves read-only inspection for the running session.
+2. Paste the complete error output. Optionally record the command that failed; it is never executed.
+3. Select **Find failing source**. Inspect the source, reported line and column, unmatched frames and suggested next checks.
+4. Select **Copy debugging brief** to take the captured error, project context and exact source into Claude or ChatGPT. If clipboard access fails, select and copy the provided text manually. Nothing is sent automatically.
 
-Opening `src/shake_bake/web/index.html` directly shows a launch guide. Use the running local address to prepare evidence; opening the page file does not start the service. See [file-opening recovery and check boundaries](docs/file-launch-recovery-2026-11-05.md).
-
-Use **Connect project folder** to approve a source folder for the running session. It becomes available to both browser workflows without a restart and does not expand any assistant adapter scope. You can also add a folder at launch with `--project my-project=/absolute/project/folder`; choose it from the interface. Use `--policy /absolute/path/outside-the-project/routing.json` for an owner policy. `--no-browser` starts the service without opening a browser; `--port 8422` selects a different local port. Installed packages also provide `shake-bake-ui`.
-
-The offline preview is a **recorded demo inspector**, with synthetic source and no model inference. It is a separate export; it does not run new jobs. Read [the workbench guide](docs/visual-workbench.md) for scope and setup. Current local Chrome interaction and comparison evidence is in [design-qa.md](design-qa.md). The earlier blocked cloud-browser attempt remains historical; current checks do not establish a formal accessibility audit.
-
-### Continue in Claude or ChatGPT
-
-After preparing, review the source and select **Copy brief**, then paste/send it in Claude or ChatGPT. The nearby links can open either assistant; choosing a destination in Shake & Bake is unnecessary. By default the brief uses the **Starting points** layout. It contains your original request, the files where the request's terms appear with line numbers, up to four short exact excerpts, near-duplicate warnings and the scan limits, framed as places to start rather than the answer. **Brief layout** switches to **Full evidence**, which has every excerpt in full and asks for a cited answer. This browser remembers the choice. Starting points is the default because it is the layout that measured better with Claude hosts; see [the workbench layout record](docs/workbench-orientation-2026-11-08.md). With Local AI on, the local model (the "intern") drafts the prompt the assistant reads first: a goal, the evidence to read first, the questions to answer and a suggested approach, labeled unverified and placed ahead of the fixed instructions. See [the handoff-prompt record](docs/handoff-prompt-2026-11-06.md). **Review & export** provides selectable text, **Save brief as .txt** and JSON export. Nothing is sent automatically. See [the handoff guide and check boundaries](docs/assistant-handoff.md). If the brief would share something that looks like a credential, such as an API key, a token, a private key or a password literal, a warning above **Copy brief** names where it is with a masked preview. The CLI prints the same warning to standard error. Nothing is removed from the exact text. See [credential warnings](docs/credential-screening-2026-11-09.md).
-
-Start with evidence-only or **Best tested**; the shipped candidate profiles do not qualify for automatic model use. To enable an explicit diagnostic candidate trial on inert source:
-
-```bash
-./scripts/run-workbench --allow-candidate-trials
-```
-
-Under **Options → Model details**, refresh installed models, choose **Try a candidate — unqualified**, select a pinned installed model and acknowledge the trial. No download or daemon start occurs. Model selection preferences persist in this browser; the shared service saves the Local AI choice. Jobs and captured results remain session-only. The owner launch flag and enabled routing policy are required. Candidate runs never promote profiles.
-
-Under **Options → Model details**, expand **This computer & selected model** for explicit readiness checks. Computer observations need no Ollama call; the selected-model check needs Local AI on and reads metadata only. Unknown GPU memory, actual model fit and task accuracy stay unknown. Worker notes now retain runtime/settings and receive actual scan cutoffs. A runtime change discards notes while preserving source. See [readiness and screening results](docs/validation-0.4.0.dev6.md).
-
-## Prepare a real model trial
-
-Fresh [owner-PC screening](docs/screening-2026-11-05.md) now has retained records: Qwen 3.5 4B timed out on the first case; Qwen 3 1.7B completed ten exposed cases but only four handoffs met the disclosed assistant-review rubric. Exact source survived, while the notes still missed or misread decisive facts. All profiles remain unqualified. These new runs do not reconstruct the missing historical screening or establish unseen accuracy or savings. A [follow-up prompt experiment](docs/validation-0.4.0.dev8.md) also met the rubric on only four cases and increased unsupported claims; that prompt was rejected and reverted. The shipped worker now refuses models whose declared thinking controls cannot honor its `think: false` request, before transmitting source. Missing controls remain unknown; they do not establish compatibility or accuracy.
-
-The November 6 [handoff-prompt runs](docs/handoff-prompt-2026-11-06.md) completed all ten exposed cases with Qwen 3 8B and Qwen 3.5 4B under the new design, with an author-only read of the drafts; they are development evidence, not qualification. Read [current evaluation status](docs/evaluation-status.md) for the complete sequence of retained trials. The latest [four-arm thinking-budget comparison](docs/thinking-budget-2026-11-05.md) ran forty attempts: thinking off at 512 tokens produced 6/10 supported handoffs; thinking on produced 3/10 at 512 and 6/10 at both 1,024 and 2,048. Each larger budget still truncated the concurrency case and retained two critical unsupported claims, so both were rejected. These private diagnostics do not change the shipped thinking-off, 512-token worker or add GUI/CLI budget controls.
-
-The separate [host-note diagnostic](docs/host-note-diagnostic-2026-11-05.md) completed twenty final answers: evidence alone met the rubric on 9/10 cases, versus 8/10 with the same evidence plus existing local notes. Both avoided counted false claims, but the assisted arm lost a required uncertainty. The no-regression gate failed; this does not establish a useful local-model contribution or whole-task savings.
-
-The subsequent [native-retrieval comparison](docs/native-preparation-2026-11-05.md) tested four larger synthetic projects twice per condition. Native search and the same tools plus deterministic preparation both met the rubric on 8/8 answers. Preparation used 24.35% fewer reported input tokens but had an 8.03% slower median timed workflow; the predeclared efficiency signal failed. One initial setup failure and all sixteen corrected attempts are retained. No local model was used, and these exposed cases do not establish whole-task savings.
-
-The [earlier frozen-prompt comparison](docs/reasoning-screening-2026-11-05.md) includes a separately authored cohort with 2/10 supported original handoffs and 3/10 experimental handoffs. That cohort is now exposed and must not be reused as unseen. [External datasets](docs/held-out-evaluation.md) support pinned inputs and isolated grading keys; independent human qualification and representative native-host benefit qualification remain open.
-
-Start with the [Run on your PC checklist](docs/PC-CHECKLIST.md). Every owner-PC item stays unchecked until actually verified there.
-
-The [per-PC calibration plan](docs/per-pc-calibration.md) and [Your computer & tuning GUI design](docs/per-pc-calibration-ui.md) explain the next hardware-aware milestone. Automatic tuning and that new dashboard remain planned.
-
-The startup check and repeatable trial runner are ready. They record reported model identity, settings, source integrity, per-attempt failures and a separate grading sheet. Accuracy stays unset until review. Start with the [PC readiness and trial guide](docs/pc-readiness-and-trials.md). The [open-gap review](docs/open-gaps.md) records what still needs proving, including representative native-host benefit and actual hardware behavior. No trial automatically promotes a model.
-
-## Run the working demo
-
-From the extracted `shake-and-bake` directory on Linux:
-
-```bash
-PYTHONPATH=src python3 -B -m shake_bake brief \
-  --root examples/review-fixture \
-  --task "Find executable slice coverage and provide exact evidence."
-```
-
-The default Markdown is the starting-points (orientation) layout. Add `--style evidence` for the full-evidence brief, which shows every excerpt and asks for a cited answer. Use `--format json` for structured output. For your own source, select a trusted, quiescent project root. The program prints to stdout and does not execute selected source or save output in that project. `-B` disables Python bytecode-cache writes.
-
-Each brief retains the original request, relative paths, line ranges, unchanged excerpts, hashes, exclusions and cutoff reasons. It is an evidence handoff, not a completed review or safety verdict. Lexical selection is not exhaustive coverage.
-
-## Optional local Ollama worker
-
-Add `--model` with the exact name of an already installed local model. The client targets `127.0.0.1:11434`; `--ollama-port` changes only the port. No server starts and no model downloads automatically.
-
-```bash
-PYTHONPATH=src python3 -B -m shake_bake brief \
-  --root examples/review-fixture \
-  --task "Find executable slice coverage and provide exact evidence." \
-  --model qwen3:8b
-```
-
-That model is an example, not a detected installation. The client checks `/api/show` before sending source and refuses known cloud names and reported remote models. It ignores proxy/host environment variables and follows no redirects. A shared 30-second deadline, bounded responses, a 6,000-byte source-message cap plus a separately budgeted instruction prompt (when a real request and its excerpts exceed the cap, the model gets a fitted copy that leaves out trailing records, and the brief says which it saw), 1,024 generated tokens and an 8,192-token requested context bound preparation. Add `--task-kind` to pass a hint to the drafted prompt.
-
-Configure the trusted Ollama daemon with cloud features disabled first: [official guidance](https://docs.ollama.com/faq#how-do-i-disable-ollamas-cloud-features). Ollama documents `OLLAMA_NO_CLOUD=1` or its daemon configuration setting, followed by a restart. Setting a variable on this client does not reconfigure an existing server. The client cannot attest model weights, enforce the daemon's network policy, prove every custom template fits, or guarantee GPU-work cancellation after disconnect.
-
-The worker returns the `handoff_prompt_v1` structure: goal, focus, asks, approach, notes, references and open questions. The brief renders the draft as a fenced, labeled prompt section ahead of the exact evidence; a model that omits the draft falls back to notes only. Everything stays labeled unverified. Unknown references, added fields, tool calls, duplicate JSON keys, truncated replies and model mismatches are refused. Every selected source remains visible. Worker failure retains evidence and returns `ABSTAIN`.
-
-## Task interface and prepared connection
-
-The new Linux `HelperSession` accepts tasks only for owner-configured projects. It runs one bounded preparation child, returns compact notes and every source reference, serves captured exact evidence on demand, and cancels its own runner. Configure an explicit local model for normal helper mode, or explicitly choose evidence-only diagnostics.
-
-Every completed preparation result sets `final_answer_ready=false` and `requires_host_reasoning=true`. Worker confidence is never a verification signal. Tests check that an injected incorrect note stays unverified and cannot remove source. They do not prove that a model detects the incorrect note.
-
-The optional `mcp` extra and `shake-bake-mcp` entry point provide an official-SDK stdio adapter. The installed official SDK 2.3.0 stdio/shared replay is recorded in [validation](docs/validation-0.4.0.dev6.md), and the first actual Codex check in [host handoff](docs/codex-host-handoff.md). Actual Claude/consumer ChatGPT connections remain unqualified. See [helper-contract.md](docs/helper-contract.md) for the five methods, launch command and qualification gate. The SDK and live-host scripts are separate from the offline base suite; the live cloud check is opt-in and never runs in CI.
-
-## Accuracy-gated model choice
-
-The `assist` command adds a task-specific policy selector, a “why this model” explanation and a local-AI off switch:
-
-```bash
-PYTHONPATH=src python3 -B -m shake_bake assist \
-  --root examples/review-fixture \
-  --task-kind code \
-  --task "Find executable slice coverage." \
-  --policy examples/routing-policy.json
-```
-
-All shipped profiles are unqualified candidates. This example returns exact evidence and explains why no model was selected; exit 3 indicates that no model-prepared handoff was produced. It makes no inventory or model call. Add `--disable-local-ai` to explicitly bypass local AI; the policy is then optional. `--format json` returns the decision and preparation result.
-
-Owner policies live outside inspected source roots. Comparable, reviewed held-out records must meet the paired native baseline with no recorded critical misses or unsupported critical claims. Model digest and pipeline identity must match; latency only breaks accuracy ties. The routed worker checks reported local inventory before source submission and after inference. These checks rely on trusted owner review records and daemon metadata; they are not an accuracy certificate or weight-byte attestation. See [routing-implementation.md](docs/routing-implementation.md).
-
-## Verification
-
-```bash
-PYTHONPATH=src python3 -B -m unittest discover -s tests -v
-PYTHONPATH=src python3 -B benchmarks/evaluate_selection.py
-```
-
-The current candidate passed 238 offline program tests on the local PC, including six for the drafted handoff prompt, six for controlling-context collection, three for BM25-style scoring with the distractor exclusion, three for the external file-recall adapter, one for the brief's answer section, one for the off-by-default datamarked worker input four for the optional embedding rerank against a loopback stub, one for crafted filenames staying inside inline code, two for the matched-line index, four for request-term selection and five from the November 7 review (a real-child job with more than four records, rerank record reset and batch sizing, narrow test-path and prose-definition classification, generic names not followed). The recovered tests remain, with coverage for candidate boundaries, capability observations, wire/receipt settings, runtime drift and worker-visible collection limits; twelve additional tests cover synthetic host-trace acceptance, configuration and the owned-runner cancellation gate. Three worker compatibility tests verify refusal before source transmission and exact-evidence retention; five later tests cover process-gate prerequisites. See the [local PC validation](docs/pc-readiness-2026-11-05.md), [worker validation](docs/validation-0.4.0.dev8.md), [previous runtime validation](docs/validation-0.4.0.dev7.md) and [host validation](docs/codex-host-handoff.md). HTTP model tests use a simulated loopback service, not a real model; GUI tests exercise the actual loopback HTTP server and real bounded preparation children. Routing tests use explicitly fabricated qualification records. The task lab supplies ten exposed jobs with independent grading keys outside each fixture root. All ten retain their required source spans on the diagnostic path. This is mechanical evidence coverage, not model accuracy. The saved previous candidate retained the required spans in nine of ten cases; the distant-condition case motivated the two-window retrieval change.
-
-```bash
-PYTHONPATH=src python3 -B benchmarks/run_task_lab.py --evidence-only
-```
-
-See [the Task Lab guide](benchmarks/task-lab/README.md) before a real model replay. Its grading fields remain pending until separately reviewed. The bundled synthetic retrieval variants and ten-case Task Lab supply the development evidence; no blind defect detection or token-savings result is claimed.
-
-## File map
-
-| Path | Role |
+| Input | What the app checks |
 | --- | --- |
-| `src/shake_bake/contracts.py` | Immutable evidence records and refusals. |
-| `src/shake_bake/collector.py` | Descriptor-relative source reads and hashes. |
-| `src/shake_bake/search.py` | Bounded lexical discovery and selection. |
-| `src/shake_bake/worker.py` | Optional loopback Ollama client and validation. |
-| `src/shake_bake/briefing.py` | Evidence-preserving handoffs. |
-| `src/shake_bake/cli.py` | Explicit-file CLI and new brief workflow. |
-| `src/shake_bake/helper.py` | Bounded task sessions and captured-evidence access. |
-| `src/shake_bake/job_runner.py` | Supervised Linux preparation child. |
-| `src/shake_bake/shared.py` | Private connection-file lifecycle and bounded shared-service client. |
-| `src/shake_bake/mcp_server.py` | Prepared optional SDK adapter with shared or explicit standalone mode. |
-| `src/shake_bake/doctor.py` | Startup and metadata-only local-model checks. |
-| `benchmarks/model_trial.py` | Checkpointed development trials and separate review scoring. |
-| `src/shake_bake/routing.py` | Reviewed-record policy gates and model-choice explanation. |
-| `src/shake_bake/gui.py` | Loopback workbench server and persistent job-owner thread. |
-| `src/shake_bake/web/` | Responsive visual interface and published-model catalog. |
-| `tests/` | Collection, selection, handoff and transport acceptance. |
-| `examples/` | Inert demo and pinned-source receipts. |
-| `benchmarks/evaluate_selection.py` | Synthetic retrieval smoke check. |
-| `docs/` | Scope, research and qualification records. |
-| `integration/mcp_smoke.py` | Optional SDK compatibility checks; actual-host qualification is separate. |
+| Python traceback | Exact file/line and whether the displayed statement matches current source. |
+| Node.js stack trace | Local V8 stack locations, starting with the first readable project frame. |
+| TypeScript compiler output | File, line, column and the corresponding compiler diagnostic. |
 
-Package metadata, entry points, MIT license and ignore rules remain in their normal locations. Historical receipts describe their stated earlier environments; [the import record](docs/import/2026-11-05.md) records this checkout's validation.
+ANSI terminal colors are ignored only while recognizing locations; the original output remains unchanged. Browser URLs, runtime internals, outside-project files and missing files remain explicit. Source maps and container-to-local path mapping are not inferred. An unsupported log produces an incomplete result.
 
-## Limits and next gates
+Changing the project, error or recorded command invalidates the previous result. A late response cannot silently replace the result for newer input. Pasted errors and commands are not stored as browser drafts or sent to a model.
 
-Default search caps: 200 supported text files, 4,000 entries, eight directory levels, a cooperative five-second scan budget, four selected windows and 16 KiB of whole-line excerpts. Skips/cutoffs are disclosed. Selected files are re-read and compared with discovered hashes.
+The optional **Try a labelled example** uses invented errors and bundled inert source. It does not demonstrate a failure on your computer. See [the quickstart](docs/quickstart.md) and [supported formats and limits](docs/failed-run-workflow.md).
 
-Up to two ranked windows per file preserve distant matching regions; one window per distinct file takes priority within the four-record cap. Further unmatched regions disclose a window cutoff. This does not guarantee complete code coverage. Task children use safe import settings and a trusted working directory, with task streams outside inspected roots.
+## Prepare source for a question
 
-Linux/POSIX is the development target; Windows remains refused pending an equivalent qualified boundary. This is not a hostile-filesystem or OS network sandbox. Trusted root ancestors, hard links, bind mounts, kernel stalls, complete secret detection and cross-file atomic snapshots remain limitations. Schema/reference checks do not prove a worker's semantic truth or immunity to prompt injection.
+When there is no traceback, choose **Prepare source brief**, select your connected project and ask a concrete question, such as “Where is the retry limit applied after a failed sign-in?” Inspect the collected source before copying the brief into your AI chat. An empty result cannot be copied as a successful source handoff.
 
-Persistent job storage, qualified MCP connections, direct cloud clients, patching and execution of inspected-project tests remain future work. [Model selection and tuning](docs/model-selection.md) compares published statistics for Qwen 9B/4B, Gemma 4 12B and a conditional gpt-oss 20B challenger; none has been measured here. [The next controlled trial](docs/next-trial.md) puts correct completed work ahead of savings. [Engineering references](docs/engineering-references.md) connect primary sources and book chapters to concrete decisions and checks.
+Selection is bounded lexical retrieval and may miss important context. Your receiving assistant supplies the final reasoning and may need more source. If that assistant already has full repository tools, direct inspection can be more useful; no general time, token or accuracy improvement is established.
 
-[The native-capability study](docs/native-capability-study.md) compares existing ChatGPT/Codex and Claude features with the useful role of a local helper. The owner-controlled selector, `assist` CLI and local visual workbench are implemented. The setup wizard, automatic task classification, fully qualified host delivery, embeddings and vision input remain pending. No real profile has qualified for automatic selection. See [the visual workbench guide](docs/visual-workbench.md) and [the routing specification](docs/model-routing-and-usability.md).
+An optional Ollama worker can draft unverified preparation notes for source briefs. It is separate from failed-run checks. New installations start with Local AI off; an existing installation retains its saved choice. No shipped model profile is qualified for automatic selection. Read [model setup and trial boundaries](docs/pc-readiness-and-trials.md), [routing](docs/routing-implementation.md) and [evaluation status](docs/evaluation-status.md) before enabling model trials.
 
-Development update (November 8, orientation brief): `0.4.0.dev21` adds a candidate `brief --style orientation` that frames the same evidence as starting points, gives one ranked file list with line numbers, flags near-duplicate code, keeps at most four short excerpts and drops the answer section, at about half the size. On six fresh cases under a protocol pushed before they were read, hosts with tools named 7 of 11 changed files with it against 6 without (rule met on one case), and the paste path tied 6 to 6. It lost no case in twelve paired comparisons, where the evidence brief had lost four; it did not show token savings. See [the orientation record](docs/orientation-comparison-2026-11-08.md).
-A second pre-registered run on eight fresh multi-file fixes asked for a gain and met both rules. With tools the host named 11 of 19 changed files against 9, and both extra files were tests. On the paste path it named 13 against 9, with five wins and one loss. Every brief arm still used more tokens. See [the multi-file record](docs/orientation-multifile-2026-11-08.md).
-Development update (November 8, later): in `0.4.0.dev22` the workbench's **Copy brief** uses the orientation layout by default, and **Brief layout** switches back to the full-evidence layout. The CLI `brief` command now defaults to the same layout, and `--style evidence` restores the old one. The workbench now fences the local model's draft in the copied text, as the CLI always did (BUG-022).
-Development update (November 8, evening): in `0.4.0.dev23` the local model gets a fitted copy when a real task exceeds its 6,000-byte message cap, instead of refusing (BUG-023). See [the worker-fit record](docs/worker-fit-2026-11-08.md). A pre-registered comparison then found that adding its draft to the orientation brief neither helped nor hurt a Claude host on six fresh cases. See [the draft comparison](docs/draft-comparison-2026-11-08.md). See [the workbench layout record](docs/workbench-orientation-2026-11-08.md).
+## Local data and scope
 
-Development update (November 8, paste path): the follow-up comparison where the host has no repository, as in pasting into Claude or ChatGPT chat, also found no benefit: with the brief the host named 9 of 25 changed files, with the issue alone 10, and the brief won no case. In both paths the host treated the brief's excerpts as the answer's boundary, and a look-alike excerpt misled it. See [the paste-path record](docs/paste-comparison-2026-11-08.md). Until a differently framed brief is frozen and measured, the brief should not be described as saving tokens or improving answers.
+- Connected folders and failure reports are session-only. A restart requires reconnecting folders unless supplied at launch. Failure reports also disappear when their tab closes; save an export you need.
+- Source-brief drafts save in this browser by default. **Options → Task draft** lets you disable saving or clear a draft. Recent source briefs last up to eight jobs and approximately five minutes in the running service.
+- Local AI on/off persists in private service settings. Models, reviewed profiles and durable job recovery are separate.
+- Possible credential formats are flagged with masked previews before sharing, including in pasted errors and recorded commands. This warns without changing exact evidence; no match is not proof that content is safe. See [credential screening](docs/credential-screening-2026-11-09.md).
+- Exports include the exact error, command and captured source. Review them before sharing. Filename exclusions do not guarantee secret detection.
+- Folder approval in the browser does not expand an existing assistant adapter's project scope. The app does not execute inspected code, install dependencies, run tests or apply repairs.
 
-Development update (November 8, host comparison): the first measurement of the project's core question came back negative. Six real Long Code Arena issues were given to Claude Code subagents (one model, one run each) with native tools, or with native tools plus the evidence-only brief, under a protocol pushed before any run. The brief added tokens in every case (median 88,523 against 86,103), did not lower mean tool calls (4.33 both), and the hosts named 7 of the 25 changed files with it against 14 without, because they stopped at the files the brief excerpted. The drafted-prompt arm could not run: the local worker refused five of six real cases on its 6,000-byte source cap. The likely place the brief still matters is the no-tools paste path, which is the next comparison. See [the host-comparison record](docs/host-comparison-2026-11-08.md).
+You can preconnect a folder at launch:
 
-Development update (November 8, frozen run): the `dev20` collector was frozen and compared with the PR #30 collector on twelve reserved Long Code Arena Python `test` cases under a protocol pushed before any of them was read. At the expanded budget it delivered 26 of 41 changed files including the map against 23, primary hits 15 against 12, and reached every case against 10 of 12, with 3 case-level wins and 2 losses; the pre-registered rule is met. Thirteen `test` rows stay reserved. This is collector file recall only, not answer quality or cost. See [the frozen-run record](docs/frozen-recall-2026-11-08.md).
+```bash
+./scripts/run-workbench --project 'my-project=/absolute/path/with spaces/project'
+```
 
-Development update (November 8, primary selection): `0.4.0.dev20` tested and rejected a prior that demoted tests and prose in primary selection (no external case moved; three self-commit cases lost hits). A per-case reading showed the real causes on the external misses: path matching ignored spaces (`ProjectEuler` against `Project Euler/`) and pip's `_vendor/` copies were not excluded like `vendor/`. With both fixed, the thirteen Long Code Arena cases reach a changed file in 10/13 at the default and 11/13 at the ceiling, with two improvements and no regressions; Task Lab, the fixtures and the self-commit cases are unchanged. The remaining misses follow tracebacks into framework internals, which is left for the frozen-candidate step rather than tuned on these exposed cases. See [the primary-selection record](docs/primary-selection-2026-11-08.md).
+Use `--port 8422` for a different local port, `--no-browser` to leave browser opening to you, and `--state-dir /absolute/private/folder` for isolated settings. Policies and private settings must stay outside inspected source. The offline exported preview is an inert recorded-demo inspector and cannot start new work.
 
-Development update (November 7, review): `0.4.0.dev19` fixes ten findings from a code review of the stacked changes and one UX finding from a headless-Chrome pass over the running workbench. The severe one, BUG-021: from `dev10` the GUI and MCP path rejected any preparation whose controlling-context pass added windows (the helper still enforced the old four-record cap and `fetch_evidence` accepted only `E1`–`E4`), while the CLI worked. Also fixed: a refused rerank no longer inheriting the previous call's record (merged with the parallel `main` fix, which also keeps a fixed batch that fails closed over the transport cap), telemetry kept out of the worker's message, a misreported pool cutoff, narrow test-path and prose-definition classification, generic names not followed as context, the recall adapter's primary count, and path matching that ignores separators. The gaps panel now distinguishes a scan that stopped early from routine selection caps. See [the review record](docs/review-2026-11-07.md).
+## Command line and assistant connection
 
-Development update (November 7, term selection): `0.4.0.dev18` chooses the request's sixteen search terms by signal instead of first appearance (code-shaped words, first-line words and repeated words first; URL fragments and issue-template words never), and raises the walk default from 200 to 1,000 files with a 5,000-file ceiling, since a 1,000-file walk took under half a second. One-line requests keep their word order, so Task Lab (10/10) and the four fixtures are unchanged. On the thirteen external cases the brief's map now reaches a changed file in 9 of 13 at the default and 10 of 13 at the ceiling, from 7; excerpt-level recall did not rise, which points at primary selection next. See [the term-selection record](docs/term-selection-2026-11-07.md).
+With a supported Python interpreter, inspect a saved UTF-8 error without running its command:
 
-Development update (November 7, external recall): with the owner's go-ahead the collector ran on thirteen real bug-localization cases from JetBrains' Long Code Arena dataset (Apache-2.0, Python `dev` split, one case per repository, base commits shallow-fetched from GitHub). At the shipped limits it reached a changed file in 5 of 13 cases and every case hit the file budget; at the ceiling limits 7 of 13, mean recall with the map 53.8%; the blended rerank changed no mean. The run exposed two collector limits to fix next: the walk ceiling on larger repositories and the 16-term request cap, which keeps issue-template words and drops the identifiers. The `test` split stays unread. See [the external-recall record](docs/external-recall-2026-11-07.md).
+```bash
+PYTHONPATH=src python3.12 -B -m shake_bake diagnose \
+  --root /absolute/project/folder \
+  --error-file /absolute/path/to/error.txt \
+  --command 'npm test'
+```
 
-Development update (November 7, rerank follow-up): `0.4.0.dev17` keeps the embedding model loaded only between the batches of one preparation (the last batch still asks for release) and blends pool-normalized similarity half-and-half with the lexical score instead of replacing it. Embedding time per repository-sized case fell from about 7 to about 2 seconds; the blend made the ordering nearly neutral on the self-commit cases (excerpted hits up 1, down 2, same 9) at the cost of the publish fixture's prose-contract gain. Task Lab stays 10/10. The option stays off by default; see [the embedding-rerank record](docs/embedding-rerank-2026-11-07.md).
+The JSON report preserves the error. Exit `0` means source was located, `3` means none was located, and `2` means the request was refused. None means the bug is fixed.
 
-Development update (November 7, rerank trial): with the owner's approval `qwen3-embedding:0.6b` was pulled and the optional rerank was run locally in `0.4.0.dev16`. Two defects were fixed first: a full pool's reply exceeded the transport cap (now embedded in batches of eight) and an oversized window refused the rerank (now truncated for scoring only). Results: Task Lab stays 10/10; the publish fixture reaches 7/7 decisive files by promoting the prose contract; on twelve self-commit cases mean recall with the map moves from 38.3% to 41.6% while per-case excerpted hits go up in 4 and down in 7, and each case spends about 7 seconds embedding because the model is unloaded between calls. The option stays off by default; see [the embedding-rerank record](docs/embedding-rerank-2026-11-07.md).
+For a source question:
 
-Development update (November 7, line index): `0.4.0.dev15` lists, after the file map, the request-term matches that no excerpt covers, as line numbers with short texts (six files, twelve lines each, 2,048 bytes, each cutoff disclosed), so a host can ask for a range instead of reading or searching a large file. On the log comparison fixture the brief now carries the second failing test at line 1805 that the excerpts missed, and on the publish fixture the contract sentence that was previously only mapped; briefs grew by 540 to 910 bytes. Texts are untrusted repository strings in inline code. See [the line-index record](docs/line-index-2026-11-07.md).
+```bash
+PYTHONPATH=src python3.12 -B -m shake_bake brief \
+  --root examples/review-fixture \
+  --task 'Find the executable slice coverage guard.'
+```
 
-Development update (November 7, hardening): a review of the Markdown handoff found that repository paths and map first-lines were rendered as plain text outside fences, so a crafted filename could read as a heading or an instruction, and that chat clients may normalize carriage returns inside fenced text. `0.4.0.dev14` renders those strings as inline code with a safe backtick run and escaped control characters, refuses paths containing control characters at the collector, notes carriage returns per excerpt and points to the JSON download as the exact-bytes path (BUG-019). Covered by a crafted-filename clipboard test and a Python test; real-Chrome suites pass.
+Add `--style evidence` for every selected excerpt, or `--format json` for structured output. Optional local-model and policy-based commands are documented in [the helper contract](docs/helper-contract.md) and [routing guide](docs/routing-implementation.md).
 
-Development update (November 7, rerank): `0.4.0.dev14` adds an optional embedding rerank of candidate windows: `--rerank-model` on the CLI brief, the Task Lab runner and the recall adapter asks an installed loopback Ollama embedding model to score the top 24 lexical candidates against the request and reorders them before primary selection, adding no window, refusing remote or mismatched responses, and falling back to lexical order with the refusal recorded. No embedding model is installed on the owner's PC, so no trial is recorded; four tests cover the mechanism with a loopback stub. See [the embedding-rerank record](docs/embedding-rerank-2026-11-07.md).
+The optional `mcp` extra supplies the official-SDK `shake-bake-mcp` stdio adapter. See [shared GUI/assistant setup](docs/shared-coordinator.md) and [actual host check boundaries](docs/codex-host-handoff.md). This standalone application does not depend on another project.
 
-Development update (November 7, experiment): `0.4.0.dev13` adds an off-by-default datamarking option for the local worker's copy of excerpt text (a marker in place of each space, Spotlighting-style) and a `--datamark` Task Lab flag, then records a negative result: on the ten exposed cases Qwen 3 8B still drafted an approach that follows the injected source instruction, Qwen 3.5 4B stayed correct with or without the marker, no marker leaked, and generated tokens rose about six percent. The flag stays off; see [the datamarking record](docs/datamark-2026-11-07.md).
+## Development and limits
 
-Development update (November 7, later): `0.4.0.dev12` makes the copied brief a Markdown message Claude or ChatGPT can read directly: the request and what to answer first, the ground rules, each exact excerpt as a fenced code block headed by its id, path, line range and hash, the file map, scan limits in plain words, and the verbatim JSON request and evidence identities last for verification. The starter-demo brief went from 4,334 to 3,375 bytes and from 100 to 57 lines; the page now shows the brief's size with a bytes/4 token estimate. The CLI brief gains the same "Answer with" section. Clipboard, real-Chrome and Python checks pass; see [the handoff-format record](docs/handoff-format-2026-11-07.md).
+[CONTRIBUTING.md](CONTRIBUTING.md) covers core tests, isolated wheel verification and browser checks. Committed workflow tests use disposable synthetic source. Passing them verifies mechanics and source integrity, not general diagnostic accuracy, security certification or model savings.
 
-Development update (November 7): `0.4.0.dev11` scores matching files BM25-style (rarer request terms weigh more, repeated hits saturate, no length normalization) and excludes files whose only hits are widespread terms as `low_signal_match`, both disclosed in the scan receipt. The ten exposed Task Lab cases keep all required spans; on the four comparison fixtures the log case now excerpts its two test files instead of a utility file and drops eighteen utility files from the map. A new `benchmarks/external_recall.py` reports file-level recall of the collector on externally authored localization cases (no model, no host); a development smoke on twelve of this repository's own commits moved mean excerpt recall from 10.7% to 18.6%. See [the retrieval-scoring record](docs/retrieval-scoring-2026-11-07.md).
+Source reads use descriptor-relative paths, reject symlinks and selected sensitive filenames, and retain exact bytes and hashes. This is not an operating-system or hostile-filesystem sandbox. Trusted root ancestors, hard links, bind mounts, kernel stalls, secret detection and cross-file atomic snapshots remain limitations. Windows needs an equivalent qualified read/process boundary before support.
 
-Development update (November 6, later): `0.4.0.dev10` follows the four primary excerpts with bounded controlling context: the top-level definitions they reference, one use of a name they define, one test file naming them, and a map of matched files not excerpted, each labeled with its mechanical reason. On the four exposed comparison fixtures, decisive-file coverage rose from 15/25 to 23/25 excerpted and the largest brief grew to about 1,270 tokens; whether a host then takes fewer turns is untested. See [the controlling-context record](docs/controlling-context-2026-11-06.md) and [the host context cost analysis](docs/host-context-cost-2026-11-06.md) that motivated it.
+Use [the documentation guide](docs/README.md) for technical details and dated experiments, [TODO.md](TODO.md) for priorities, [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for open release gates and [SECURITY.md](SECURITY.md) for reporting. The [original import](docs/import/2026-11-05.md) remains documented in Git history.
 
-Development update (November 6): `0.4.0.dev9` makes the local worker draft the assistant-facing prompt (`handoff_prompt_v1`, 1,024 requested output tokens) and records ten-case runs of Qwen 3 8B and Qwen 3.5 4B plus a pre-source refusal of Qwen 3 4B; see [the handoff-prompt record](docs/handoff-prompt-2026-11-06.md). The preceding `.dev8` adds a worker compatibility guard and records a rejected prompt experiment. See [validation and remaining gates](docs/validation-0.4.0.dev8.md). The preceding `.dev7` adds saved Local AI settings, a supported-Python source launcher and external evaluation dataset support. Historical `.dev5`/`.dev6` model and browser observations retain their original scope.
+The application uses the [MIT license](LICENSE). Dependencies and model weights have separate terms; see [third-party notices](THIRD_PARTY_NOTICES.md), [model licenses](MODEL_LICENSES.json) and [the licensing plan](docs/LICENSING.md).

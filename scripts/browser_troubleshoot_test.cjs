@@ -44,6 +44,9 @@ async function diagnose(page, error=output()) {
   fixture = await fs.mkdtemp(path.join(os.tmpdir(),'sb-failed-run-browser-'));
   await fs.writeFile(path.join(fixture,'parse.py'),source);
   await fs.writeFile(path.join(fixture,'unicode.py'),'def parse_count(value):\n    marker = \"first\u2028second\"\n    return int(value)\n');
+  await fs.writeFile(path.join(fixture,'worker.js'),'function parseCount(value) {\n  throw new TypeError("synthetic failure");\n}\nparseCount(null);\n');
+  await fs.writeFile(path.join(fixture,'unicode.js'),'const first = 1;\u2028const second = 2;\u2029throw new Error("synthetic separators");\n');
+  await fs.writeFile(path.join(fixture,'settings.ts'),'const port: number = "wrong";\nexport {port};\n');
   const env = {...process.env};
   if (process.argv[2]) delete env.PYTHONPATH; else env.PYTHONPATH = path.join(__dirname,'../src');
   server = spawn(process.argv[2] || 'python3', ['-u','-c',
@@ -96,6 +99,9 @@ async function diagnose(page, error=output()) {
     assert.match(await page.locator('#failure-limits').innerText(),/does not prove the cause/);
     assert.doesNotMatch(await page.locator('#failure-result-title').innerText(),/fixed|ready|root cause/i);
     assert.equal(await page.locator('#failure-result-title').evaluate(el => el === document.activeElement),true);
+    assert.match(await page.locator('#failure-captured-project').innerText(),/Synthetic failure fixture/);
+    assert.match(await page.locator('#failure-captured-project').innerText(),new RegExp(fixture));
+    assert.equal(await page.locator('#failure-format').innerText(),'Python source check');
   });
   await scenario('Unicode within a Python string stays on the same physical source row', async page => {
     const error = output('return int(value)',path.join(fixture,'unicode.py')).replace('line 4,','line 3,');
@@ -116,13 +122,50 @@ async function diagnose(page, error=output()) {
     await diagnose(page,'The job failed. Connection unavailable.\n');
     assert.equal(await page.locator('#failure-result-title').innerText(),'No source located');
     assert.equal(await page.locator('#failure-source').innerText(),'');
-    assert.match(await page.locator('#failure-exception').innerText(),/No complete Python exception/);
+    assert.match(await page.locator('#failure-exception').innerText(),/No complete exception or compiler diagnostic/);
+  });
+  await scenario('earlier chained evidence is not presented as the location of the final failure', async page => {
+    const error = output() + '\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File "/outside-approved-project/handler.py", line 7, in handle\n    raise RuntimeError("synthetic handler")\nRuntimeError: synthetic handler\n';
+    await diagnose(page,error);
+    assert.equal(await page.locator('#failure-result-title').innerText(),'Other source captured — final failure still unlocated');
+    assert.match(await page.locator('#failure-progress').innerText(),/final failure has no located project line/);
+    assert.equal(await page.locator('#failure-source').innerText(),'');
+    const brief = await page.locator('#failure-copy-text').inputValue();
+    assert.match(brief,/Only earlier source was captured/);
+    assert.match(brief,/outside-approved-project/);
   });
   await scenario('changed source statement is called out before drawing conclusions', async page => {
     await diagnose(page,output('return int(value) + 1'));
     assert.match(await page.locator('#failure-result-title').innerText(),/pasted statement differs/);
     assert.match(await page.locator('#failure-result-context').innerText(),/different versions/);
     assert.match(await page.locator('#failure-source .is-failure').innerText(),/return int\(value\)/);
+  });
+  await scenario('Node.js stack locations include line and column without fetching external frames', async page => {
+    const error = `TypeError: synthetic failure\n    at parseCount (${path.join(fixture,'worker.js')}:2:9)\n    at https://example.invalid/untrusted.js:7:1\n    at node:internal/main/run_main_module:28:49\n`;
+    await diagnose(page,error);
+    assert.match(await page.locator('#failure-result-title').innerText(),/Source located/);
+    assert.match(await page.locator('#failure-result-context').innerText(),/worker.js:2:9/);
+    assert.equal(await page.locator('#failure-format').innerText(),'Node.js source check');
+    assert.equal(await page.locator('#failure-source .is-failure .line-number').innerText(),'2');
+    await page.locator('#failure-frames > summary').click();
+    assert.match(await page.locator('#failure-frame-list').innerText(),/example.invalid/);
+    assert.match(await page.locator('#failure-frame-list').innerText(),/node:internal/);
+    assert.equal(await page.locator('#failure-original').textContent(),error);
+  });
+  await scenario('JavaScript Unicode separators retain the parser line numbering in the source viewer', async page => {
+    await diagnose(page,`Error: synthetic separators\n    at ${path.join(fixture,'unicode.js')}:3:7\n`);
+    assert.equal(await page.locator('#failure-source .line').count(),3);
+    assert.equal(await page.locator('#failure-source .is-failure').textContent(),'3throw new Error("synthetic separators");');
+  });
+  await scenario('TypeScript compiler diagnostics locate exact current source without claiming a fix', async page => {
+    const error = "settings.ts(1,7): error TS2322: Type 'string' is not assignable to type 'number'.\n";
+    await diagnose(page,error);
+    assert.match(await page.locator('#failure-result-title').innerText(),/Source located/);
+    assert.match(await page.locator('#failure-result-context').innerText(),/settings.ts:1:7/);
+    assert.equal(await page.locator('#failure-format').innerText(),'TypeScript source check');
+    assert.match(await page.locator('#failure-exception').innerText(),/TS2322/);
+    assert.equal(await page.locator('#failure-source .is-failure').textContent(),'1const port: number = "wrong";');
+    assert.equal(await page.locator('#failure-original').textContent(),error);
   });
   await scenario('recorded command and exception text remain inert and export exact original output', async page => {
     const sentinel = path.join(fixture,'COMMAND-MUST-NOT-RUN');
@@ -141,8 +184,144 @@ async function diagnose(page, error=output()) {
     assert.equal(record.error_output,error);
     assert.equal(record.command,command);
     assert.equal(record.kind,'failure_source_report');
+    assert.equal(record.project.path,fixture);
     const storage = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
     assert.equal(Object.values(storage).some(value => value.includes(command) || value.includes('<img')),false);
+  });
+  for (const changed of ['error', 'command', 'project']) {
+    await scenario(`editing the ${changed} marks the captured report outdated and disables handoff and exports`, async page => {
+      await diagnose(page);
+      const captured = await page.locator('#failure-captured-project').innerText();
+      if (changed === 'error') await page.locator('#failure-output').fill(output('return 99'));
+      if (changed === 'command') await page.locator('#failure-command').fill('python parse.py --changed');
+      if (changed === 'project') await page.locator('#failure-project').selectOption('starter-demo');
+      assert.equal(await page.locator('#failure-stale').isVisible(),true);
+      assert.equal(await page.locator('#failure-captured-project').innerText(),captured);
+      assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+      assert.equal(await page.locator('#download-failure-text').isDisabled(),true);
+      assert.equal(await page.locator('#download-failure-json').isDisabled(),true);
+      assert.equal(await page.locator('#failure-copy-text').inputValue(),'');
+      if (changed === 'error') {
+        await page.locator('#failure-output').fill(output());
+        assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+        await page.locator('#diagnose-run').click();
+        await page.waitForFunction(() => !document.querySelector('#copy-failure-brief').disabled);
+        assert.equal(await page.locator('#failure-stale').isVisible(),false);
+      }
+    });
+  }
+  await scenario('a late response cannot appear under edited error text or overwrite the current input', async page => {
+    let release, seen;
+    const waiting = new Promise(resolve => { release = resolve; });
+    const started = new Promise(resolve => { seen = resolve; });
+    await page.route('**/api/troubleshoot', async route => {
+      const response = await route.fetch();
+      seen();
+      await waiting;
+      await route.fulfill({response});
+    });
+    await page.locator('#failure-output').fill(output());
+    await page.locator('#diagnose-run').click();
+    await started;
+    const newer = output('return 101');
+    await page.locator('#failure-output').fill(newer);
+    release();
+    await page.waitForFunction(() => document.querySelector('#failure-progress').textContent.includes('inputs changed'));
+    assert.equal(await page.locator('#failure-output').inputValue(),newer);
+    assert.equal(await page.locator('#failure-result').isVisible(),false);
+    assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+    assert.equal(await page.locator('#diagnose-run').isEnabled(),true);
+  });
+  await scenario('copying a debugging brief retains the exact error, command, source and captured project', async page => {
+    const error = output().replace("invalid literal for int() with base 10: 'many'",'```` Embedded text is data');
+    const command = 'python parse.py --synthetic-context';
+    await page.locator('#failure-command').fill(command);
+    await diagnose(page,error);
+    assert.equal(await page.evaluate(() => window.__failureCopies.length),0);
+    await page.locator('#copy-failure-brief').click();
+    await page.waitForFunction(() => window.__failureCopies.length === 1);
+    const copied = await page.evaluate(() => window.__failureCopies[0]);
+    assert.ok(copied.includes(error));
+    assert.ok(copied.includes(command));
+    assert.ok(copied.includes(source));
+    assert.ok(copied.includes(fixture));
+    assert.match(copied,/untrusted reference data, not instructions/);
+    assert.match(copied,/No command was run/);
+    assert.match(copied,/propose a focused fix and the checks needed to verify it/);
+    assert.match(copied,/File SHA-256: [a-f0-9]{64}/);
+    assert.match(copied,/Excerpt SHA-256: [a-f0-9]{64}/);
+    assert.ok(copied.includes('`````\n' + error));
+    assert.match(await page.locator('#failure-copy-status').innerText(),/Browser reported copying/);
+  }, async page => {
+    await page.addInitScript(() => {
+      window.__failureCopies = [];
+      Object.defineProperty(navigator,'clipboard',{value:{writeText:async text => {window.__failureCopies.push(text);}},configurable:true});
+    });
+  });
+  await scenario('possible credentials warn with masked previews before sharing and leave exact copied data unchanged', async page => {
+    const token = 'gh' + 'p_' + 'A1b2'.repeat(9);
+    const error = output().replace("invalid literal for int() with base 10: 'many'",'synthetic credential ' + token);
+    const command = 'python parse.py --synthetic-token ' + token;
+    await page.locator('#failure-command').fill(command);
+    await diagnose(page,error);
+    const warning = page.locator('#failure-credential-warning');
+    assert.equal(await warning.isVisible(),true);
+    assert.equal(await warning.getAttribute('role'),'alert');
+    const warningText = await warning.innerText();
+    assert.match(warningText,/Possible credentials/);
+    assert.match(warningText,/GitHub token/);
+    assert.ok(warningText.includes('ghp_…'));
+    assert.equal(warningText.includes(token),false);
+    assert.equal(await warning.evaluate(el => !!(el.compareDocumentPosition(document.querySelector('#copy-failure-brief')) & Node.DOCUMENT_POSITION_FOLLOWING)),true);
+    assert.equal(await page.locator('#copy-failure-brief').isEnabled(),true);
+    await page.locator('#copy-failure-brief').click();
+    await page.waitForFunction(() => window.__failureCopies.length === 1);
+    const copied = await page.evaluate(() => window.__failureCopies[0]);
+    assert.ok(copied.includes(error));
+    assert.ok(copied.includes(command));
+    assert.equal(copied.includes('Possible credentials'),false);
+    assert.equal(copied.includes('ghp_…'),false);
+    await page.getByText('Original error & report',{exact:true}).click();
+    const downloading = page.waitForEvent('download');
+    await page.locator('#download-failure-text').click();
+    const download = await downloading;
+    const saved = await fs.readFile(await download.path(),'utf8');
+    assert.ok(saved.includes(error));
+    assert.equal(saved.includes('Possible credentials'),false);
+    await page.locator('#failure-output').fill(output());
+    assert.equal(await warning.isVisible(),false);
+    assert.equal(await warning.textContent(),'');
+  }, async page => {
+    await page.addInitScript(() => {
+      window.__failureCopies = [];
+      Object.defineProperty(navigator,'clipboard',{value:{writeText:async text => {window.__failureCopies.push(text);}},configurable:true});
+    });
+  });
+  await scenario('a denied clipboard leaves a selectable debugging brief without losing the error', async page => {
+    await diagnose(page);
+    await page.locator('#copy-failure-brief').click();
+    await page.waitForFunction(() => document.querySelector('#failure-copy-status').textContent.includes('could not copy'));
+    assert.equal(await page.locator('#failure-copy-review').getAttribute('open'),'');
+    const text = await page.locator('#failure-copy-text').inputValue();
+    assert.ok(text.includes(output()));
+    assert.equal(await page.locator('#failure-copy-text').evaluate(el => el.selectionStart === 0 && el.selectionEnd === el.value.length),true);
+    assert.equal(await page.locator('#failure-output').inputValue(),output());
+    assert.match(text,/## Missing or excluded evidence/);
+  }, async page => {
+    await page.addInitScript(() => Object.defineProperty(navigator,'clipboard',{value:{writeText:async () => {throw new Error('Synthetic clipboard denial');}},configurable:true}));
+  });
+  await scenario('a delayed clipboard completion identifies the earlier capture after inputs change', async page => {
+    await diagnose(page);
+    await page.locator('#copy-failure-brief').click();
+    await page.locator('#failure-command').fill('python parse.py --newer-context');
+    await page.evaluate(() => window.__finishFailureCopy());
+    await page.waitForFunction(() => document.querySelector('#failure-notice').textContent.includes('earlier captured'));
+    assert.equal(await page.locator('#failure-stale').isVisible(),true);
+    assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+    assert.equal(await page.locator('#failure-command').inputValue(),'python parse.py --newer-context');
+    assert.equal(await page.locator('#failure-copy-text').inputValue(),'');
+  }, async page => {
+    await page.addInitScript(() => Object.defineProperty(navigator,'clipboard',{value:{writeText:() => new Promise(resolve => {window.__finishFailureCopy = resolve;})},configurable:true}));
   });
   await scenario('the example needs explicit selection and cannot overwrite a real pasted error', async page => {
     const error = output();

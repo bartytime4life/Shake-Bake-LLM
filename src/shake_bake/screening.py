@@ -36,16 +36,60 @@ def _mask(value: str) -> str:
     return value[:4] + "…" + f" ({len(value)} characters)"
 
 
-def scan(text: str) -> list[tuple[str, int, str]]:
-    """(kind, 1-based line within text, masked preview) for each credential-looking match."""
-    found = []
+def _scan(text: str):
+    """Yield masked matches so bounded consumers can stop before building a list."""
     for kind, pattern in PATTERNS:
         for match in pattern.finditer(text):
             value = match.group(1) if match.groups() else match.group(0)
             if kind == "password or secret literal" and PLACEHOLDER.match(value):
                 continue
-            found.append((kind, text.count("\n", 0, match.start()) + 1, "BEGIN … PRIVATE KEY" if kind == "private key" else _mask(value)))
-    return found
+            yield (kind, text.count("\n", 0, match.start()) + 1,
+                   "BEGIN … PRIVATE KEY" if kind == "private key" else _mask(value))
+
+
+def scan(text: str) -> list[tuple[str, int, str]]:
+    """(kind, 1-based line within text, masked preview) for each credential-looking match."""
+    return list(_scan(text))
+
+
+def screen_failure(report) -> list[dict]:
+    """Warn over a failure handoff without changing its exact captured content.
+
+    Uses the source-brief finding schema and patterns. Output is capped while
+    scanning, including when a log contains many matches. Line normalization
+    applies only to the derived scan copy, following the captured format's
+    physical source-line rules; the report itself is never rewritten.
+    """
+    findings = []
+    javascript = report.get("format") in ("node", "typescript")
+
+    def add(where, path, base_line, text, *, source_lines=False):
+        if not isinstance(text, str) or len(findings) >= MAX_FINDINGS:
+            return
+        derived = text.replace("\r\n", "\n").replace("\r", "\n")
+        if source_lines and javascript:
+            derived = derived.replace("\u2028", "\n").replace("\u2029", "\n")
+        for kind, line, preview in _scan(derived):
+            findings.append({"kind": kind, "where": where, "path": path,
+                             "line": None if base_line is None else base_line + line - 1,
+                             "preview": preview})
+            if len(findings) >= MAX_FINDINGS:
+                break
+
+    project = report.get("project")
+    if isinstance(project, dict):
+        for key, where in (("id", "project id"), ("label", "project name"), ("path", "project folder")):
+            # Do not repeat a possibly credential-containing project value in
+            # a finding's location field. Its masked preview identifies it.
+            add(where, None, None, project.get(key))
+    add("recorded command", None, 1, report.get("command"))
+    add("original error output", None, 1, report.get("error_output"))
+    for number, record in enumerate(report.get("evidence") or [], 1):
+        if len(findings) >= MAX_FINDINGS:
+            break
+        add(record.get("evidence_id") or f"E{number}", record.get("path"), record.get("start_line"),
+            record.get("text"), source_lines=True)
+    return findings
 
 
 def screen_items(items) -> list[dict]:

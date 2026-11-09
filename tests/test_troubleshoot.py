@@ -3,6 +3,7 @@
 import hashlib
 from pathlib import Path
 import tempfile
+import traceback
 import unittest
 from unittest.mock import patch
 
@@ -103,12 +104,16 @@ class FailureLocatorTests(unittest.TestCase):
         self.assertEqual(result["frames"][0]["status"], "located")
         self.assertTrue(any("source matches" in item["title"] for item in result["guidance"]))
 
-    def test_indentation_only_is_ignored_and_trailing_spaces_are_not(self):
+    def test_statement_whitespace_matches_python_traceback_formatting(self):
         self.source(text="def run():\n\treturn missing  \n")
-        result = locate_failure(self.root, self.trace(statement="return missing  "))
+        formatted = "".join(traceback.StackSummary.from_list(
+            [("app.py", 2, "run", "\treturn missing  ")]).format())
+        self.assertIn("    return missing\n", formatted)
+        raw = "Traceback (most recent call last):\n" + formatted + "NameError: missing\n"
+        result = locate_failure(self.root, raw)
         self.assertEqual(result["frames"][0]["source_comparison"], "match")
-        result = locate_failure(self.root, self.trace(statement="return missing"))
-        self.assertEqual(result["frames"][0]["source_comparison"], "mismatch")
+        self.assertEqual(result["evidence"][0]["text"], "def run():\n\treturn missing  \n")
+        self.assertEqual(result["error_output"], raw)
 
     def test_statement_missing_is_unknown(self):
         self.source()
@@ -262,8 +267,8 @@ class FailureLocatorTests(unittest.TestCase):
         self.source(text='note = "a\u2028b"\n\f    return missing\n')
         result = locate_failure(self.root, self.trace())
         self.assertEqual(result["evidence"][0]["end_line"], 2)
-        # Only indentation spaces/tabs are ignored, not arbitrary characters.
-        self.assertEqual(result["frames"][0]["source_comparison"], "mismatch")
+        # Python strips a leading form feed from the displayed statement too.
+        self.assertEqual(result["frames"][0]["source_comparison"], "match")
 
     def test_crlf_bytes_and_trailing_newline_are_preserved(self):
         target = self.source(text="def run():\r\n    return missing\r\n")

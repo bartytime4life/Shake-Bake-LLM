@@ -1,8 +1,6 @@
 # Documentation guide
 
-Start with [current evaluation status](evaluation-status.md), the root
-[README](../README.md), [TODO](../TODO.md) and [Known Issues](../KNOWN_ISSUES.md).
-They describe the current `0.4.0.dev9` behavior and measured limits. Dated reports
+Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md) for the current app. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. Dated reports
 below retain the exact scope of earlier checks; an older test count or pending
 state is not a statement about the latest build.
 
@@ -10,7 +8,7 @@ state is not a statement about the latest build.
 
 | Topic | Documents |
 | --- | --- |
-| First useful brief | [Three-step getting-started guide](quickstart.md), including privacy, retention and common recovery actions |
+| Check a failed run | [Getting started](quickstart.md), [supported formats and limits](failed-run-workflow.md), including privacy, copying and recovery |
 | November 9 integration | [Current-main integration and publication checks](publication-2026-11-09.md) |
 | November 9 improvements | [Changes, validation and next product priorities](project-improvements-2026-11-09.md), [draft privacy](draft-privacy.md), [source/transport reliability](source-boundary-reliability.md), [offline host review](host-review-scoring.md) |
 | Local setup and trials | [PC checklist](PC-CHECKLIST.md), [readiness and trial commands](pc-readiness-and-trials.md), [Task Lab](../benchmarks/task-lab/README.md) |

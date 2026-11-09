@@ -77,6 +77,14 @@ class HelperSession:
         with self._lock:
             return {"mode": self.mode, "projects": sorted(self._projects), "max_active_tasks": 1}
 
+    def approved_project_roots(self) -> dict[str, Path]:
+        """Return a copy of owner-approved, canonical roots to the local controller.
+
+        This is not an MCP/model operation and does not expand any scope.
+        """
+        with self._lock:
+            return dict(self._projects)
+
     @staticmethod
     def _project_root(project_id: str, path: Path) -> Path:
         if not isinstance(project_id, str) or not re.fullmatch(r"[a-z][a-z0-9_-]{0,47}", project_id):
