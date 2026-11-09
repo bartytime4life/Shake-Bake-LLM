@@ -1,7 +1,7 @@
 """Deterministic, bounded lexical selection over a trusted local checkout."""
 
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import math
 import os
@@ -186,6 +186,8 @@ class SearchResult:
     line_index: tuple[dict, ...] = ()
     # The optional local embedding rerank's record, or its refusal code; None when not requested.
     rerank: dict | None = None
+    # Warn-only credential findings over what the brief can share (screening.py); masked previews only.
+    screening: tuple[dict, ...] = ()
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -571,5 +573,7 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         packet = build_packet(root, request, tuple(selections))
         if any(record.file_sha256 != digest for record, digest in zip(packet.evidence, expected)):
             raise Refusal("source_changed_after_search")
-    return SearchResult(request, packet, terms, examined, entries_seen, bytes_read, len(file_matches), total,
-                        dict(sorted(excluded.items())), tuple(sorted(cutoffs)), tuple(context), tuple(context_map), tuple(line_index), rerank_record)
+    result = SearchResult(request, packet, terms, examined, entries_seen, bytes_read, len(file_matches), total,
+                          dict(sorted(excluded.items())), tuple(sorted(cutoffs)), tuple(context), tuple(context_map), tuple(line_index), rerank_record)
+    from .screening import screen
+    return replace(result, screening=tuple(screen(result)))

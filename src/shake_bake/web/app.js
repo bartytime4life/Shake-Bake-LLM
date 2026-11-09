@@ -52,6 +52,18 @@ function viewLines(p){
   const left=view.omitted.length?` and was not shown ${view.omitted.join(', ')}`:'';
   return [`The local model saw a shortened copy: it was shown ${view.shown.join(', ')}${cut}${left}. Every excerpt in this brief is unchanged.`];
 }
+// Mirrors screening.warning_lines: warn-only credential findings with masked previews.
+// They are shown to the person sharing the brief and never added to the brief.
+function screeningView(value){
+  if(!Array.isArray(value))return [];
+  return value.filter(item=>item&&typeof item.kind==='string'&&typeof item.where==='string'&&typeof item.preview==='string').slice(0,20)
+    .map(item=>({kind:item.kind,where:item.where,path:typeof item.path==='string'?item.path:null,line:Number.isInteger(item.line)?item.line:null,preview:item.preview}));
+}
+function screeningLines(findings){
+  if(!findings?.length)return [];
+  return [`Possible credentials in what this brief would share (${findings.length} found). Exact text is unchanged; remove or rotate before sharing if they are real:`,
+    ...findings.map(item=>`- ${item.kind} in ${item.where}${item.path?' '+item.path:''}${item.line?' line '+item.line:''}: ${item.preview}`)];
+}
 function contextReason(item){
   // Mirrors briefing.context_lines: software-selected scan facts, not interpretations.
   if(item.kind==='definition')return `${item.evidence_id}: top-level definition of ${item.name}, referenced by ${item.referenced_by.join(', ')}.`;
@@ -71,6 +83,7 @@ function viewJob(value) {
     gaps:evidence.length?[]:[{code:'no_usable_evidence',message:'No usable source matched within the scan. Clarify the request; this is not an exhaustive review.'}],
     routing:{...route,status:note?(route.mode==='candidate_trial'?'candidate_notes':'qualified_profile_notes'):route.model||value.worker_error&&route.reason!=='no_qualified_profile'&&route.reason!=='local_ai_disabled'?'abstained':'evidence_only',reason:route.why||value.worker_error||'Exact evidence only.',final_answer_ready:false},
     model_notes:note?{notes:[{text:note.summary,evidence_ids:note.evidence_ids}],uncertainties:note.questions,prompt:promptView(note),source_view:viewOf(note.source_view)}:null,
+    screening:screeningView(value.screening),
     receipt:{files_examined:value.files_examined,matching_files:value.matching_files,source_bytes_read:value.source_bytes_read,excerpt_bytes:value.selected_excerpt_bytes,local_server_reported_usage:note?.usage||null,observed_runtime_version:note?.observed_runtime_version||null,requested_configuration:note?.requested_configuration||null,cloud_tokens:null,token_savings:null,
       discovery:{files_read:value.files_examined,cutoffs:value.cutoffs||[],refusals:value.exclusions||{}},context_map:value.context_map||[],line_index:value.line_index||[]},
     limitations:['Selected excerpts are not a complete repository review.','Source identities refer to captured bytes; later changes require a fresh task.','Model notes are unverified. Real host delivery, accuracy, hardware calibration and savings remain unqualified.','Jobs are retained only in this running session, up to eight and approximately five minutes.']}};
@@ -287,6 +300,9 @@ function renderBrief(previous = false) {
   $('handoff-copy').hidden=false;
   const text=handoffText(pinned);
   if($('handoff-text').value!==text)$('handoff-text').value=text;
+  const warning=screeningLines(pinned.packet.screening).join('\n');
+  $('credential-warning').hidden=!warning;
+  if($('credential-warning').textContent!==warning)$('credential-warning').textContent=warning;
   $('handoff-size').textContent=handoffSize(text);
   const packet=pinned.packet; $('brief-title').textContent=previous ? 'Previous brief — no new result yet' : pinned.status==='incomplete' ? 'Brief incomplete — review the gaps' : 'Your brief is ready';
   $('brief-subtitle').textContent=`${pinned.project_id==='starter-demo'?'Synthetic demo':pinned.project_id} · ${packet.evidence.length} source excerpt${packet.evidence.length===1?'':'s'}`;

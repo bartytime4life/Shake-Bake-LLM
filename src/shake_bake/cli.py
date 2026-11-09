@@ -62,7 +62,15 @@ def brief_main(argv: list[str]) -> int:
         print(json.dumps({"outcome": "ERROR", "code": "preparation_failed"}, sort_keys=True))
         return 1
     print(json.dumps(brief.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) if args.format == "json" else (render_orientation(brief) if args.style == "orientation" else render(brief)), end="\n" if args.format == "json" else "")
+    _warn(brief)
     return 0 if brief.outcome == "ANSWER" else 3
+
+
+def _warn(brief) -> None:
+    """Credential warnings go to stderr for the person running the command, never into the brief."""
+    from .screening import warning_lines
+    for line in warning_lines(brief.search.screening):
+        print(line, file=sys.stderr)
 
 
 def assist_main(argv: list[str]) -> int:
@@ -91,4 +99,5 @@ def assist_main(argv: list[str]) -> int:
                          ensure_ascii=False, indent=2))
     else:
         print("# Why this model\n\n" + decision.why + "\n\nRouting status: " + decision.reason + "\n\n" + render(brief), end="")
+    _warn(brief)
     return 0 if brief.worker is not None else 3

@@ -238,6 +238,7 @@ class HelperSession:
                 answer["context"] = search.get("context", [])
                 answer["context_map"] = search.get("context_map", [])
                 answer["line_index"] = search.get("line_index", [])
+                answer["screening"] = search.get("screening", [])
             packet = search.get("packet")
             if packet:
                 answer["snapshot_id"] = packet["snapshot_id"]
