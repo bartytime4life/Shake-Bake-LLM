@@ -211,6 +211,20 @@ class SearchAcceptance(unittest.TestCase):
             failed = render_orientation(build_brief(self.root, self.task, model="fixture:local"))
         self.assertIn("Local model failed: worker_timeout. The places below were collected without it.", failed)
 
+    def test_both_layouts_disclose_a_fitted_local_model_copy(self):
+        from shake_bake.worker import WorkerNote
+        view = {"lines_per_excerpt": 12, "shown": ["E1", "E2"], "cut": ["E2"], "omitted": ["E3", "E4"]}
+        line = ("The local model saw a shortened copy: it was shown E1, E2 (E2 cut to 12 lines) and was not shown E3, E4. "
+                "Every excerpt in this brief is unchanged.")
+        for note in (WorkerNote("fixture:local", "s", ("E1",), (), {}, goal="Decide.", asks=("Ask?",), source_view=view),
+                     WorkerNote("fixture:local", "s", ("E1",), (), {}, source_view=view)):
+            with patch("shake_bake.briefing.organize", return_value=note):
+                brief = build_brief(self.root, self.task, model="fixture:local")
+            for text in (render(brief), render_orientation(brief)):
+                self.assertIn(line, text)
+        with patch("shake_bake.briefing.organize", return_value=WorkerNote("fixture:local", "s", ("E1",), (), {})):
+            self.assertNotIn("shortened copy", render_orientation(build_brief(self.root, self.task, model="fixture:local")))
+
     def test_cli_runs_the_full_question_to_handoff_path(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
