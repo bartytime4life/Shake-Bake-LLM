@@ -1,5 +1,9 @@
-"""Synthetic JavaScript/TypeScript location claims; no source is executed here."""
+"""Synthetic location claims and explicit disposable development fixtures."""
 
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
 import unittest
 
 from shake_bake.contracts import Refusal
@@ -116,6 +120,29 @@ class JavascriptFormatTests(unittest.TestCase):
         result = parse_javascript("/approved/app.js:2\nError: unrelated text\n")
         self.assertEqual(result["frames"], [])
 
+    def test_unexpected_eof_without_caret_retains_exact_reported_location(self):
+        for path, line, source, marker in (("/approved/app.cjs", 1, "function unfinished() {", " " * 23),
+                                           ("file:///approved/app.mjs", 2, "", "")):
+            with self.subTest(path=path):
+                result = parse_javascript(f"{path}:{line}\n{source}\n{marker}\n\n"
+                                          "SyntaxError: Unexpected end of input\n"
+                                          "    at wrapSafe (node:internal/modules/cjs/loader:1512:18)\n")
+                frame = result["frames"][0]
+                self.assertEqual(frame["reported_path"], path)
+                self.assertEqual(frame["line"], line)
+                self.assertIsNone(frame["column"])
+                self.assertEqual(frame["exception_index"], 0)
+                self.assertEqual(result["primary_frame_id"], frame["frame_id"])
+
+    def test_no_caret_eof_requires_the_normal_source_block(self):
+        for body, error in (("", "SyntaxError: Unexpected end of input"),
+                            ("source\nnot a marker\n\n", "SyntaxError: Unexpected end of input"),
+                            ("source\n   \n\n", "Error: Unexpected end of input"),
+                            ("source\n   \n\n", "SyntaxError: Unrelated message")):
+            with self.subTest(body=body, error=error):
+                result = parse_javascript(f"/approved/app.js:2\n{body}{error}\n")
+                self.assertEqual(result["frames"], [])
+
     def test_runtime_source_header_does_not_hide_stack_column_and_function(self):
         result = parse_javascript("/approved/app.js:2\nthrow new Error('fail');\n^\n\nError: fail\n"
                                   "    at run (/approved/app.js:2:7)\n"
@@ -130,6 +157,60 @@ class JavascriptFormatTests(unittest.TestCase):
                                   "RangeError: second\n    at run (second.js:3:4)\n")
         self.assertEqual([f["exception_index"] for f in result["frames"]], [0, 1])
         self.assertEqual([e["message"] for e in result["exceptions"]], ["first", "second"])
+
+    def test_node_cause_frames_bind_their_own_error(self):
+        result = parse_javascript("Error: wrapper failed\n"
+                                  "    at wrap (/outside/runner.cjs:1:12) {\n"
+                                  "  [cause]: TypeError: inner detail\n"
+                                  "      at fail (/approved/inner.js:2:4)\n"
+                                  "}\n")
+        self.assertEqual(len(result["exceptions"]), 2)
+        frame = next(item for item in result["frames"] if item["lookup_path"] == "/approved/inner.js")
+        exception = result["exceptions"][frame["exception_index"]]
+        self.assertEqual((exception["type"], exception["message"]), ("TypeError", "inner detail"))
+
+    def test_nested_causes_and_later_stack_keep_exception_binding(self):
+        result = parse_javascript("Error: outer\n    at outer (outer.js:1:1)\n"
+                                  "  [cause]: RangeError: middle {\n"
+                                  "      at middle (middle.js:2:3)\n"
+                                  "    [cause]: TypeError: inner\n"
+                                  "        at inner (inner.js:4:5)\n"
+                                  "  }\n}\n"
+                                  "Error: separate\n    at later (later.js:6:7)\n")
+        self.assertEqual([item["exception_index"] for item in result["frames"]], [0, 1, 2, 3])
+        self.assertEqual([item["type"] for item in result["exceptions"]],
+                         ["Error", "RangeError", "TypeError", "Error"])
+
+    @unittest.skipUnless(shutil.which("node"), "optional development Node.js unavailable")
+    def test_actual_node_eof_and_cause_from_disposable_generated_fixtures(self):
+        # Only these generated fixtures execute. The production parser receives
+        # output text and never runs the command or source it is inspecting.
+        with tempfile.TemporaryDirectory(prefix="sb-node-format-") as scratch:
+            root = Path(scratch)
+            for name, source, line in (("broken.cjs", "function unfinished() {", 1),
+                                       ("broken.mjs", "export function unfinished() {\n", 2)):
+                path = root / name
+                path.write_text(source, encoding="utf-8")
+                run = subprocess.run([shutil.which("node"), str(path)], capture_output=True,
+                                     text=True, timeout=5)
+                self.assertNotEqual(run.returncode, 0)
+                result = parse_javascript(run.stderr)
+                frame = result["frames"][0]
+                self.assertEqual(frame["lookup_path"], str(path))
+                self.assertEqual(frame["line"], line)
+                self.assertEqual(result["terminal_exception"]["type"], "SyntaxError")
+            inner = root / "inner.cjs"
+            inner.write_text("module.exports = () => { throw new TypeError('inner detail') };\n", encoding="utf-8")
+            wrapper = root / "wrapper.cjs"
+            wrapper.write_text("try { require('./inner.cjs')() } catch (cause) { throw new Error('outer wrapper', {cause}) }\n",
+                               encoding="utf-8")
+            run = subprocess.run([shutil.which("node"), str(wrapper)], capture_output=True,
+                                 text=True, timeout=5)
+            self.assertNotEqual(run.returncode, 0)
+            result = parse_javascript(run.stderr)
+            frame = next(item for item in result["frames"] if item["lookup_path"] == str(inner))
+            exception = result["exceptions"][frame["exception_index"]]
+            self.assertEqual((exception["type"], exception["message"]), ("TypeError", "inner detail"))
 
     def test_frame_budget_keeps_innermost_twenty(self):
         raw = "Error: fail\n" + "".join(f"    at run (src/{i}.js:{i + 1}:1)\n" for i in range(30))
@@ -227,6 +308,16 @@ class TypescriptFormatTests(unittest.TestCase):
 
 
 class TerminalMatchingTests(unittest.TestCase):
+    def test_initial_utf8_bom_is_removed_only_from_the_matching_copy(self):
+        raw = "\ufeffsrc/task.ts(1,2): error TS2322: Invalid value.\r\n"
+        self.assertEqual(strip_terminal_controls(raw), raw[1:])
+        result = parse_javascript(raw)
+        self.assertEqual(result["format"], "typescript")
+        self.assertEqual(result["frames"][0]["lookup_path"], "src/task.ts")
+        self.assertTrue(raw.startswith("\ufeff"))
+        self.assertEqual(strip_terminal_controls("\ufeff\ufefftext"), "\ufefftext")
+        self.assertEqual(strip_terminal_controls("text\ufeff"), "text\ufeff")
+
     def test_complete_color_hyperlink_and_cursor_sequences_are_removed(self):
         raw = "\x1b[1mError\x1b[0m: fail\n    at run (\x1b]8;;file:///tmp/app.js\x1b\\/tmp/app.js\x1b]8;;\x07:2:3)\x1b[K\n"
         matching = strip_terminal_controls(raw)

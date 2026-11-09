@@ -8,6 +8,7 @@ let inventoryLoading = false, historySignature = '', serviceTimer = null, sessio
 let copyState = null;
 let settingsPending = false, connected = null, stateRevision = 0, pinRevision = 0;
 let draftInitialized = false, draftProjectId = '';
+let sourceProjectSelectionRevision = 0;
 const DRAFT_KEY = 'sb-workbench-draft', DRAFT_SAVING_KEY = 'sb-workbench-save-draft';
 let draftSaving = true, draftSavingPendingOff = false, draftPrivacyError = '';
 let focusPreparedBrief = false;
@@ -197,7 +198,7 @@ function draftContext(){
   $('project-help').classList.toggle('sr-only',projectValid&&kindValid&&$('project').value!=='starter-demo');
   $('project-help').textContent=!projectValid
     ? `The saved project${draftProjectId?' “'+draftProjectId+'”':''} is unavailable. Choose an approved project for this draft.${kindValid?'':' Choose a task type too.'}`
-    : !kindValid?'The saved task type is unavailable. Choose a task type for this draft.':$('project').value==='starter-demo'?'Synthetic demo selected: only bundled example files are available. Choose your real project above, or use Connect project folder in the failed-run workflow.':"Only projects you explicitly connected or approved at launch are available.";
+    : !kindValid?'The saved task type is unavailable. Choose a task type for this draft.':$('project').value==='starter-demo'?'Synthetic demo selected: only bundled example files are available. Choose your real project above, or use Connect project folder above.':"Only projects you explicitly connected or approved at launch are available.";
 }
 function saveDraft(){
   if(preview||fileLaunch)return;
@@ -364,7 +365,7 @@ async function refreshState(initial=false){
   $('local-ai-retention').textContent=nativeState.local_ai_preference_persistent?'Local AI choice is saved on this computer. Briefs expire with the session.':'Local AI choice and briefs last only for this diagnostic session.';
   if(initial){
     renderCatalog();
-    $('project').replaceChildren();for(const id of state.projects){const option=new Option(id==='starter-demo'?'Synthetic demo':id,id);$('project').append(option);}
+    $('project').replaceChildren();for(const id of state.projects){const project=nativeState.projects.find(item=>item.id===id);const option=new Option(id==='starter-demo'?'Synthetic demo':project?.label||id,id);$('project').append(option);}
     const prefs=state.preferences;restoreDraft(prefs);
     $('local-ai').checked=prefs.ai_mode!=='off'&&!state.local_ai_paused; $('ai-mode').value=prefs.ai_mode==='trial'?'trial':'best';
     if(prefs.model){const saved=new Option(`${prefs.model} — saved candidate`,prefs.model);saved.dataset.digest=prefs.digest;$('model').append(saved);$('model').value=prefs.model;}
@@ -434,7 +435,7 @@ $('local-ai').addEventListener('change',async()=>{
 });
 $('model-details-toggle').addEventListener('click',()=>{const open=$('model-details').hidden;$('model-details').hidden=!open;$('model-details-toggle').setAttribute('aria-expanded',String(open));});
 $('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{modelView();savePreferences();});
-$('project').addEventListener('change',()=>{draftTouched.add('project');draftContext();savePreferences();controls();});
+$('project').addEventListener('change',()=>{sourceProjectSelectionRevision++;draftTouched.add('project');draftContext();savePreferences();controls();});
 $('save-draft').addEventListener('change',()=>{
   if(preview||fileLaunch)return;
   if(!$('save-draft').checked){stopDraftSaving();return;}
@@ -775,7 +776,12 @@ async function initialize(){
   catch(error){message(error.message,true);connectionFailed();}
   if(!preview){timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(()=>{if(!active||!connected)syncSession();},3000);}
 };
-window.sbWorkbench={api,syncSession,getState:()=>state,isPreview:()=>!!preview||fileLaunch};initialize();
+function getSourceSelection(){return {id:$('project').value,revision:sourceProjectSelectionRevision};}
+function selectConnectedSourceProject(id, expectedSelection){
+  if(!state?.projects.includes(id)||!expectedSelection||$('project').value!==expectedSelection.id||sourceProjectSelectionRevision!==expectedSelection.revision)return false;
+  $('project').value=id;sourceProjectSelectionRevision++;draftTouched.add('project');draftContext();void savePreferences();controls();return true;
+}
+window.sbWorkbench={api,syncSession,getState:()=>state,isPreview:()=>!!preview||fileLaunch,getSourceSelection,selectSourceProject:selectConnectedSourceProject};initialize();
 
 function memoryText(value){return typeof value==='number'?`${(value/1073741824).toFixed(1)} GiB`:'Not detected';}
 function facts(id,entries){const list=$(id);list.replaceChildren();for(const [name,value]of entries){const term=document.createElement('dt'),detail=document.createElement('dd');term.textContent=name;detail.textContent=value;list.append(term,detail);}}

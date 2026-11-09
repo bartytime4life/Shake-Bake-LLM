@@ -2,7 +2,9 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
+import stat
 import sys
 
 from .collector import build_packet
@@ -113,7 +115,10 @@ def diagnose_main(argv):
     parser.add_argument("--command", default="", help="Record the command that failed; never execute it")
     args = parser.parse_args(argv)
     try:
-        with args.error_file.open("rb") as stream:
+        descriptor = os.open(args.error_file, os.O_RDONLY | os.O_NONBLOCK)
+        with os.fdopen(descriptor, "rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise Refusal("regular_error_file_required")
             raw = stream.read(65537)
         if len(raw) > 65536:
             raise Refusal("invalid_error_output")

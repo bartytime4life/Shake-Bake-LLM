@@ -95,7 +95,7 @@ class FailureReports(unittest.TestCase):
             report = locate_failure(root, error, f"STRIPE={STRIPE} python3 app.py")
             self.assertEqual(report["error_output"], error, "the pasted output is unchanged")
             self.assertEqual([(f["kind"], f["where"], f["path"], f["line"]) for f in report["screening"]],
-                             [("Google API key", "error output", None, 5), ("Stripe live key", "command", None, None),
+                             [("Stripe live key", "recorded command", None, 1), ("Google API key", "original error output", None, 5),
                               ("GitHub token", "E1", "app.py", 2)])
             self.assertNotIn(GITHUB, json.dumps(report["screening"]))
             (root / "err.txt").write_text(error, encoding="utf-8")

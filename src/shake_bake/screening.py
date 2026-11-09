@@ -52,7 +52,7 @@ def scan(text: str) -> list[tuple[str, int, str]]:
     return list(_scan(text))
 
 
-def screen_failure(report) -> list[dict]:
+def _screen_failure_report(report) -> list[dict]:
     """Warn over a failure handoff without changing its exact captured content.
 
     Uses the source-brief finding schema and patterns. Output is capped while
@@ -97,10 +97,12 @@ def screen_items(items) -> list[dict]:
     Each: kind, where, path, line, masked preview."""
     findings = []
     for where, path, base_line, text in items:
-        for kind, line, preview in scan(text or ""):
+        for kind, line, preview in _scan(text or ""):
             findings.append({"kind": kind, "where": where, "path": path,
                              "line": None if base_line is None else base_line + line - 1, "preview": preview})
-    return findings[:MAX_FINDINGS]
+            if len(findings) >= MAX_FINDINGS:
+                return findings
+    return findings
 
 
 def screen(search) -> list[dict]:
@@ -113,10 +115,20 @@ def screen(search) -> list[dict]:
     return screen_items(items)
 
 
-def screen_failure(error_output: str, command: str, evidence) -> list[dict]:
-    """Everything a failure report can share: the pasted output (line numbers within it), the command and excerpts."""
-    return screen_items([("error output", None, 1, error_output), ("command", None, None, command)]
-                        + [(item["evidence_id"], item["path"], item["start_line"], item["text"]) for item in evidence])
+def screen_failure(error_output, command=None, evidence=None) -> list[dict]:
+    """Screen a captured report; retain the earlier three-argument API too.
+
+    One implementation owns masking, line rules and bounds. The legacy call
+    keeps its location labels, order and optional command line number.
+    """
+    if isinstance(error_output, dict):
+        if command is not None or evidence is not None:
+            raise TypeError("a report cannot be combined with separate inputs")
+        return _screen_failure_report(error_output)
+    items = [("error output", None, 1, error_output), ("command", None, None, command)]
+    items += [(item["evidence_id"], item["path"], item["start_line"], item["text"])
+              for item in (evidence or [])]
+    return screen_items(items)
 
 
 def warning_lines(findings, subject: str = "this brief") -> list[str]:

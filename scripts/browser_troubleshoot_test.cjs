@@ -3,10 +3,12 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const os = require('node:os');
 const fs = require('node:fs/promises');
+const {createHash} = require('node:crypto');
 const {spawn} = require('node:child_process');
 const {waitForServer} = require('./browser_server.cjs');
 const {chromium} = require('playwright');
-let browser, server, baseURL, fixture, passed = 0;
+let browser, server, baseURL, fixture, sourceFixture, passed = 0;
+const connectionFixtures = [];
 const source = '"""Synthetic failed-run source. Never imported by this test."""\n\ndef parse_count(value):\n    return int(value)\n';
 const output = (statement='return int(value)',filename=path.join(fixture,'parse.py')) =>
   `Traceback (most recent call last):\n  File "${filename}", line 4, in parse_count\n    ${statement}\nValueError: invalid literal for int() with base 10: 'many'\n`;
@@ -42,9 +44,12 @@ async function diagnose(page, error=output()) {
 }
 (async () => {
   fixture = await fs.mkdtemp(path.join(os.tmpdir(),'sb-failed-run-browser-'));
+  sourceFixture = await fs.mkdtemp(path.join(os.tmpdir(),'sb-source-brief-browser-'));
+  await fs.writeFile(path.join(sourceFixture,'retry.py'),'RETRY_LIMIT = 3\n');
   await fs.writeFile(path.join(fixture,'parse.py'),source);
   await fs.writeFile(path.join(fixture,'unicode.py'),'def parse_count(value):\n    marker = \"first\u2028second\"\n    return int(value)\n');
   await fs.writeFile(path.join(fixture,'worker.js'),'function parseCount(value) {\n  throw new TypeError("synthetic failure");\n}\nparseCount(null);\n');
+  await fs.writeFile(path.join(fixture,'eof.js'),'function incomplete() {\n');
   await fs.writeFile(path.join(fixture,'unicode.js'),'const first = 1;\u2028const second = 2;\u2029throw new Error("synthetic separators");\n');
   await fs.writeFile(path.join(fixture,'settings.ts'),'const port: number = "wrong";\nexport {port};\n');
   const env = {...process.env};
@@ -87,6 +92,168 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#failure-output').inputValue(),output());
     const storage = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
     assert.equal(Object.values(storage).some(value => value.includes('ValueError: invalid literal')),false);
+  });
+  await scenario('source-brief folder connection selects only that workflow and keeps readable labels after reload', async page => {
+    await page.locator('#failure-project').selectOption('');
+    const failureProject = await page.locator('#failure-project').inputValue();
+    assert.equal(failureProject,'');
+    await page.locator('#failure-output').fill(output());
+    await page.locator('#failure-command').fill('python parse.py --preserved');
+    await page.locator('#choose-source-brief').click();
+    await page.locator('#request').fill('Where is RETRY_LIMIT defined? Preserve this source question.');
+    assert.equal(await page.locator('#connect-project').isVisible(),true);
+    await page.locator('#connect-project > summary').click();
+    await page.locator('#project-label').fill('Second Synthetic Folder');
+    await page.locator('#project-path').fill(sourceFixture);
+    await page.locator('#connect-project-button').click();
+    await page.waitForFunction(() => document.querySelector('#project-connect-status').textContent.includes('source brief now uses'));
+    const sourceProject = await page.locator('#project').inputValue();
+    assert.notEqual(sourceProject,'starter-demo');
+    assert.notEqual(sourceProject,failureProject);
+    assert.equal(await page.locator('#project option:checked').innerText(),'Second Synthetic Folder');
+    assert.equal(await page.locator('#request').inputValue(),'Where is RETRY_LIMIT defined? Preserve this source question.');
+    await page.locator('#choose-failed-run').click();
+    assert.equal(await page.locator('#failure-project').inputValue(),failureProject);
+    assert.equal(await page.locator('#failure-output').inputValue(),output());
+    assert.equal(await page.locator('#failure-command').inputValue(),'python parse.py --preserved');
+    await page.reload();
+    await page.waitForFunction(() => window.sbWorkbench?.getState()?.native?.csrf_token);
+    await page.locator('#choose-source-brief').click();
+    assert.equal(await page.locator('#project').inputValue(),sourceProject);
+    assert.equal(await page.locator('#project option:checked').innerText(),'Second Synthetic Folder');
+    assert.equal(await page.locator('#request').inputValue(),'Where is RETRY_LIMIT defined? Preserve this source question.');
+  });
+  for (const workflow of ['source','failed']) {
+    await scenario(`a delayed ${workflow} folder connection preserves an away-and-back project choice and newer text`, async page => {
+      const newRoot = await fs.mkdtemp(path.join(os.tmpdir(),'sb-connect-race-'));
+      connectionFixtures.push(newRoot);
+      const initialError = output(), newerError = output('return 123');
+      const initialQuestion = 'Preserve this question during folder connection.';
+      const newerQuestion = 'This newer source question must survive the delayed connection.';
+      await page.locator('#failure-output').fill(initialError);
+      await page.locator('#choose-source-brief').click();
+      await page.locator('#request').fill(initialQuestion);
+      if (workflow === 'failed') await page.locator('#choose-failed-run').click();
+      const selector = workflow === 'source' ? '#project' : '#failure-project';
+      const before = await page.locator(selector).inputValue();
+      const alternative = await page.locator(`${selector} option`).evaluateAll((options, selected) => options.find(option => option.value && option.value !== selected && !option.disabled).value,before);
+      let release, started;
+      const waiting = new Promise(resolve => {release = resolve;});
+      const seen = new Promise(resolve => {started = resolve;});
+      await page.route('**/api/projects',async route => {
+        const response = await route.fetch();
+        started();
+        await waiting;
+        await route.fulfill({response});
+      });
+      try {
+        await page.locator('#connect-project > summary').click();
+        await page.locator('#project-label').fill(`Synthetic ${workflow} connection race`);
+        await page.locator('#project-path').fill(newRoot);
+        await page.locator('#connect-project-button').click();
+        await seen;
+        await page.locator(selector).selectOption(alternative);
+        await page.locator(selector).selectOption(before);
+        if (workflow === 'source') await page.locator('#request').fill(newerQuestion);
+        else await page.locator('#failure-output').fill(newerError);
+        release();
+        await page.waitForFunction(() => document.querySelector('#project-connect-status').textContent.includes('newer project selection is unchanged'));
+        assert.equal(await page.locator(selector).inputValue(),before);
+        const connected = await page.evaluate(root => window.sbWorkbench.getState().native.projects.find(project => project.path === root),newRoot);
+        assert.ok(connected);
+        assert.notEqual(before,connected.id);
+        await page.locator('#choose-source-brief').click();
+        assert.equal(await page.locator('#request').inputValue(),workflow === 'source' ? newerQuestion : initialQuestion);
+        await page.locator('#choose-failed-run').click();
+        assert.equal(await page.locator('#failure-output').inputValue(),workflow === 'failed' ? newerError : initialError);
+      } finally {release?.();}
+    });
+  }
+  await scenario('loading a UTF-8 error file preserves BOM and CRLF through the local check and JSON export', async (page,{requests}) => {
+    const error = '\ufeff' + output().replace(/\n/g,'\r\n');
+    await page.locator('#failure-file').setInputFiles({name:'complete-error.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
+    await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded complete-error.log'));
+    assert.equal(await page.locator('#failure-output').inputValue(),error.replace(/\r\n/g,'\n'));
+    await page.locator('#failure-command').fill('python parse.py --recorded-only');
+    assert.equal(requests.includes('/api/troubleshoot'),false);
+    const storage = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
+    assert.equal(Object.values(storage).some(value => value.includes('ValueError: invalid literal')),false);
+    await page.locator('#diagnose-run').click();
+    await page.locator('#failure-result').waitFor({state:'visible'});
+    assert.match(await page.locator('#failure-result-title').innerText(),/Source located/);
+    assert.equal(await page.locator('#failure-original').textContent(),error);
+    await page.getByText('Original error & report',{exact:true}).click();
+    const downloading = page.waitForEvent('download');
+    await page.locator('#download-failure-json').click();
+    const record = JSON.parse(await fs.readFile(await (await downloading).path(),'utf8'));
+    assert.equal(record.error_output,error);
+    assert.equal(record.error_sha256,createHash('sha256').update(Buffer.from(error,'utf8')).digest('hex'));
+    assert.equal(record.command,'python parse.py --recorded-only');
+  });
+  await scenario('editing a loaded error replaces its preserved file copy with the edited text', async page => {
+    const loaded = output().replace(/\n/g,'\r\n');
+    await page.locator('#failure-file').setInputFiles({name:'edit-me.log',mimeType:'text/plain',buffer:Buffer.from(loaded,'utf8')});
+    await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded edit-me.log'));
+    const edited = output('return 77');
+    await page.locator('#failure-output').fill(edited);
+    assert.equal(await page.locator('#failure-file-status').textContent(),'');
+    await page.locator('#diagnose-run').click();
+    await page.locator('#failure-result').waitFor({state:'visible'});
+    assert.equal(await page.locator('#failure-original').textContent(),edited);
+    assert.match(await page.locator('#failure-result-title').innerText(),/pasted statement differs/);
+  });
+  await scenario('oversized, invalid UTF-8, NUL and unreadable files preserve the current exact error', async (page,{requests}) => {
+    const error = output().replace(/\n/g,'\r\n');
+    await page.locator('#failure-file').setInputFiles({name:'keep.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
+    await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded keep.log'));
+    for (const [name,buffer,message] of [
+      ['large.log',Buffer.alloc(65537,65),/larger than 64 KiB/],
+      ['invalid.log',Buffer.from([0xc3,0x28]),/valid UTF-8/],
+      ['binary.log',Buffer.from('not\0a text log'),/NUL bytes/],
+      ['unreadable.log',Buffer.from('unused'),/could not be read/]
+    ]) {
+      await page.locator('#failure-file').setInputFiles({name,mimeType:'text/plain',buffer});
+      await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.includes('current error is unchanged'));
+      assert.match(await page.locator('#failure-file-status').textContent(),message);
+      assert.equal(await page.locator('#failure-output').inputValue(),error.replace(/\r\n/g,'\n'));
+    }
+    assert.equal(requests.includes('/api/troubleshoot'),false);
+    await page.locator('#diagnose-run').click();
+    await page.locator('#failure-result').waitFor({state:'visible'});
+    assert.equal(await page.locator('#failure-original').textContent(),error);
+  }, async page => {
+    await page.addInitScript(() => {
+      const read = File.prototype.arrayBuffer;
+      File.prototype.arrayBuffer = function () {
+        return this.name === 'unreadable.log' ? Promise.reject(new Error('Synthetic read failure')) : read.call(this);
+      };
+    });
+  });
+  await scenario('late file reads cannot overwrite newer typed text or a newer selected file', async (page,{requests}) => {
+    await page.locator('#failure-file').setInputFiles({name:'slow-first.log',mimeType:'text/plain',buffer:Buffer.from(output(),'utf8')});
+    await page.waitForFunction(() => window.__finishFileReads.length === 1);
+    const newer = output('return 88');
+    await page.locator('#failure-output').fill(newer);
+    await page.evaluate(async () => {window.__finishFileReads.shift()();await new Promise(requestAnimationFrame);});
+    assert.equal(await page.locator('#failure-output').inputValue(),newer);
+    assert.doesNotMatch(await page.locator('#failure-file-status').textContent(),/^Loaded slow-first\.log/);
+    await page.locator('#failure-file').setInputFiles({name:'slow-second.log',mimeType:'text/plain',buffer:Buffer.from('old file','utf8')});
+    await page.waitForFunction(() => window.__finishFileReads.length === 1);
+    await page.locator('#failure-file').setInputFiles({name:'newer.log',mimeType:'text/plain',buffer:Buffer.from(newer,'utf8')});
+    await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded newer.log'));
+    await page.evaluate(async () => {window.__finishFileReads.shift()();await new Promise(requestAnimationFrame);});
+    assert.equal(await page.locator('#failure-output').inputValue(),newer);
+    assert.match(await page.locator('#failure-file-status').textContent(),/^Loaded newer.log/);
+    assert.equal(requests.includes('/api/troubleshoot'),false);
+  }, async page => {
+    await page.addInitScript(() => {
+      const read = File.prototype.arrayBuffer;
+      window.__finishFileReads = [];
+      File.prototype.arrayBuffer = function () {
+        const bytes = read.call(this);
+        return this.name.startsWith('slow-') ? new Promise((resolve,reject) => bytes.then(value => window.__finishFileReads.push(() => resolve(value)),reject)) : bytes;
+      };
+    });
   });
   await scenario('a real Python traceback locates exact current source without claiming a fix', async page => {
     const error = output();
@@ -133,6 +300,14 @@ async function diagnose(page, error=output()) {
     const brief = await page.locator('#failure-copy-text').inputValue();
     assert.match(brief,/Only earlier source was captured/);
     assert.match(brief,/outside-approved-project/);
+    await page.getByText('Original error & report',{exact:true}).click();
+    const downloading = page.waitForEvent('download');
+    await page.locator('#download-failure-text').click();
+    const saved = await fs.readFile(await (await downloading).path(),'utf8');
+    assert.equal(saved,brief);
+    assert.match(saved,/Only earlier source was captured/);
+    assert.match(saved,/outside-approved-project\/handler.py/);
+    assert.match(saved,/outside_project/);
   });
   await scenario('changed source statement is called out before drawing conclusions', async page => {
     await diagnose(page,output('return int(value) + 1'));
@@ -156,6 +331,17 @@ async function diagnose(page, error=output()) {
     await diagnose(page,`Error: synthetic separators\n    at ${path.join(fixture,'unicode.js')}:3:7\n`);
     assert.equal(await page.locator('#failure-source .line').count(),3);
     assert.equal(await page.locator('#failure-source .is-failure').textContent(),'3throw new Error("synthetic separators");');
+  });
+  await scenario('Node.js end-of-file locations show preceding source without inventing the reported source line', async page => {
+    const error = `${path.join(fixture,'eof.js')}:2\n\n\n\nSyntaxError: Unexpected end of input\n`;
+    await diagnose(page,error);
+    assert.equal(await page.locator('#failure-result-title').innerText(),'End of file reported — inspect preceding source');
+    assert.match(await page.locator('#failure-result-context').innerText(),/eof.js:2.*end of file.*through line 1/);
+    assert.equal(await page.locator('#failure-source .is-failure .line-number').innerText(),'1');
+    const brief = await page.locator('#failure-copy-text').inputValue();
+    assert.match(brief,/"line": 2/);
+    assert.match(brief,/"location_kind": "end_of_file"/);
+    assert.match(brief,/"context_line": 1/);
   });
   await scenario('TypeScript compiler diagnostics locate exact current source without claiming a fix', async page => {
     const error = "settings.ts(1,7): error TS2322: Type 'string' is not assignable to type 'number'.\n";
@@ -375,4 +561,6 @@ async function diagnose(page, error=output()) {
   if (browser) await browser.close();
   if (server) server.kill('SIGTERM');
   if (fixture) await fs.rm(fixture,{recursive:true,force:true});
+  if (sourceFixture) await fs.rm(sourceFixture,{recursive:true,force:true});
+  for (const root of connectionFixtures) await fs.rm(root,{recursive:true,force:true});
 });

@@ -33,6 +33,7 @@ _NODE_EXCEPTION = re.compile(
     r"^(?P<type>(?:[A-Za-z_$][A-Za-z_0-9$]*\.)*(?:[A-Za-z_$][A-Za-z_0-9$]*)?Error)"
     r"(?: \[(?P<code>[A-Z][A-Z_0-9]{0,79})\])?(?:: ?(?P<message>.*))?$"
 )
+_NODE_CAUSE = re.compile(r"^ +\[cause\]: (?P<header>.+)$")
 _TS_POSITIONAL = re.compile(
     rf"^(?P<path>.+)\((?P<line>{_POSITION}),(?P<column>{_POSITION})\): "
     r"error (?P<type>TS[0-9]{3,6}): ?(?P<message>.*)$"
@@ -46,8 +47,8 @@ _SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 
 
 def strip_terminal_controls(text: str) -> str:
-    """Remove complete terminal escape sequences from a matching copy only."""
-    return _TERMINAL.sub("", text)
+    """Remove terminal escapes and one initial UTF-8 BOM in a matching copy."""
+    return _TERMINAL.sub("", text).removeprefix("\ufeff")
 
 
 def _clip(value: str, limit: int) -> tuple[str, int, bool]:
@@ -179,7 +180,8 @@ def parse_javascript(error_output: str) -> dict:
     if kind is None:
         exception_indices: dict[int, int | None] = {}
         for index, line in enumerate(lines):
-            match = _NODE_EXCEPTION.fullmatch(line)
+            cause = _NODE_CAUSE.fullmatch(line)
+            match = _NODE_EXCEPTION.fullmatch(cause["header"] if cause else line)
             if match:
                 if len(exceptions) < MAX_FRAMES:
                     exception_indices[index] = len(exceptions)
@@ -194,10 +196,20 @@ def parse_javascript(error_output: str) -> dict:
             first_error = next(iter(exception_indices))
             for index in range(max(0, first_error - 6), first_error):
                 header = _HEADER_LOCATION.fullmatch(lines[index])
+                body = lines[index + 1:first_error]
+                # V8 omits its caret for an unexpected EOF: the source line,
+                # whitespace-only marker line and blank separator still form
+                # its normal source block. Keep this exception narrow so an
+                # arbitrary path followed by an error does not become a frame.
+                first_exception = exceptions[0] if exceptions else None
+                eof_block = (first_exception is not None
+                             and first_exception["type"] == "SyntaxError"
+                             and first_exception["message"] == "Unexpected end of input"
+                             and len(body) == 3 and not body[1].strip() and not body[2])
                 if (header and (header["path"].startswith(("/", "file:", "node:"))
                                 or re.search(r"\.[cm]?[jt]sx?$", header["path"]))
-                        and any(re.fullmatch(r"[ \t]*\^+[ \t]*", candidate)
-                                for candidate in lines[index + 1:first_error])):
+                        and (eof_block or any(re.fullmatch(r"[ \t]*\^+[ \t]*", candidate)
+                                             for candidate in body))):
                     frame = _frame(header["path"], int(header["line"]), None, None,
                                    len(frames) + 1, "node", cutoffs)
                     frame["exception_index"] = 0
