@@ -11,7 +11,7 @@ Keep that terminal open. The launcher chooses Python 3.11 or newer and opens the
 1. Under **Diagnose a failed run**, open **Connect project folder**. Enter the absolute folder path containing the failing code, then select **Connect folder**. The name is optional. Connection approves read-only inspection for this service session.
 2. Paste the complete Python traceback. Optionally record the command that failed. The app never runs that command.
 3. Select **Find failing source**. Inspect the highlighted line and whether it matches the statement in the traceback. A mismatch can mean the error came from a different source version.
-4. Read the suggested next checks and limits. Select **Copy debugging brief** for your AI chat, or save the text/JSON report if you need it after closing the page. If copying fails, select the exact handoff text shown on the page. Nothing is sent automatically.
+4. Read the suggested next checks and limits. Select **Copy debugging brief** for your AI chat, or save the text/JSON report if you need it after closing the page. If copying fails, select the exact handoff text shown on the page. Review any possible-credential warning before sharing. Nothing is sent automatically.
 
 Python tracebacks, Node.js V8 stacks and TypeScript compiler diagnostics are supported. A source location shows where to investigate; it does not establish the cause or verify a fix. A missing file, unsupported log or outside-project frame is reported explicitly. Editing the error, command or selected project makes the previous result outdated; rerun the check before copying or exporting. The bundled **Try a labelled example** is synthetic and optional.
 

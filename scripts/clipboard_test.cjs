@@ -356,3 +356,16 @@ test('a fitted local model copy is disclosed in both layouts and the visible cap
   assert.equal(vm.runInContext('JSON.stringify(viewOf({shown:["E1","x; drop"],cut:"E1",omitted:[],lines_per_excerpt:12}))',h.context),'{"shown":["E1"],"cut":[],"omitted":[],"lines":12}');
   assert.equal(vm.runInContext('viewOf({shown:[]})',h.context),null);
 });
+test('credential findings are shown beside Copy and never enter the copied brief',async()=>{
+  const h=harness(()=>Promise.resolve(),{style:null}),j=job('screened');
+  j.packet.screening=[{kind:'AWS access key ID',where:'E1',path:'fixture.txt',line:2,preview:'AKIA… (20 characters)'}];
+  h.pin(j);
+  assert.equal(h.el('credential-warning').hidden,false);
+  assert.equal(h.el('credential-warning').textContent,'Possible credentials in what this brief would share (1 found). Exact text is unchanged; remove or rotate before sharing if they are real:\n- AWS access key ID in E1 fixture.txt line 2: AKIA… (20 characters)');
+  assert.doesNotMatch(h.el('handoff-text').value,/Possible credentials/);
+  await h.fire('copy');assert.doesNotMatch(h.writes[0],/Possible credentials/);
+  const clean=job('clean');clean.packet.screening=[];h.pin(clean);assert.equal(h.el('credential-warning').hidden,true);
+  assert.equal(vm.runInContext('JSON.stringify(screeningView([{kind:"k",where:"request",preview:"p",line:"x",path:5},{kind:1},null]))',h.context),
+    '[{"kind":"k","where":"request","path":null,"line":null,"preview":"p"}]');
+  assert.equal(vm.runInContext('JSON.stringify(screeningView("bad"))',h.context),'[]');
+});

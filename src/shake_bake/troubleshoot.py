@@ -14,6 +14,7 @@ import re
 from .collector import _parts, _read
 from .contracts import Evidence, Refusal
 from .error_formats import parse_javascript, strip_terminal_controls
+from .screening import screen_failure
 
 
 MAX_ERROR_BYTES = 65_536
@@ -326,7 +327,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
                 if format_name in ("node", "typescript") else _guidance(terminal, primary, frames))
     snapshot = hashlib.sha256(json.dumps([(item["path"], item["file_sha256"], item["start_line"], item["end_line"])
                                          for item in evidence], separators=(",", ":")).encode("utf-8")).hexdigest()
-    return {"schema_version": "0.1", "kind": "failure_source_report", "outcome": "ANSWER" if evidence else "ABSTAIN",
+    report = {"schema_version": "0.1", "kind": "failure_source_report", "outcome": "ANSWER" if evidence else "ABSTAIN",
             "command": command, "error_output": error_output, "error_sha256": hashlib.sha256(error_output.encode("utf-8")).hexdigest(),
             "supported_format": bool(frames or exceptions), "format": format_name, "source_located": bool(evidence), "frames": frames,
             "evidence": evidence, "exceptions": exceptions, "terminal_exception": terminal,
@@ -339,3 +340,5 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
                             "Generated files are read as reported; no source maps or path translations were inferred.",
                             "Only exact paths in the approved project are read; no basename guessing or external-file access.",
                             "No tests, dependency checks, model calls, installation or source changes were performed."]}
+    report["screening"] = screen_failure(report)
+    return report

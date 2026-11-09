@@ -13,7 +13,7 @@ state is not a statement about the latest build.
 | November 9 improvements | [Changes, validation and next product priorities](project-improvements-2026-11-09.md), [draft privacy](draft-privacy.md), [source/transport reliability](source-boundary-reliability.md), [offline host review](host-review-scoring.md) |
 | Local setup and trials | [PC checklist](PC-CHECKLIST.md), [readiness and trial commands](pc-readiness-and-trials.md), [Task Lab](../benchmarks/task-lab/README.md) |
 | Interface and recovery | [Visual workbench](visual-workbench.md), [saved Local AI choice](local-ai-preferences.md), [shared coordinator](shared-coordinator.md) |
-| Continue in Claude or ChatGPT | [Manual handoff, text-file export and verification scope](assistant-handoff.md) |
+| Continue in Claude or ChatGPT | [Manual handoff, text-file export and verification scope](assistant-handoff.md), [credential warnings before sharing](credential-screening-2026-11-09.md) |
 | Boundaries and integration | [Architecture](architecture.md), [helper contract](helper-contract.md), [routing](routing-implementation.md), [connection limits](connection-limits.md), [Codex host evidence](codex-host-handoff.md) |
 | Evaluation and practical benefit | [Current results](evaluation-status.md), [external datasets](held-out-evaluation.md), [next host trial](next-trial.md), [open gaps](open-gaps.md), [development yardsticks](../benchmarks/development-yardsticks.md) |
 | Development and reporting | [Contributing](../CONTRIBUTING.md), [security reporting](../SECURITY.md), [third-party notices](../THIRD_PARTY_NOTICES.md), [licensing plan](LICENSING.md) |

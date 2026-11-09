@@ -78,6 +78,7 @@
           <p id="failure-format" class="small muted"></p>
           <p id="failure-exception" class="failure-exception"></p>
           <p id="failure-result-context" class="small muted"></p>
+          <p id="failure-credential-warning" class="notice credential-warning" role="alert" hidden></p>
           <div class="failure-handoff"><button type="button" id="copy-failure-brief" class="primary" disabled>Copy debugging brief</button><p class="small muted">Take the original error and captured source into your existing AI chat to investigate the cause and a verifiable fix.</p></div>
           <p id="failure-copy-status" class="small" role="status" aria-live="polite"></p>
           <details id="failure-copy-review" class="handoff-copy" hidden><summary>Review debugging brief or copy manually</summary><label for="failure-copy-text" class="sr-only">Captured debugging brief</label><textarea id="failure-copy-text" rows="12" readonly spellcheck="false"></textarea><p class="small muted">This includes the original error, recorded command, project folder and captured source. Review before sharing. Clipboard and chat clients can change line endings; the JSON report preserves exact contents.</p></details>
@@ -149,6 +150,7 @@
           <div class="brief-identity"><h2 id="brief-title" tabindex="-1">Your brief is ready</h2><p class="small muted" id="brief-subtitle"></p></div>
         </header>
         <p id="handoff-summary" class="captured-request small muted"></p>
+        <p id="credential-warning" class="notice credential-warning" role="alert" hidden></p>
         <div class="handoff-actions">
           <button type="button" class="primary" id="copy" disabled><img src="icons/copy.svg" alt="">Copy brief</button>
           <p>Paste into <a id="open-claude" href="https://claude.ai/" target="_blank" rel="noopener noreferrer" aria-label="Open Claude in a new tab" aria-describedby="handoff-privacy">Claude</a> or <a id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-label="Open ChatGPT in a new tab" aria-describedby="handoff-privacy">ChatGPT</a>, then send.</p>

@@ -1,6 +1,6 @@
 # Known issues and release expectations
 
-Updated November 9, 2026 · applies to the 0.4.0.dev23 development build.
+Updated November 9, 2026 · applies to the 0.4.0.dev25 development build.
 
 This register separates implemented controls from open engineering work and unverified behavior. An open security qualification gap is not a confirmed exploitable vulnerability. No complete independent security audit, real-model accuracy qualification or production-readiness sign-off has been completed. Program tests cover specific contracts only; see the [November 9 integration record](docs/publication-2026-11-09.md).
 

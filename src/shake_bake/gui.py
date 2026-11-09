@@ -28,6 +28,7 @@ from .routing import eligible_profiles, pipeline_id, validate_policy
 from .shared import ConnectionPublication
 from .failure_runner import MAX_FAILURE_INPUT_BYTES
 from .failure_service import run_failure_location
+from .screening import screen_failure
 from .task_protocol import MAX_TASK_INPUT_BYTES
 from .worker import local_inventory, parse_json
 
@@ -221,6 +222,7 @@ class Controller:
                                           payload["command"], scratch=self._session._scratch)
             result["project"] = {"id": project_id, "label": self.project_labels[project_id],
                                  "path": str(self.projects[project_id])}
+            result["screening"] = screen_failure(result)
             return result
         if operation == "state":
             recent = []

@@ -258,6 +258,45 @@ async function diagnose(page, error=output()) {
       Object.defineProperty(navigator,'clipboard',{value:{writeText:async text => {window.__failureCopies.push(text);}},configurable:true});
     });
   });
+  await scenario('possible credentials warn with masked previews before sharing and leave exact copied data unchanged', async page => {
+    const token = 'gh' + 'p_' + 'A1b2'.repeat(9);
+    const error = output().replace("invalid literal for int() with base 10: 'many'",'synthetic credential ' + token);
+    const command = 'python parse.py --synthetic-token ' + token;
+    await page.locator('#failure-command').fill(command);
+    await diagnose(page,error);
+    const warning = page.locator('#failure-credential-warning');
+    assert.equal(await warning.isVisible(),true);
+    assert.equal(await warning.getAttribute('role'),'alert');
+    const warningText = await warning.innerText();
+    assert.match(warningText,/Possible credentials/);
+    assert.match(warningText,/GitHub token/);
+    assert.ok(warningText.includes('ghp_…'));
+    assert.equal(warningText.includes(token),false);
+    assert.equal(await warning.evaluate(el => !!(el.compareDocumentPosition(document.querySelector('#copy-failure-brief')) & Node.DOCUMENT_POSITION_FOLLOWING)),true);
+    assert.equal(await page.locator('#copy-failure-brief').isEnabled(),true);
+    await page.locator('#copy-failure-brief').click();
+    await page.waitForFunction(() => window.__failureCopies.length === 1);
+    const copied = await page.evaluate(() => window.__failureCopies[0]);
+    assert.ok(copied.includes(error));
+    assert.ok(copied.includes(command));
+    assert.equal(copied.includes('Possible credentials'),false);
+    assert.equal(copied.includes('ghp_…'),false);
+    await page.getByText('Original error & report',{exact:true}).click();
+    const downloading = page.waitForEvent('download');
+    await page.locator('#download-failure-text').click();
+    const download = await downloading;
+    const saved = await fs.readFile(await download.path(),'utf8');
+    assert.ok(saved.includes(error));
+    assert.equal(saved.includes('Possible credentials'),false);
+    await page.locator('#failure-output').fill(output());
+    assert.equal(await warning.isVisible(),false);
+    assert.equal(await warning.textContent(),'');
+  }, async page => {
+    await page.addInitScript(() => {
+      window.__failureCopies = [];
+      Object.defineProperty(navigator,'clipboard',{value:{writeText:async text => {window.__failureCopies.push(text);}},configurable:true});
+    });
+  });
   await scenario('a denied clipboard leaves a selectable debugging brief without losing the error', async page => {
     await diagnose(page);
     await page.locator('#copy-failure-brief').click();

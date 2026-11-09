@@ -19,6 +19,15 @@
     el('failure-notice').hidden = !text;
   }
   const currentReport = () => report && reportRevision === inputRevision;
+  function credentialWarning(findings) {
+    const items = Array.isArray(findings) ? findings.filter(item => item && typeof item.kind === 'string' && typeof item.where === 'string' && typeof item.preview === 'string').slice(0, 20) : [];
+    const warning = items.length ? [
+      `Possible credentials in what this debugging brief would share (${items.length} found). Exact text is unchanged; remove or rotate before sharing if they are real:`,
+      ...items.map(item => `- ${item.kind} in ${item.where}${typeof item.path === 'string' && item.path ? ' ' + item.path : ''}${Number.isInteger(item.line) ? ' line ' + item.line : ''}: ${item.preview}`)
+    ].join('\n') : '';
+    el('failure-credential-warning').textContent = warning;
+    el('failure-credential-warning').hidden = !warning;
+  }
   function reportControls() {
     for (const id of ['copy-failure-brief', 'download-failure-text', 'download-failure-json']) el(id).disabled = !currentReport();
   }
@@ -29,6 +38,7 @@
     el('failure-copy-text').value = '';
     el('failure-copy-review').open = false;
     el('failure-copy-review').hidden = true;
+    credentialWarning([]);
     if (report) {
       el('failure-stale').hidden = false;
       el('failure-result').classList.add('is-outdated');
@@ -229,6 +239,7 @@
       el('failure-limits').append(list);
     }
     el('failure-result').hidden = false;
+    credentialWarning(value.screening);
     el('failure-copy-text').value = debuggingBrief(report);
     el('failure-copy-review').hidden = false;
     el('failure-copy-review').open = false;
@@ -260,6 +271,7 @@
     el('failure-copy-status').textContent = '';
     el('failure-copy-text').value = '';
     el('failure-copy-review').hidden = true;
+    credentialWarning([]);
     reportControls();
     el('failure-result').hidden = true;
     el('failure-progress').textContent = 'Matching the error to your current source…';
