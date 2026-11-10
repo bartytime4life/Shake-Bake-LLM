@@ -372,8 +372,15 @@
       if (document.activeElement === el('diagnose-run') || document.activeElement === document.body) el('failure-result-title').focus();
     } catch (error) {
       if (requestRevision === inputRevision) {
-        notice(`Could not check this error. ${error.message} Your pasted output is still here.`);
+        const folderRecovery = {
+          working_directory_outside_project: 'That working folder is outside the connected project. Choose a folder inside this project, or clear the field to use the connected project folder.',
+          working_directory_not_allowed: 'That working folder cannot be used. Choose a folder inside the connected project without parent-folder steps (..) or symbolic links, or clear the field to use the connected project folder.',
+          working_directory_unavailable: 'That working folder could not be opened. Check that it exists and is a readable folder inside the connected project, or clear the field to use the connected project folder.',
+          invalid_failure_working_directory: 'The working-folder text could not be used. Enter a plain folder path of up to 4 KiB, or clear the field to use the connected project folder.'
+        }[error.code];
+        notice(folderRecovery ? `${folderRecovery} Your error, command and folder text are unchanged.` : `Could not check this error. ${error.message} Your pasted output is still here.`);
         el('failure-progress').textContent = 'Source check did not complete.';
+        if (folderRecovery) el('failure-working-directory').focus();
       } else {
         el('failure-progress').textContent = 'Your inputs changed during the check. Find failing source again to check the current error and project.';
       }

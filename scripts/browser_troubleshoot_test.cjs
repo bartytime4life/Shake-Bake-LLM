@@ -254,6 +254,38 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#failure-original').textContent(),error);
     assert.match(await page.locator('#failure-result-title').innerText(),/pasted statement differs/);
   });
+  await scenario('refused working folders explain how to recover and preserve exact inputs', async page => {
+    const error = '\ufeff' + output().replace(/\n/g,'\r\n');
+    const command = 'python parse.py --keep-this-command';
+    await page.locator('#failure-file').setInputFiles({name:'preserved-error.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
+    await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded preserved-error.log'));
+    await page.locator('#failure-command').fill(command);
+    for (const [directory,recovery] of [
+      [os.tmpdir(),/outside the connected project/],
+      ['../',/without parent-folder steps/],
+      ['missing-synthetic-folder',/Check that it exists and is a readable folder/]
+    ]) {
+      await page.locator('#failure-working-directory').fill(directory);
+      await page.locator('#diagnose-run').click();
+      await page.locator('#failure-notice').waitFor({state:'visible'});
+      const message = await page.locator('#failure-notice').innerText();
+      assert.match(message,recovery);
+      assert.match(message,/clear the field to use the connected project folder/);
+      assert.doesNotMatch(message,/working_directory_|invalid_failure_/);
+      assert.equal(await page.locator('#failure-working-directory').inputValue(),directory);
+      assert.equal(await page.locator('#failure-command').inputValue(),command);
+      assert.equal(await page.locator('#failure-output').inputValue(),error.replace(/\r\n/g,'\n'));
+      assert.equal(await page.evaluate(() => document.activeElement.id),'failure-working-directory');
+      assert.equal(await page.locator('#failure-result').isVisible(),false);
+    }
+    await page.locator('#failure-working-directory').fill('');
+    await page.locator('#diagnose-run').click();
+    await page.locator('#failure-result').waitFor({state:'visible'});
+    assert.match(await page.locator('#failure-result-title').innerText(),/Source located — check this line/);
+    assert.equal(await page.locator('#failure-original').textContent(),error);
+    assert.equal(await page.locator('#failure-command').inputValue(),command);
+    assert.equal(await page.locator('#failure-notice').isVisible(),false);
+  });
   await scenario('editing a loaded error replaces its preserved file copy with the edited text', async page => {
     const loaded = output().replace(/\n/g,'\r\n');
     await page.locator('#failure-file').setInputFiles({name:'edit-me.log',mimeType:'text/plain',buffer:Buffer.from(loaded,'utf8')});
