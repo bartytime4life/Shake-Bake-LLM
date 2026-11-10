@@ -79,7 +79,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   try{
     if(setup)await setup(h);
     await page.goto(baseURL);await page.locator('#choose-source-brief').click();
-    if(waitForStartup)await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.')||!document.querySelector('#notice').hidden);
+    if(waitForStartup)await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('v0.')||!document.querySelector('#notice').hidden||!document.querySelector('#session-notice').hidden);
     await run(h);assert.deepEqual(errors,[]);passed++;console.log('PASS '+label);
   }finally{
     h.releases.forEach(wait=>wait.resolve());
@@ -481,7 +481,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   await scenario('stalled initial state times out and can retry without reloading',async h=>{
     await h.stateSeen.promise;await h.page.clock.fastForward(16000);
     await h.page.waitForFunction(()=>!document.querySelector('#retry-connection').hidden);
-    assert.match(await h.page.locator('#notice').innerText(),/timed out/);
+    assert.match(await h.page.locator('#session-notice').innerText(),/timed out/);
     h.stateWait=null;await h.page.locator('#retry-connection').click();
     await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
     assert.equal(h.tasks,0);
@@ -602,7 +602,7 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
   });
   await scenario('initial non-JSON outage has an actionable retry',async h=>{
     assert.equal(await h.page.locator('#prepare').isDisabled(),true);
-    assert.match(await h.page.locator('#notice').innerText(),/HTTP 503/);
+    assert.match(await h.page.locator('#session-notice').innerText(),/HTTP 503/);
     h.failState=false;await h.page.locator('#retry-connection').click();
     await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
   },{startupFailure:true});

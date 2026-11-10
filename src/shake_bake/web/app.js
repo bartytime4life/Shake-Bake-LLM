@@ -18,6 +18,8 @@ async function writeClipboard(text, owner){
   finally{clipboardWriteOwner=null;clipboardChanged();}
 }
 let settingsPending = false, connected = null, stateRevision = 0, pinRevision = 0;
+let sessionGeneration = 0;
+let sessionRenewalRequired = false;
 let draftInitialized = false, draftProjectId = '';
 let sourceProjectSelectionRevision = 0;
 const DRAFT_KEY = 'sb-workbench-draft', DRAFT_SAVING_KEY = 'sb-workbench-save-draft';
@@ -25,6 +27,7 @@ let draftSaving = true, draftSavingPendingOff = false, draftPrivacyError = '';
 let focusPreparedBrief = false;
 const draftTouched = new Set(), taskKinds = ['code','troubleshoot','documents','search'];
 function message(text, error = false) { $('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text; }
+function connectionMessage(text,error=false){$('session-notice').textContent=text;$('session-notice').classList.toggle('error',error);$('session-notice').hidden=!text;}
 const preview = window.__SB_RECORDED_PREVIEW__ || null;
 const fileLaunch = !preview && window.location?.protocol==='file:';
 let nativeState = null, readinessRunning = false;
@@ -135,6 +138,38 @@ async function api(path, body) {
     return {models:data.models.map(m=>({model:m.name,digest:m.digest,quantization:'installed artifact'}))};
   }
   return data;
+}
+// Renew only the browser session cookie. This is an explicit owner's Retry,
+// never an API write replay; reading this page does not execute its scripts.
+async function renewBrowserSession(){
+  const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
+  let response,reader;
+  try{
+    response=await fetch('/',{credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal});
+    if(!response.ok||!/^text\/html(?:\s*;|$)/i.test(response.headers.get('Content-Type')||''))throw new Error('Unexpected local page');
+    reader=response.body.getReader();
+    const decoder=new TextDecoder('utf-8',{fatal:true});let text='',bytes=0;
+    while(true){
+      const chunk=await reader.read();if(chunk.done)break;
+      bytes+=chunk.value.byteLength;if(bytes>131072)throw new Error('Local page exceeds the session renewal limit');
+      text+=decoder.decode(chunk.value,{stream:true});
+    }
+    text+=decoder.decode();
+    if(!/id=["']workbench-shell["']/.test(text)||!/<script\b[^>]*\bsrc=["'](?:\/)?app\.js["']/.test(text))throw new Error('Unexpected local page');
+  }catch{
+    const error=new Error(controller.signal.aborted?'The local session renewal timed out.':'The local app page could not be verified for session renewal.');
+    error.code=controller.signal.aborted?'session_renewal_timeout':'session_renewal_unavailable';throw error;
+  }finally{
+    try{if(reader)await reader.cancel();else await response?.body?.cancel();}catch{}
+    clearTimeout(deadline);
+  }
+}
+function invalidateSessionOperations(){
+  sessionGeneration++;pinRevision++;polling=false;inventoryLoading=false;readinessRunning=false;
+  if(active?.pending){active=null;focusPreparedBrief=false;}
+  resetModelCheck();facts('computer-facts',[['Current check','Not checked in this session']]);
+  for(const option of $('model').options)option.dataset.availability='unknown';
+  $('readiness-status').textContent='Local session changed. Check computer or model metadata again if needed.';
 }
 function renderCatalog() {
   const box=$('catalog');box.replaceChildren();
@@ -370,6 +405,8 @@ async function refreshState(initial=false){
   try{next=await api('/api/state');}
   catch(error){if(revision!==stateRevision||settingsPending)return;throw error;}
   if(revision!==stateRevision||settingsPending)return;
+  const sessionChanged=!!csrf&&csrf!==next.csrf,previousVersion=state?.version;
+  if(sessionChanged)invalidateSessionOperations();
   state=next;nativeState=next.native;csrf=next.csrf;connected=true;
   $('version').textContent=`v${state.version} · ${state.shared_native?'Shared coordinator':'Local session'}`;
   $('connection-status').textContent='Connected locally';
@@ -387,19 +424,33 @@ async function refreshState(initial=false){
   }
   if(!initial){
     $('local-ai').checked=!state.local_ai_paused;
-    for(const project of nativeState.projects)if(![...$('project').options].some(option=>option.value===project.id))$('project').append(new Option(project.label||project.id,project.id));
+    const selected=$('project').value;
+    const entries=nativeState.projects.map(project=>[project.id,project.id==='starter-demo'?'Synthetic demo':project.label||project.id]);
+    const shown=[...$('project').options].filter(option=>option.value).map(option=>[option.value,option.textContent]);
+    if(JSON.stringify(entries)!==JSON.stringify(shown)){
+      $('project').replaceChildren(...entries.map(([id,label])=>new Option(label,id)));
+      if(state.projects.includes(selected))$('project').value=selected;
+      else{
+        const choose=new Option('Choose a project for this draft','');choose.disabled=true;$('project').prepend(choose);$('project').value='';
+        if(selected)sourceProjectSelectionRevision++;
+      }
+      draftContext();
+    }
   }
   renderHistory(state.recent);modelView();controls();
   if(window.dispatchEvent&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('sb-workbench-state',{detail:state}));
+  if(sessionChanged)connectionMessage(reconnectionMessage({versionChanged:!!previousVersion&&previousVersion!==state.version,previousVersion}));
 }
 async function poll(){
-  if(polling||!active?.job_id)return;polling=true;
-  try {const job=await api('/api/result',{project_id:active.project_id,job_id:active.job_id});if(job.status!=='running'){
+  if(polling||sessionRenewalRequired||!active?.job_id)return;polling=true;
+  const generation=sessionGeneration,observedActive=active;let completed=false;
+  const current=()=>generation===sessionGeneration&&(active===observedActive||(completed&&active===null));
+  try {const job=await api('/api/result',{project_id:observedActive.project_id,job_id:observedActive.job_id});if(!current())return;if(job.status!=='running'){
     const focusResult=focusPreparedBrief;focusPreparedBrief=false;
-    active=null;++pinRevision;if(job.packet){pinned=job;renderBrief(false);message('');$('result-status').textContent=job.status==='incomplete'?'Brief incomplete. Review the gaps below.':'Your brief is ready. Review it and copy it below.';if(focusResult&&(document.activeElement===$('prepare')||document.activeElement===document.body))$('brief-title').focus();}else{if(pinned)renderBrief(true);message(`${job.status==='cancelled'?'Preparation stopped.':'Preparation failed.'} ${job.error?.message||'No new completed brief is available.'}`,true);}await refreshState();
-  }}catch(error){connectionFailed();if(error.code==='unknown_or_expired_task'){active=null;if(pinned)renderBrief(true);message('This task has expired from the local session. Your pinned brief remains available; prepare a new task for fresh evidence.',true);}else message(`Connection interrupted. ${error.message} Job status is unknown until reconnected.`,true);}finally{polling=false;controls();}
+    completed=true;active=null;++pinRevision;if(job.packet){pinned=job;renderBrief(false);message('');$('result-status').textContent=job.status==='incomplete'?'Brief incomplete. Review the gaps below.':'Your brief is ready. Review it and copy it below.';if(focusResult&&(document.activeElement===$('prepare')||document.activeElement===document.body))$('brief-title').focus();}else{if(pinned)renderBrief(true);message(`${job.status==='cancelled'?'Preparation stopped.':'Preparation failed.'} ${job.error?.message||'No new completed brief is available.'}`,true);}await refreshState();
+  }}catch(error){if(!current())return;if(error.code==='unknown_or_expired_task'){active=null;if(pinned)renderBrief(true);message('This task has expired from the local session. Your pinned brief remains available; prepare a new task for fresh evidence.',true);return 'expired';}else{connectionFailed();message(`Connection interrupted. ${error.message} Job status is unknown until reconnected.`,true);}}finally{if(generation===sessionGeneration)polling=false;controls();}
 }
-$('task-form').addEventListener('submit',async(event)=>{event.preventDefault();if(active||settingsPending||!connected||!state||preview)return;try{
+$('task-form').addEventListener('submit',async(event)=>{event.preventDefault();if(active||settingsPending||!connected||!state||preview)return;const generation=sessionGeneration;try{
   if(!validDraftProject()||!taskKinds.includes(taskKind())){draftContext();throw new Error('Choose an approved project and task type for this draft.');}
   if(!$('request').value.trim())throw new Error('Describe the task first.');
   if(mode()==='trial'&&!state.allow_candidate_trials){revealModelOptions();throw new Error('Candidate trials are unavailable in this session. Choose Best tested, or turn Local AI off in Options.');}
@@ -409,8 +460,9 @@ $('task-form').addEventListener('submit',async(event)=>{event.preventDefault();i
   // submit action, but revoke focus recovery if they move on to another control.
   focusPreparedBrief=document.activeElement===$('prepare');
   const params={...preferences(),request:$('request').value};++pinRevision;++stateRevision;active={pending:true};controls();if(pinned)renderBrief(true);message('');
-  const job=await api('/api/start',params);active=job;await savePreferences();await poll();
+  const job=await api('/api/start',params);if(generation!==sessionGeneration)return;active=job;await savePreferences();await poll();
 }catch(error){
+  if(generation!==sessionGeneration)return;
   active=null;focusPreparedBrief=false;
   if(error.uncertain){
     connectionFailed();message(`Preparation start was not confirmed. ${error.message} Checking the local session…`,true);
@@ -483,11 +535,13 @@ $('refresh-models').addEventListener('click',async()=>{
   if(settingsPending||preview)return;
   if(!$('local-ai').checked){message('Local AI is off. No inventory request was made.');return;}
   // Revoke before awaiting inventory: it may reveal replacement/removal or fail entirely.
+  const generation=sessionGeneration;
   inventoryLoading=true;resetModelCheck();$('trial-ack').checked=false;
   $('readiness-status').textContent='Refreshing inventory. Previous model metadata cleared; check the selected model again afterward.';
   $('refresh-models').disabled=true;readinessControls();
   try{
     const result=await api('/api/models',{});
+    if(generation!==sessionGeneration)return;
     // Respect a choice made while the inventory request was pending.
     const selected=selectedModel();models=result.models;
     $('model').replaceChildren(new Option(models.length?'Choose a local candidate':'No local models installed',''));
@@ -506,11 +560,12 @@ $('refresh-models').addEventListener('click',async()=>{
     $('readiness-status').textContent='Inventory refreshed. Previous model metadata cleared; check the selected model again.';
     message(models.length?`${models.length} installed local candidate${models.length===1?'':'s'} found. No model was loaded or downloaded.`:'No installed local candidates found. Exact evidence preparation remains available.');
   }catch(error){
+    if(generation!==sessionGeneration)return;
     for(const option of $('model').options)option.dataset.availability='unknown';
     $('readiness-status').textContent='Inventory unavailable. Previous model metadata cleared; refresh or check the selected model again.';
     revealModelOptions();
     message(error.message,true);
-  }finally{inventoryLoading=false;modelView();controls();}
+  }finally{if(generation===sessionGeneration)inventoryLoading=false;modelView();controls();}
 });
 // A textarea normalizes raw CR/CRLF. Encode the request as a JSON string so both
 // copy paths retain its original value, including whitespace and line endings.
@@ -769,18 +824,46 @@ $('download').addEventListener('click',()=>{if(!pinned?.packet)return;const blob
 function showWorkspace(){$('recent-section').hidden=true;$('history-nav').setAttribute('aria-expanded','false');}
 $('history-nav').addEventListener('click',()=>{const open=$('recent-section').hidden;$('recent-section').hidden=!open;$('history-nav').setAttribute('aria-expanded',String(open));});
 $('workspace-nav').addEventListener('click',()=>{showWorkspace();$('request').focus();});
-function connectionFailed(){connected=false;$('connection-status').textContent='Local session unavailable — retry or reload this page.';controls();}
-function syncSession(announce=true){
+function connectionFailed(){connected=false;$('connection-status').textContent='Local session unavailable — retry the connection.';connectionMessage('The local session is unavailable. Your open-tab inputs and captures remain here. Check that the workbench is running, then select Retry connection.',true);controls();if(window.dispatchEvent&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('sb-workbench-state',{detail:state}));}
+function syncSession(announce=true,{renewExpiredSession=false}={}){
   if(settingsPending)return Promise.resolve();
   if(sessionSync)return sessionSync;
-  const wasConnected=connected;
+  if(sessionRenewalRequired&&!renewExpiredSession)return Promise.resolve();
+  const wasConnected=connected,previousVersion=state?.version;
   sessionSync=(async()=>{
-    try{await refreshState(!state);if(!active&&state?.active){active=state.active;controls();}if(active?.job_id)await poll();if(announce&&!wasConnected&&connected)message('Local session reconnected. Your task draft and pinned brief are unchanged.');}
-    catch{connectionFailed();}
+    let renewed=false,renewalAttempted=false;
+    try{
+      try{
+        if(sessionRenewalRequired){const expired=new Error('Session expired');expired.code='session_required';throw expired;}
+        await refreshState(!state);
+      }
+      catch(error){
+        if(error.code==='session_required')sessionRenewalRequired=true;
+        if(!renewExpiredSession||error.code!=='session_required')throw error;
+        renewalAttempted=true;
+        // Responses from the expired session cannot replace a retained capture
+        // or describe current jobs/model metadata after this renewal attempt.
+        invalidateSessionOperations();
+        await renewBrowserSession();renewed=true;await refreshState(!state);sessionRenewalRequired=false;
+      }
+      if(!active&&state?.active){active=state.active;controls();}
+      const expiredTask=active?.job_id&&await poll()==='expired';
+      const versionChanged=!!previousVersion&&previousVersion!==state?.version;
+      const result={renewed,expiredTask,versionChanged,previousVersion};
+      if(announce&&!wasConnected&&connected)connectionMessage(reconnectionMessage(result));
+      return result;
+    }catch(error){connectionFailed();return {failure:error,renewalAttempted};}
   })().finally(()=>{sessionSync=null;controls();});
   controls();return sessionSync;
 }
-$('retry-connection').addEventListener('click',async()=>{await syncSession();if(connected)message('Local session reconnected. Your task draft and pinned brief are unchanged.');else message('The local session is still unavailable. Check the workbench is running. If it restarted, save any pinned brief, then reload this page.',true);});
+function reconnectionMessage(result={}){
+  return `Local session reconnected. Your open-tab inputs and captured briefs are retained.${result.expiredTask?' The earlier preparation is no longer in this session; no task was replayed.':''}${result.versionChanged?` The service version changed from ${result.previousVersion} to ${state.version}; this page and its older captures were not refreshed.`:''}`;
+}
+$('retry-connection').addEventListener('click',async()=>{
+  const result=await syncSession(true,{renewExpiredSession:true});
+  if(connected)connectionMessage(reconnectionMessage(result));
+  else connectionMessage(`${result?.renewalAttempted?`${['session_renewal_timeout','session_renewal_unavailable','request_timeout','connection_unavailable','unreadable_response'].includes(result.failure?.code)?result.failure.message:'The renewed local state could not be read.'} `:''}The local session is still unavailable. Check that the workbench is running, then retry. Your open-tab inputs and captures remain here. Save any captured report before reloading this page.`,true);
+});
 async function initialize(){
   initializeDraftPrivacy();
   clearInterval(timer);clearInterval(serviceTimer);controls();
@@ -791,7 +874,7 @@ async function initialize(){
   }
   restoreBriefStyle();
   try{await refreshState(true);if(preview){pinned=viewJob(preview.result);renderBrief(false);message('Recorded inert demo. New tasks require the local app.');}}
-  catch(error){message(error.message,true);connectionFailed();}
+  catch(error){connectionFailed();connectionMessage(error.message,true);}
   if(!preview){timer=setInterval(()=>{if(active?.job_id)poll();},600);serviceTimer=setInterval(()=>{if(!active||!connected)syncSession();},3000);}
 };
 function getSourceSelection(){return {id:$('project').value,revision:sourceProjectSelectionRevision};}
@@ -799,7 +882,7 @@ function selectConnectedSourceProject(id, expectedSelection){
   if(!state?.projects.includes(id)||!expectedSelection||$('project').value!==expectedSelection.id||sourceProjectSelectionRevision!==expectedSelection.revision)return false;
   $('project').value=id;sourceProjectSelectionRevision++;draftTouched.add('project');draftContext();void savePreferences();controls();return true;
 }
-window.sbWorkbench={api,syncSession,getState:()=>state,isPreview:()=>!!preview||fileLaunch,getSourceSelection,selectSourceProject:selectConnectedSourceProject,clipboardOwner,writeClipboard};initialize();
+window.sbWorkbench={api,syncSession,connectionFailed,getSessionGeneration:()=>sessionGeneration,isConnected:()=>connected===true,getState:()=>state,isPreview:()=>!!preview||fileLaunch,getSourceSelection,selectSourceProject:selectConnectedSourceProject,clipboardOwner,writeClipboard};initialize();
 
 function memoryText(value){return typeof value==='number'?`${(value/1073741824).toFixed(1)} GiB`:'Not detected';}
 function facts(id,entries){const list=$(id);list.replaceChildren();for(const [name,value]of entries){const term=document.createElement('dt'),detail=document.createElement('dd');term.textContent=name;detail.textContent=value;list.append(term,detail);}}
@@ -810,15 +893,17 @@ function readinessControls(){
 function resetModelCheck(){modelCheckRevision++;facts('model-facts',[['Model','No check for this selection']]);$('readiness-status').textContent='Selection changed. Check this model again before relying on its metadata.';}
 $('check-computer').addEventListener('click',async()=>{
   if(readinessRunning)return;readinessRunning=true;readinessControls();$('readiness-status').textContent='Reading local capability metadata…';
-  try{const r=await api('/api/computer',{});facts('computer-facts',[
+  const generation=sessionGeneration;
+  try{const r=await api('/api/computer',{});if(generation!==sessionGeneration)return;facts('computer-facts',[
     ['System',r.system+' · '+r.machine],['CPU',r.cpu_model||'Not detected'],['Available CPU threads',String(r.available_logical_cpus??'Not detected')],
     ['Physical RAM',memoryText(r.physical_ram_bytes)],['Available memory now',memoryText(r.available_memory_bytes)],['Observed container limit',memoryText(r.container_memory_limit_bytes)],
     ['GPU / VRAM',r.gpus.length?r.gpus.map(g=>`${g.vendor} ${g.device_id} · ${g.driver||'driver unknown'} · ${memoryText(g.vram_total_bytes)}`).join('; '):'Not detected; CPU-only hardware is not established'],
     ['Observed',new Date(r.observed_at).toLocaleString()],['Model fit / peak memory','Not measured']]);$('readiness-status').textContent='Computer metadata checked without contacting Ollama. Memory is a point-in-time estimate for this process environment.';
-  }catch(error){facts('computer-facts',[['Current check','Unavailable']]);$('readiness-status').textContent=error.message;revealModelOptions();$('readiness-details').open=true;}finally{readinessRunning=false;readinessControls();}
+  }catch(error){if(generation!==sessionGeneration)return;facts('computer-facts',[['Current check','Unavailable']]);$('readiness-status').textContent=error.message;revealModelOptions();$('readiness-details').open=true;}finally{if(generation===sessionGeneration)readinessRunning=false;readinessControls();}
 });
 $('check-model').addEventListener('click',async()=>{
   if(readinessRunning||inventoryLoading||settingsPending||!connected||preview)return;modelView();const selection=selectedModel(),key=JSON.stringify(selection),revision=modelCheckRevision;if(!selection.model||!$('local-ai').checked)return;
+  const generation=sessionGeneration;
   readinessRunning=true;readinessControls();facts('model-facts',[['Current check','Checking selected model…']]);$('readiness-status').textContent='Checking the pinned digest, runtime and model metadata. No source or generation is sent.';
   const current=()=>revision===modelCheckRevision&&key===JSON.stringify(selectedModel())&&$('local-ai').checked&&!inventoryLoading;
   try{const r=await api('/api/model-check',selection);if(!current())return;
@@ -828,5 +913,5 @@ $('check-model').addEventListener('click',async()=>{
       ['Requested preparation',`${r.requested_configuration.options.num_ctx.toLocaleString()} context / ${r.requested_configuration.options.num_predict} output tokens · thinking off · ${r.requested_configuration.deadline_seconds}s deadline`],
       ['Local task accuracy','Unqualified; readiness is not an accuracy trial'],['Checked',new Date(r.observed_at).toLocaleString()]]);
     $('readiness-status').textContent='Reported model identity and runtime stayed stable during this check. Actual memory fit and task accuracy remain unmeasured.';
-  }catch(error){if(current()){facts('model-facts',[['Current check','Unavailable or identity changed']]);$('readiness-status').textContent=error.message;revealModelOptions();$('readiness-details').open=true;}}finally{readinessRunning=false;readinessControls();}
+  }catch(error){if(current()){facts('model-facts',[['Current check','Unavailable or identity changed']]);$('readiness-status').textContent=error.message;revealModelOptions();$('readiness-details').open=true;}}finally{if(generation===sessionGeneration)readinessRunning=false;readinessControls();}
 });
