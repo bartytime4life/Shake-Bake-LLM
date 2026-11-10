@@ -20,3 +20,4 @@
 .credential-warning{white-space:pre-wrap;overflow-wrap:anywhere}
 
 .error-input-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:10px}.error-input-heading .request-label{margin:0}.error-input-heading .compact{font-size:.74rem;min-height:34px}#failure-file-status{margin:0 0 10px;overflow-wrap:anywhere}#failure-file-status:empty{display:none}.workflow-choices+.connect-project{padding-top:0;border-top:0;margin-bottom:20px}
+label[for=failure-working-directory]{display:block;font-size:.79rem;margin:0 0 8px}#failure-working-directory-help{font-size:.7rem;margin:9px 0 23px}#failure-captured-working-directory{overflow-wrap:anywhere;margin:0 0 7px}

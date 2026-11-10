@@ -91,6 +91,37 @@ class FailureWorkflowTests(unittest.TestCase):
                 "label": "Denied", "path": str(self.root)}, "projects": ("starter-demo",)})
         self.assertEqual(self.client.controller.projects, before)
 
+    def test_explicit_nested_working_folder_passes_through_owner_http_and_child(self):
+        project = self.connect()
+        nested = self.root / "services" / "api workspace"
+        nested.mkdir(parents=True)
+        nested_source = 'def count(value):\n    return int(value) + 100\n'
+        (nested / "parse.py").write_text(nested_source)
+        output = ('Traceback (most recent call last):\n  File "parse.py", line 2, in count\n'
+                  '    return int(value) + 100\nValueError: bad value\n')
+        status, _, raw = self.client.request("POST", "/api/troubleshoot", {
+            "project_id": project, "error_output": output, "command": "python parse.py",
+            "working_directory": "./services/api workspace"})
+        self.assertEqual(status, 200, raw)
+        report = json.loads(raw)
+        self.assertEqual(report["working_directory"], "./services/api workspace")
+        self.assertEqual(report["working_directory_path"], "services/api workspace")
+        self.assertEqual(report["frames"][0]["reported_path"], "parse.py")
+        self.assertEqual(report["frames"][0]["source_comparison"], "match")
+        self.assertEqual(report["evidence"][0]["path"], "services/api workspace/parse.py")
+        self.assertEqual(report["evidence"][0]["text"], nested_source)
+        self.assertEqual(report["error_output"], output)
+
+    def test_working_folder_cannot_expand_the_connected_root_or_override_policy(self):
+        project = self.connect()
+        for directory in (str(self.root.parent), "../outside", ".git", 12):
+            with self.subTest(directory=directory):
+                status, _, raw = self.client.request("POST", "/api/troubleshoot", {
+                    "project_id": project, "error_output": "ValueError: bad", "command": "",
+                    "working_directory": directory})
+                self.assertEqual(status, 400, raw)
+                self.assertTrue(json.loads(raw)["error"].startswith(("working_directory_", "invalid_failure_working_directory")))
+
     def test_new_source_cannot_contain_private_service_settings(self):
         protected = self.root / "private-settings"
         self.client.controller._protected_paths.append(protected)

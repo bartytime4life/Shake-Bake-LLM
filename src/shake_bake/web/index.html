@@ -69,6 +69,8 @@
             <div><label for="failure-project">Project containing the failing code</label><select id="failure-project" name="project_id" required aria-describedby="failure-project-help"><option value="">Connecting to local session…</option></select></div>
           </div>
           <p id="failure-project-help" class="small muted">Choose a connected project, or use Connect project folder above. Source is read only after you ask for a diagnosis.</p>
+          <label for="failure-working-directory">Folder where the command ran <span class="muted">(optional)</span></label><input id="failure-working-directory" name="working_directory" type="text" spellcheck="false" aria-describedby="failure-working-directory-help" placeholder="Connected project folder by default">
+          <p id="failure-working-directory-help" class="small muted">Leave blank for the connected project folder, or enter a subfolder such as services/api. An absolute folder must stay inside the connected project. This is not inferred from the command.</p>
           <p id="failure-example-notice" class="notice" hidden>Labelled synthetic example. This traceback is invented for the bundled demo; it is not a failure observed on your computer.</p>
           <div class="action-row"><button type="submit" id="diagnose-run" class="primary" disabled>Find failing source <span aria-hidden="true">→</span></button><span id="failure-progress" class="small muted" role="status" aria-live="polite"></span></div>
         </form>
@@ -78,13 +80,14 @@
           <p id="failure-stale" class="notice" role="status" hidden>Inputs changed. This result belongs to the captured project and error below. Find failing source again before copying or exporting.</p>
           <h2 id="failure-result-title" tabindex="-1"></h2>
           <p id="failure-captured-project" class="small muted"></p>
+          <p id="failure-captured-working-directory" class="small muted"></p>
           <p id="failure-format" class="small muted"></p>
           <p id="failure-exception" class="failure-exception"></p>
           <p id="failure-result-context" class="small muted"></p>
           <p id="failure-credential-warning" class="notice credential-warning" role="alert" hidden></p>
           <div class="failure-handoff"><button type="button" id="copy-failure-brief" class="primary" disabled>Copy debugging brief</button><p class="small muted">Take the original error and captured source into your existing AI chat to investigate the cause and a verifiable fix.</p></div>
           <p id="failure-copy-status" class="small" role="status" aria-live="polite"></p>
-          <details id="failure-copy-review" class="handoff-copy" hidden><summary>Review debugging brief or copy manually</summary><label for="failure-copy-text" class="sr-only">Captured debugging brief</label><textarea id="failure-copy-text" rows="12" readonly spellcheck="false"></textarea><p class="small muted">This includes the original error, recorded command, project folder and captured source. Review before sharing. Clipboard and chat clients can change line endings; the JSON report preserves exact contents.</p></details>
+          <details id="failure-copy-review" class="handoff-copy" hidden><summary>Review debugging brief or copy manually</summary><label for="failure-copy-text" class="sr-only">Captured debugging brief</label><textarea id="failure-copy-text" rows="12" readonly spellcheck="false"></textarea><p class="small muted">This includes the original error, recorded command, project folder, working folder and captured source. Review before sharing. Clipboard and chat clients can change line endings; the JSON report preserves exact contents.</p></details>
           <div id="failure-source"></div>
           <section class="failure-next" aria-labelledby="failure-next-heading"><h3 id="failure-next-heading">What to check next</h3><div id="failure-guidance"></div></section>
           <details id="failure-frames" class="technical"><summary>Error locations &amp; matching details</summary><ol id="failure-frame-list"></ol></details>

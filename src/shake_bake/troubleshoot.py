@@ -8,18 +8,23 @@ came from this checkout, interpreter or revision.
 from dataclasses import asdict
 import hashlib
 import json
+import errno
+import os
 from pathlib import Path, PurePosixPath
 import re
+import stat
 
 from .collector import _parts, _read
 from .contracts import Evidence, Refusal
 from .error_formats import parse_javascript, strip_terminal_controls
 from .pytest_formats import parse_pytest
 from .screening import screen_failure
+from .search import EXCLUDED_DIRS
 
 
 MAX_ERROR_BYTES = 65_536
 MAX_COMMAND_BYTES = 4_096
+MAX_WORKING_DIRECTORY_BYTES = 4_096
 MAX_EXCEPTION_MESSAGE_BYTES = 2_048
 MAX_FRAMES = 20
 MAX_EVIDENCE = 10
@@ -155,7 +160,56 @@ def _parse(error_output: str) -> tuple[list[dict], list[dict], list[dict], list[
     return frames, exceptions, relations, sorted(cutoffs), chain
 
 
-def _relative_path(root: Path, reported: str) -> str:
+def _working_directory(root: Path, supplied: str) -> str:
+    """Validate an explicitly selected directory without following symlinks."""
+    _input(supplied, MAX_WORKING_DIRECTORY_BYTES, "invalid_failure_working_directory")
+    if ".." in supplied.split("/"):
+        raise Refusal("working_directory_not_allowed")
+    path = PurePosixPath(supplied or ".")
+    if path.is_absolute():
+        try:
+            path = path.relative_to(PurePosixPath(root))
+        except ValueError:
+            raise Refusal("working_directory_outside_project") from None
+    relative = path.as_posix()
+    if relative == ".":
+        parts = ()
+    else:
+        try:
+            parts = _parts(relative)
+        except Refusal:
+            raise Refusal("working_directory_not_allowed") from None
+        if any(part in EXCLUDED_DIRS for part in parts):
+            raise Refusal("working_directory_not_allowed")
+    # Even '.' must be an actual approved directory. Never resolve() here:
+    # resolving would hide a symlink and turn it into permission to read files.
+    if os.name != "posix" or not hasattr(os, "O_NOFOLLOW") or os.open not in os.supports_dir_fd:
+        raise Refusal("unsupported_read_boundary")
+    descriptors = []
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    try:
+        if stat.S_ISLNK(os.stat(root, follow_symlinks=False).st_mode):
+            raise Refusal("working_directory_not_allowed")
+        parent = os.open(root, flags)
+        descriptors.append(parent)
+        for part in parts:
+            if stat.S_ISLNK(os.stat(part, dir_fd=parent, follow_symlinks=False).st_mode):
+                raise Refusal("working_directory_not_allowed")
+            parent = os.open(part, flags, dir_fd=parent)
+            descriptors.append(parent)
+    except OSError as error:
+        # O_NOFOLLOW still refuses a directory replaced after the stat check;
+        # no path resolution or symlink target read grants additional access.
+        code = ("working_directory_not_allowed" if error.errno == errno.ELOOP
+                else "working_directory_unavailable")
+        raise Refusal(code) from None
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+    return relative
+
+
+def _relative_path(root: Path, reported: str, working_directory_path: str = ".") -> str:
     # Reject traversal before PurePosixPath can normalize components. In
     # particular an absolute in-root prefix must not authorize ../outside.
     if ".." in reported.split("/"):
@@ -166,6 +220,8 @@ def _relative_path(root: Path, reported: str) -> str:
             path = path.relative_to(PurePosixPath(root))
         except ValueError:
             raise Refusal("outside_project") from None
+    elif working_directory_path != ".":
+        path = PurePosixPath(working_directory_path) / path
     relative = path.as_posix()
     _parts(relative)
     return relative
@@ -213,7 +269,7 @@ def _guidance(terminal: dict | None, primary: dict | None, frames: list[dict]) -
     elif kind == "FileNotFoundError":
         guidance.append({"title": "Check the missing path and working directory",
                          "detail": "The exception reports a missing path. Relative paths depend on the failed process's working directory; "
-                         "this report does not know that directory or prove that a file should be created."})
+                         "confirm that it matches the owner-selected directory used for source lookup. This report does not prove that a file should be created."})
     else:
         guidance.append({"title": "Use the exception with the captured source",
                          "detail": ("Read the final exception alongside the innermost project frame and its callers. "
@@ -252,7 +308,7 @@ def _javascript_guidance(format_name: str, terminal: dict | None,
     return guidance
 
 
-def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
+def locate_failure(root: Path, error_output: str, command: str = "", *, working_directory: str = "") -> dict:
     """Return a bounded current-source location report; make no model calls or writes."""
     _input(error_output, MAX_ERROR_BYTES, "invalid_error_output", required=True)
     _input(command, MAX_COMMAND_BYTES, "invalid_failure_command")
@@ -262,6 +318,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
         raise Refusal("invalid_project_root") from None
     if not root.is_absolute() or ".." in root.parts:
         raise Refusal("invalid_project_root")
+    working_directory_path = _working_directory(root, working_directory)
     pytest = parse_pytest(error_output)
     if pytest["format"]:
         # Decorated report boundaries take precedence over tracebacks that may
@@ -289,7 +346,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
             frame["status"] = frame["path_status"]
             continue
         try:
-            path = _relative_path(root, frame.get("lookup_path") or frame["reported_path"])
+            path = _relative_path(root, frame.get("lookup_path") or frame["reported_path"], working_directory_path)
             frame["path"] = path
             key = (path, frame["line"])
             if key not in selected and len(evidence) >= MAX_EVIDENCE:
@@ -381,6 +438,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
                                          for item in evidence], separators=(",", ":")).encode("utf-8")).hexdigest()
     report = {"schema_version": "0.1", "kind": "failure_source_report", "outcome": "ANSWER" if evidence else "ABSTAIN",
             "command": command, "error_output": error_output, "error_sha256": hashlib.sha256(error_output.encode("utf-8")).hexdigest(),
+            "working_directory": working_directory, "working_directory_path": working_directory_path,
             "supported_format": bool(frames or exceptions), "format": format_name, "source_located": bool(evidence), "frames": frames,
             "evidence": evidence, "exceptions": exceptions, "terminal_exception": terminal,
             "innermost_project_frame": primary["frame_id"] if primary else None, "chain_relations": relations,
@@ -391,6 +449,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
                             "A location or matching statement does not prove the failed run used this checkout or file version.",
                             "Generated files are read as reported; no source maps or path translations were inferred.",
                             "Only exact paths in the approved project are read; no basename guessing or external-file access.",
+                            "Relative source locations use only the explicitly selected working directory, defaulting to the approved project root; no directory was inferred from the command or log.",
                             "No tests, dependency checks, model calls, installation or source changes were performed."]}
     report["screening"] = screen_failure(report)
     if any(frame.get("location_kind") == "end_of_file" for frame in frames):
