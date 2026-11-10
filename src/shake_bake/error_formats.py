@@ -159,6 +159,18 @@ def _node_bindings(lines: list[str], exceptions: list[dict], cutoffs: set[str]) 
     active_is_aggregate = False
     scope = None
 
+    def unsupported_member():
+        # Node can reveal a member's object properties only after printing
+        # several stack frames. Keep those frames provisional until the member
+        # ends, so later nested structure cannot leave earlier reads approved.
+        if scope is not None:
+            for frame_index in scope["member_frames"]:
+                bindings[frame_index] = None
+                blocked_frames.add(frame_index)
+            scope["member_frames"].clear()
+            scope["blocked"] = True
+        cutoffs.add("node_aggregate_format_unsupported")
+
     def record(index, match, parent=None):
         if len(exceptions) >= MAX_FRAMES:
             cutoffs.add("exception_budget")
@@ -178,7 +190,7 @@ def _node_bindings(lines: list[str], exceptions: list[dict], cutoffs: set[str]) 
                                                 bracket["header"] if bracket else line)
         if root_match and (scope is None or not line.startswith(" ")):
             if scope is not None:
-                cutoffs.add("node_aggregate_format_unsupported")
+                unsupported_member()
                 scope = None
             active = record(index, root_match)
             active_is_aggregate = root_match["type"] == "AggregateError"
@@ -190,11 +202,11 @@ def _node_bindings(lines: list[str], exceptions: list[dict], cutoffs: set[str]) 
                 active_is_aggregate = False
                 continue
             if scope is not None:
-                scope["blocked"] = True
-                cutoffs.add("node_aggregate_format_unsupported")
+                unsupported_member()
             else:
                 valid = active_is_aggregate and property_match["body"] == "["
-                scope = {"indent": len(property_match["indent"]), "parent": active, "blocked": not valid}
+                scope = {"indent": len(property_match["indent"]), "parent": active,
+                         "blocked": not valid, "member_frames": []}
                 if not valid:
                     cutoffs.add("node_aggregate_format_unsupported")
             active = None
@@ -209,6 +221,7 @@ def _node_bindings(lines: list[str], exceptions: list[dict], cutoffs: set[str]) 
                 continue
             member = _NODE_EXCEPTION.fullmatch(line[member_indent:]) if indentation == member_indent else None
             if member and not scope["blocked"] and not line.endswith(" {"):
+                scope["member_frames"] = []
                 active = record(index, member, scope["parent"])
                 continue
             # The comma belongs to Node's inspect array, not the location.
@@ -216,26 +229,34 @@ def _node_bindings(lines: list[str], exceptions: list[dict], cutoffs: set[str]) 
             location = _v8_location(stack_line)
             if location is not None:
                 bindings[index] = active
+                if indentation < member_indent + 4:
+                    unsupported_member()
                 if scope["blocked"] or active is None or indentation < member_indent + 4:
                     blocked_frames.add(index)
                     bindings[index] = None
-                    if active is not None:
-                        cutoffs.add("node_aggregate_format_unsupported")
+                else:
+                    scope["member_frames"].append(index)
+                    if line.endswith(","):
+                        # The final stack frame's inspect-array comma closes
+                        # this member before the next (possibly unsupported)
+                        # value. Later primitive/property text cannot revoke a
+                        # completed sibling or inherit its error association.
+                        scope["member_frames"].clear()
+                        active = None
                 continue
             if not line.strip():
                 continue
             # Multiline messages, nested causes/aggregates, primitive members,
             # and unrecognized delimiters must not borrow the previous member.
-            scope["blocked"] = True
+            unsupported_member()
             active = None
-            cutoffs.add("node_aggregate_format_unsupported")
             continue
         # Node appends an inspect-object brace to its final outer stack line
         # when the error has [errors], [cause] or other displayed properties.
         if _v8_location(line.removesuffix(" {")) is not None:
             bindings[index] = active
     if scope is not None:
-        cutoffs.add("node_aggregate_format_unsupported")
+        unsupported_member()
     return headers, bindings, blocked_frames
 
 
