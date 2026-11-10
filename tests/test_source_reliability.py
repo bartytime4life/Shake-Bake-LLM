@@ -244,7 +244,7 @@ class WorkbenchRequestBudgetAcceptance(unittest.TestCase):
 
     def gui(self, method, path, body=None):
         connection = http.client.HTTPConnection("127.0.0.1", self.server.server_port, timeout=3)
-        headers = {"Cookie": "sb_session=" + self.server.session_token,
+        headers = {"Cookie": self.server.session_cookie_name + "=" + self.server.session_token,
                    "Origin": f"http://127.0.0.1:{self.server.server_port}",
                    "X-SB-CSRF": self.server.csrf_token, "Content-Type": "application/json"}
         try:

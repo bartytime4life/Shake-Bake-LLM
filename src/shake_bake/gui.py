@@ -207,7 +207,9 @@ class Controller:
             return {**descriptor, "project_id": name, "label": label, "read_only": True,
                     "persistent": False}
         if operation == "troubleshoot":
-            if (not isinstance(payload, dict) or set(payload) != {"project_id", "error_output", "command"}
+            if (not isinstance(payload, dict) or set(payload) not in (
+                    {"project_id", "error_output", "command"},
+                    {"project_id", "error_output", "command", "working_directory"})
                     or not isinstance(payload["project_id"], str) or payload["project_id"] not in self.projects):
                 raise Refusal("project_not_allowed")
             for identifier in self.records:
@@ -219,7 +221,8 @@ class Controller:
                         raise
             project_id = payload["project_id"]
             result = run_failure_location(self.projects[project_id], payload["error_output"],
-                                          payload["command"], scratch=self._session._scratch)
+                                          payload["command"], scratch=self._session._scratch,
+                                          working_directory=payload.get("working_directory", ""))
             result["project"] = {"id": project_id, "label": self.project_labels[project_id],
                                  "path": str(self.projects[project_id])}
             result["screening"] = screen_failure(result)
@@ -319,6 +322,10 @@ class WorkbenchServer(ThreadingHTTPServer):
         self.session_token = secrets.token_urlsafe(32)
         self.csrf_token = secrets.token_urlsafe(32)
         super().__init__(address, Handler)
+        # Browsers scope cookies by host and path, not port. Use the bound port
+        # (including an OS-selected port) so another local workbench cannot
+        # replace this instance's cookie when its page is opened.
+        self.session_cookie_name = f"sb_session_{self.server_port}"
         self.origins = {f"http://127.0.0.1:{self.server_port}", f"http://localhost:{self.server_port}"}
         self.hosts = {urlsplit(origin).netloc for origin in self.origins}
 
@@ -398,7 +405,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
         if cookie:
-            self.send_header("Set-Cookie", f"sb_session={self.server.session_token}; HttpOnly; SameSite=Strict; Path=/")
+            self.send_header("Set-Cookie", f"{self.server.session_cookie_name}={self.server.session_token}; HttpOnly; SameSite=Strict; Path=/")
         self.end_headers()
         try:
             self.wfile.write(raw)
@@ -413,7 +420,7 @@ class Handler(BaseHTTPRequestHandler):
             return False
         try:
             cookie = SimpleCookie(self.headers.get("Cookie", ""))
-            token = cookie.get("sb_session")
+            token = cookie.get(self.server.session_cookie_name)
             authenticated = token and secrets.compare_digest(token.value, self.server.session_token)
         except Exception:
             authenticated = False

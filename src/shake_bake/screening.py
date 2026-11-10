@@ -83,6 +83,7 @@ def _screen_failure_report(report) -> list[dict]:
             # a finding's location field. Its masked preview identifies it.
             add(where, None, None, project.get(key))
     add("recorded command", None, 1, report.get("command"))
+    add("recorded working folder", None, None, report.get("working_directory"))
     add("original error output", None, 1, report.get("error_output"))
     for number, record in enumerate(report.get("evidence") or [], 1):
         if len(findings) >= MAX_FINDINGS:

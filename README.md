@@ -2,7 +2,7 @@
 
 Check a failed run against the code on your computer, then take a precise debugging brief into your AI chat. The workbench reads approved source folders, preserves the original error and shows the exact lines it found. No model is needed for this workflow.
 
-**Development preview: `0.4.0.dev28`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
+**Development preview: `0.4.0.dev30`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
 
 ## Open the app
 
@@ -18,18 +18,22 @@ The launcher chooses a supported installed Python and opens `http://127.0.0.1:84
 
 1. Open **Connect project folder**, enter the absolute folder path containing the failing code, and select **Connect folder**. This approves read-only inspection for the running session.
 2. Paste the complete error output, or select **Load error file** for a saved UTF-8 `.txt` or `.log` up to 64 KiB. Optionally record the command that failed; it is never executed.
+   If the command ran in a subfolder, enter **Folder where the command ran**, for example `services/api`. Leave it blank to use the connected project root. This choice controls relative locations only and is never inferred from the command.
 3. Select **Find failing source**. Inspect the source, reported line and column, unmatched frames and suggested next checks.
 4. Select **Copy debugging brief** to take the captured error, project context and exact source into Claude or ChatGPT. If clipboard access fails, select and copy the provided text manually. Nothing is sent automatically.
 
 | Input | What the app checks |
 | --- | --- |
 | Python traceback | Exact file/line and whether the displayed statement matches current source. |
+| pytest failure report | Default/long and short decorated test locations, keeping each failure separate and ignoring captured test output. |
 | Node.js stack trace | Local V8 stack locations, starting with the first readable project frame. |
 | TypeScript compiler output | File, line, column and the corresponding compiler diagnostic. |
 
 ANSI terminal colors are ignored only while recognizing locations; the original output remains unchanged. Browser URLs, runtime internals, outside-project files and missing files remain explicit. Source maps and container-to-local path mapping are not inferred. An unsupported log produces an incomplete result.
 
 Changing the project, error or recorded command invalidates the previous result. A late response cannot silently replace the result for newer input. Pasted errors and commands are not stored as browser drafts or sent to a model.
+
+The recorded working folder is captured with the result and exports. It must remain inside the connected project; symlinks and parent traversal are refused. Changing it also makes the previous result outdated. Separate local previews now keep their browser sessions from replacing one another.
 
 Loading a file stays in the open tab until **Find failing source**. Original file text and line endings are preserved; editing the error uses the edited text instead. Invalid files leave the current error unchanged. **Connect project folder** is available from either workflow and keeps the other workflow's inputs unchanged.
 
