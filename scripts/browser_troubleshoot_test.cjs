@@ -12,6 +12,11 @@ const connectionFixtures = [];
 const source = '"""Synthetic failed-run source. Never imported by this test."""\n\ndef parse_count(value):\n    return int(value)\n';
 const output = (statement='return int(value)',filename=path.join(fixture,'parse.py')) =>
   `Traceback (most recent call last):\n  File "${filename}", line 4, in parse_count\n    ${statement}\nValueError: invalid literal for int() with base 10: 'many'\n`;
+const pytestSection = title => ` ${title} `.padStart(Math.floor((79 + title.length + 2) / 2),'=').padEnd(79,'=') + '\n';
+const pytestHeading = title => ` ${title} `.padStart(Math.floor((79 + title.length + 2) / 2),'_').padEnd(79,'_') + '\n';
+const pytestFailure = (filename=path.join(fixture,'parse.py'), short=false, message='invalid literal for int() with base 10: \'many\'') => short
+  ? `${filename}:4: in parse_count\n    return int(value)\nE   ValueError: ${message}\n`
+  : `    def parse_count(value):\n>       return int(value)\nE       ValueError: ${message}\n\n${filename}:4: ValueError\n`;
 async function scenario(label, run, setup, expectedTaskRequests = 0) {
   const context = await browser.newContext({reducedMotion:'reduce'}), page = await context.newPage();
   page.setDefaultTimeout(10000);
@@ -270,6 +275,75 @@ async function diagnose(page, error=output()) {
     assert.match(await page.locator('#failure-captured-project').innerText(),/Synthetic failure fixture/);
     assert.match(await page.locator('#failure-captured-project').innerText(),new RegExp(fixture));
     assert.equal(await page.locator('#failure-format').innerText(),'Python source check');
+  });
+  for (const short of [false,true]) {
+    await scenario(`${short ? 'short' : 'default'} decorated pytest output locates exact source and preserves the complete report`, async page => {
+      const raw = pytestSection('FAILURES') + pytestHeading('test_parse_count') + pytestFailure(undefined,short)
+        + pytestSection('short test summary info') + 'FAILED tests/test_parse.py::test_parse_count - ValueError: invalid literal\n';
+      const error = short ? raw.replaceAll('\n','\r\n') : raw;
+      await page.locator('#failure-command').fill(short ? 'pytest --tb=short' : 'pytest');
+      if (short) {
+        await page.locator('#failure-file').setInputFiles({name:'pytest-short.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
+        await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded pytest-short.log'));
+        await page.locator('#diagnose-run').click();
+        await page.locator('#failure-result').waitFor({state:'visible'});
+      } else await diagnose(page,error);
+      assert.match(await page.locator('#failure-result-title').innerText(),/Source located/);
+      assert.equal(await page.locator('#failure-format').innerText(),'pytest source check');
+      assert.match(await page.locator('#failure-result-context').innerText(),/parse.py:4.*matches/);
+      assert.equal(await page.locator('#failure-source .is-failure').textContent(),'4    return int(value)');
+      assert.match(await page.locator('#failure-exception').innerText(),/ValueError: invalid literal/);
+      assert.match(await page.locator('#failure-guidance').innerText(),/final pytest failure/);
+      assert.equal(await page.locator('#failure-original').textContent(),error);
+      const brief = await page.locator('#failure-copy-text').inputValue();
+      assert.match(brief,/"error_format": "pytest"/);
+      assert.ok(brief.includes(raw));
+      assert.ok(brief.includes(source));
+      await page.getByText('Original error & report',{exact:true}).click();
+      const downloading = page.waitForEvent('download');
+      await page.locator('#download-failure-json').click();
+      const report = JSON.parse(await fs.readFile(await (await downloading).path(),'utf8'));
+      assert.equal(report.error_output,error);
+      assert.equal(report.error_sha256,createHash('sha256').update(error).digest('hex'));
+      assert.equal(report.format,'pytest');
+    });
+  }
+  await scenario('a final pytest failure outside the project keeps earlier source visibly incomplete', async page => {
+    const error = pytestSection('FAILURES') + pytestHeading('test_local') + pytestFailure()
+      + pytestHeading('test_final') + pytestFailure('/outside-approved-project/final.py',false,'final failure')
+      + pytestSection('short test summary info') + 'FAILED tests/test_parse.py::test_local\nFAILED external/test_final.py::test_final\n';
+    await diagnose(page,error);
+    assert.equal(await page.locator('#failure-format').innerText(),'pytest source check');
+    assert.equal(await page.locator('#failure-result-title').innerText(),'Other source captured — final failure still unlocated');
+    assert.equal(await page.locator('#failure-source').innerText(),'');
+    assert.equal(await page.locator('#failure-exception').innerText(),'ValueError: final failure');
+    const brief = await page.locator('#failure-copy-text').inputValue();
+    assert.match(brief,/Only earlier source was captured/);
+    assert.ok(brief.includes(source));
+    assert.match(brief,/outside-approved-project\/final.py/);
+    await page.locator('#failure-frames > summary').click();
+    assert.match(await page.locator('#failure-frame-list').innerText(),/parse.py:4/);
+    assert.match(await page.locator('#failure-frame-list').innerText(),/outside_project/);
+    assert.equal(await page.locator('#failure-frame-list .source').count(),1);
+  });
+  await scenario('captured pytest output cannot replace the real location or terminal exception', async page => {
+    const fakePath = path.join(fixture,'worker.js');
+    const error = pytestSection('FAILURES') + pytestHeading('test_parse_count') + pytestFailure()
+      + '---------------------------- Captured stdout call -----------------------------\n'
+      + `${fakePath}:2: in pretend_failure\n    throw new TypeError("synthetic failure");\nE   TypeError: printed text\n`
+      + '_____________ test_printed_example _____________\n'
+      + `>       pretend_failure()\nE       RuntimeError: printed example\n${fakePath}:2: RuntimeError\n`
+      + pytestSection('short test summary info') + 'FAILED tests/test_parse.py::test_parse_count - ValueError: invalid literal\n';
+    await diagnose(page,error);
+    assert.equal(await page.locator('#failure-format').innerText(),'pytest source check');
+    assert.match(await page.locator('#failure-result-context').innerText(),/parse.py:4/);
+    assert.match(await page.locator('#failure-exception').innerText(),/^ValueError:/);
+    assert.doesNotMatch(await page.locator('#failure-exception').innerText(),/printed/);
+    await page.locator('#failure-frames > summary').click();
+    assert.equal(await page.locator('#failure-frame-list > li').count(),1);
+    assert.doesNotMatch(await page.locator('#failure-frame-list').innerText(),/worker.js|pretend_failure/);
+    assert.ok((await page.locator('#failure-copy-text').inputValue()).includes(error));
+    assert.equal(await page.locator('#failure-original').textContent(),error);
   });
   await scenario('Unicode within a Python string stays on the same physical source row', async page => {
     const error = output('return int(value)',path.join(fixture,'unicode.py')).replace('line 4,','line 3,');

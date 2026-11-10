@@ -14,6 +14,7 @@ import re
 from .collector import _parts, _read
 from .contracts import Evidence, Refusal
 from .error_formats import parse_javascript, strip_terminal_controls
+from .pytest_formats import parse_pytest
 from .screening import screen_failure
 
 
@@ -261,12 +262,20 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
         raise Refusal("invalid_project_root") from None
     if not root.is_absolute() or ".." in root.parts:
         raise Refusal("invalid_project_root")
-    frames, exceptions, relations, parsed_cutoffs, parsed_final_chain = _parse(strip_terminal_controls(error_output))
-    format_name = "python" if frames or exceptions else None
-    javascript = parse_javascript(error_output)
-    if not frames and javascript["format"] and (javascript["frames"] or not exceptions or javascript["format"] == "typescript"):
-        frames, exceptions, relations, parsed_cutoffs = (javascript[key] for key in ("frames", "exceptions", "chain_relations", "cutoffs"))
-        format_name = javascript["format"]
+    pytest = parse_pytest(error_output)
+    if pytest["format"]:
+        # Decorated report boundaries take precedence over tracebacks that may
+        # occur inside captured test output. Raw input remains independent.
+        frames, exceptions, relations, parsed_cutoffs = (pytest[key] for key in ("frames", "exceptions", "chain_relations", "cutoffs"))
+        parsed_final_chain = pytest["last_chain"]
+        format_name = "pytest"
+    else:
+        frames, exceptions, relations, parsed_cutoffs, parsed_final_chain = _parse(strip_terminal_controls(error_output))
+        format_name = "python" if frames or exceptions else None
+        javascript = parse_javascript(error_output)
+        if not frames and javascript["format"] and (javascript["frames"] or not exceptions or javascript["format"] == "typescript"):
+            frames, exceptions, relations, parsed_cutoffs = (javascript[key] for key in ("frames", "exceptions", "chain_relations", "cutoffs"))
+            format_name = javascript["format"]
     cutoffs = set(parsed_cutoffs)
     evidence: list[dict] = []
     cached: dict[str, tuple[bytes, list[str]]] = {}
@@ -274,7 +283,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
     total_bytes = 0
     # Python prints outermost first; V8 and compiler diagnostics put the first
     # location to investigate first. Keep that order when capture is capped.
-    capture_order = list(reversed(frames)) if format_name == "python" else frames
+    capture_order = list(reversed(frames)) if format_name in ("python", "pytest") else frames
     for frame in capture_order:
         if frame.get("path_status", "not_checked") != "not_checked":
             frame["status"] = frame["path_status"]
@@ -347,7 +356,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
                 cutoffs.add("evidence_byte_budget")
     final_chain = max([item["chain_index"] for item in frames + exceptions]
                       + [item["to_chain"] for item in relations]
-                      + [parsed_final_chain if format_name == "python" else 0])
+                      + [parsed_final_chain if format_name in ("python", "pytest") else 0])
     terminal = exceptions[-1] if exceptions and exceptions[-1]["chain_index"] == final_chain else None
     primary = next((frame for frame in capture_order
                     if frame["chain_index"] == final_chain and frame["status"] == "located"), None)
@@ -359,6 +368,15 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
                         and 0 <= exception_index < len(exceptions) else None)
     guidance = (_javascript_guidance(format_name, terminal, primary, frames)
                 if format_name in ("node", "typescript") else _guidance(terminal, primary, frames))
+    if format_name == "pytest":
+        guidance = [{"title": "Review the final pytest failure and its callers",
+                     "detail": "The main result refers to the final failure section. Other captured tests and callers are in matching details. Confirm the exact test, input and environment before changing code; no tests were run by this check."}]
+        if not terminal or "pytest_traceback_format_unsupported" in cutoffs or "pytest_incomplete_case" in cutoffs:
+            guidance.append({"title": "Use a complete supported pytest report",
+                             "detail": "Include the FAILURES or ERRORS section, test headings and full locations. Default, long and short decorated tracebacks are supported. Abbreviated, tree-shaped or truncated reports may remain incomplete; no missing paths or errors were guessed."})
+        if any(frame["source_comparison"] == "mismatch" for frame in frames):
+            guidance.append({"title": "Confirm the source used by that test run",
+                             "detail": "A displayed statement differs from the current file. Check the checkout and version used by the failed tests before relying on these locations."})
     snapshot = hashlib.sha256(json.dumps([(item["path"], item["file_sha256"], item["start_line"], item["end_line"])
                                          for item in evidence], separators=(",", ":")).encode("utf-8")).hexdigest()
     report = {"schema_version": "0.1", "kind": "failure_source_report", "outcome": "ANSWER" if evidence else "ABSTAIN",

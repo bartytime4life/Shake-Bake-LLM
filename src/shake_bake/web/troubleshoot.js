@@ -286,7 +286,7 @@
       ? endOfFile ? 'End of file reported — inspect preceding source' : frame.source_comparison === 'mismatch' ? 'Source located; pasted statement differs' : 'Source located — check this line'
       : value.evidence?.length ? 'Other source captured — final failure still unlocated' : 'No source located';
     const exception = value.terminal_exception;
-    const format = {python:'Python', node:'Node.js', typescript:'TypeScript'}[value.format];
+    const format = {python:'Python', pytest:'pytest', node:'Node.js', typescript:'TypeScript'}[value.format];
     el('failure-format').textContent = format ? `${format} source check` : 'Error source check';
     el('failure-exception').textContent = exception ? `${exception.type}${exception.message ? ': ' + exception.message : ''}${exception.message_truncated ? ' [Summary shortened; complete message is in Original output.]' : ''}` : 'No complete exception or compiler diagnostic was identified.';
     el('failure-result-context').textContent = located

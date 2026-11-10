@@ -2,7 +2,7 @@
 
 Check a failed run against the code on your computer, then take a precise debugging brief into your AI chat. The workbench reads approved source folders, preserves the original error and shows the exact lines it found. No model is needed for this workflow.
 
-**Development preview: `0.4.0.dev28`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
+**Development preview: `0.4.0.dev29`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
 
 ## Open the app
 
@@ -24,6 +24,7 @@ The launcher chooses a supported installed Python and opens `http://127.0.0.1:84
 | Input | What the app checks |
 | --- | --- |
 | Python traceback | Exact file/line and whether the displayed statement matches current source. |
+| pytest failure report | Default/long and short decorated test locations, keeping each failure separate and ignoring captured test output. |
 | Node.js stack trace | Local V8 stack locations, starting with the first readable project frame. |
 | TypeScript compiler output | File, line, column and the corresponding compiler diagnostic. |
 

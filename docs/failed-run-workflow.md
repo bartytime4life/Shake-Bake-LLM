@@ -1,10 +1,12 @@
 # Failed-run source checks
 
-The workbench starts with a concrete job: match a pasted Python, Node.js or TypeScript failure to current local source. It preserves the original output and optional command, locates exact reported paths inside the selected folder, and compares Python traceback statements with current source. Node.js and TypeScript provide reported line/column locations; they do not prove the source statement matches the failed run. It reports Python chained exceptions, missing files, source mismatches and bounded next checks for common errors such as missing modules, syntax errors and missing files.
+The workbench starts with a concrete job: match a pasted Python, pytest, Node.js or TypeScript failure to current local source. It preserves the original output and optional command, locates exact reported paths inside the selected folder, and compares Python and pytest statements with current source. Node.js and TypeScript provide reported line/column locations; they do not prove the source statement matches the failed run. It reports Python chained exceptions, missing files, source mismatches and bounded next checks for common errors such as missing modules, syntax errors and missing files.
 
 This is deterministic source inspection. No model, project import, failing command, test, installation or repair runs. Finding a line does not prove a root cause. A fix still needs implementation and validation in the appropriate environment. Source-map lookups and browser-URL fetching are not performed. Container paths and paths from another machine must match the connected root; there is no basename guessing or automatic path mapping.
 
 Logs may contain several independent Python tracebacks, such as multiple failed tests or retries. Their source stays separate: the main result uses only a location belonging to the final traceback. Earlier source is retained in matching details, and an unlocated or truncated final traceback stays incomplete. Explicit cause and handling relationships are retained only when the output contains those markers.
+
+For pytest, paste or load the complete **FAILURES** or **ERRORS** report, including test headings and locations. Default/long and short decorated reports are supported; the [pytest output guide](https://docs.pytest.org/en/stable/how-to/output.html) describes those styles. Each independent test keeps its own source and exception. The main result concerns the final test section; earlier tests remain in matching details. Recognized captured stdout, stderr and logging sections are preserved in the original text but skipped when identifying locations. Plain tracebacks and summary banners printed inside those sections do not replace the final failure. These format boundaries are untrusted claims from the text, not proof of provenance. No pytest installation is required by the application.
 
 Only one automatic browser clipboard write may be pending across both workflows in this tab. A delayed write keeps Copy disabled until it settles, even after edits or a new result. Manual review and exports remain available; late completion still identifies the older capture.
 
@@ -32,9 +34,6 @@ PYTHONPATH=src python3.12 -B -m shake_bake diagnose \
 ```
 
 The CLI accepts a regular UTF-8 error file; named pipes are refused rather than waited on. It prints JSON. Exit status `0` means source was located, `3` means no source was located, and `2` means the request was refused. None means the bug has been fixed. Use UTF-8 input and keep private error files outside inspected source if they should not be included in future briefs.
-
-
-
 Text exports use the same complete debugging brief as the copy action, including every captured excerpt, unmatched frame, source comparison and cutoff. An earlier-chain-only match remains incomplete for the final failure. JSON retains the structured original text and hashes.
 
-Known format gaps: pytest's default decorated failure output, Python ExceptionGroup tree traces and arbitrary log prefixes are not parsed as full traceback formats. Unsupported output is kept as supplied and does not establish a source location or cause. Generated Node.js fixtures and synthetic browser/HTTP cases verify the supported mechanics; no private-project diagnosis or repair success is claimed.
+Known format gaps: abbreviated pytest `--tb=line` / `--tb=no`, Python ExceptionGroup tree traces, mixed/native pytest reports with captured output, and arbitrary log prefixes are not parsed as full traceback formats. Unsupported or incomplete pytest sections expose explicit cutoffs; an earlier section cannot fill a missing final location. Standard native Python tracebacks without captured pytest output continue through the Python parser. Original output is kept as supplied. Generated pytest/Node.js failures and synthetic browser/HTTP cases verify supported mechanics; no private-project diagnosis or repair success is claimed.
