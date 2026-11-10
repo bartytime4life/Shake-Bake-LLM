@@ -12,7 +12,7 @@ const connectionFixtures = [];
 const source = '"""Synthetic failed-run source. Never imported by this test."""\n\ndef parse_count(value):\n    return int(value)\n';
 const output = (statement='return int(value)',filename=path.join(fixture,'parse.py')) =>
   `Traceback (most recent call last):\n  File "${filename}", line 4, in parse_count\n    ${statement}\nValueError: invalid literal for int() with base 10: 'many'\n`;
-async function scenario(label, run, setup) {
+async function scenario(label, run, setup, expectedTaskRequests = 0) {
   const context = await browser.newContext({reducedMotion:'reduce'}), page = await context.newPage();
   page.setDefaultTimeout(10000);
   const errors = [], requests = [], external = [];
@@ -29,7 +29,8 @@ async function scenario(label, run, setup) {
     await run(page, {requests,external});
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
-    assert.equal(requests.some(url => ['/api/tasks','/api/inventory','/api/model-check'].includes(url)), false);
+    assert.equal(requests.filter(url => url === '/api/tasks').length,expectedTaskRequests);
+    assert.equal(requests.some(url => ['/api/inventory','/api/model-check'].includes(url)), false);
     passed++;
     console.log('PASS '+label);
   } finally {
@@ -509,6 +510,92 @@ async function diagnose(page, error=output()) {
   }, async page => {
     await page.addInitScript(() => Object.defineProperty(navigator,'clipboard',{value:{writeText:() => new Promise(resolve => {window.__finishFailureCopy = resolve;})},configurable:true}));
   });
+  await scenario('an unsettled earlier copy blocks a newer report copy while review and exports remain available', async page => {
+    await page.locator('#failure-command').fill('python parse.py --capture-A');
+    await diagnose(page);
+    await page.locator('#copy-failure-brief').click();
+    assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+    assert.equal(await page.locator('#copy-failure-brief').getAttribute('aria-busy'),'true');
+    // Repeated or scripted clicks cannot queue another uncancellable write.
+    await page.locator('#copy-failure-brief').dispatchEvent('click');
+    assert.equal(await page.evaluate(() => window.__clipboardWrites.length),1);
+    await page.locator('#failure-command').fill('python parse.py --capture-B');
+    await page.locator('#diagnose-run').click();
+    await page.locator('#failure-result').waitFor({state:'visible'});
+    assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+    assert.match(await page.locator('#failure-copy-status').innerText(),/earlier captured debugging brief/);
+    await page.locator('#copy-failure-brief').dispatchEvent('click');
+    assert.equal(await page.evaluate(() => window.__clipboardWrites.length),1);
+    assert.match(await page.locator('#failure-copy-text').inputValue(),/--capture-B/);
+    await page.locator('#failure-copy-review > summary').click();
+    assert.equal(await page.locator('#failure-copy-text').isVisible(),true);
+    await page.getByText('Original error & report',{exact:true}).click();
+    assert.equal(await page.locator('#download-failure-text').isEnabled(),true);
+    assert.equal(await page.locator('#download-failure-json').isEnabled(),true);
+    const downloading = page.waitForEvent('download');
+    await page.locator('#download-failure-text').click();
+    assert.match(await fs.readFile(await (await downloading).path(),'utf8'),/--capture-B/);
+    await page.evaluate(() => window.__clipboardWrites[0].finish());
+    await page.waitForFunction(() => document.querySelector('#failure-notice').textContent.includes('earlier captured'));
+    assert.equal(await page.locator('#copy-failure-brief').isEnabled(),true);
+    assert.equal(await page.locator('#copy-failure-brief').getAttribute('aria-busy'),'false');
+    await page.locator('#copy-failure-brief').click();
+    assert.equal(await page.evaluate(() => window.__clipboardWrites.length),2);
+    await page.evaluate(() => window.__clipboardWrites[1].finish());
+    await page.waitForFunction(() => document.querySelector('#failure-copy-status').textContent.includes('Browser reported copying'));
+    assert.match(await page.evaluate(() => window.__syntheticClipboard),/--capture-B/);
+    assert.equal(await page.locator('#failure-command').inputValue(),'python parse.py --capture-B');
+  }, async page => {
+    await page.addInitScript(() => {
+      window.__clipboardWrites = [];
+      Object.defineProperty(navigator,'clipboard',{value:{writeText:text => new Promise(resolve => {
+        window.__clipboardWrites.push({text,finish(){window.__syntheticClipboard=text;resolve();}});
+      })},configurable:true});
+    });
+  });
+  await scenario('the source and failed-run workflows share one unsettled clipboard write', async page => {
+    await diagnose(page);
+    await page.locator('#copy-failure-brief').click();
+    await page.locator('#choose-source-brief').click();
+    const question = 'Find the retry limit in this synthetic source fixture.';
+    const sourceProject = await page.evaluate(root => window.sbWorkbench.getState().native.projects.find(project => project.path === root).id,sourceFixture);
+    await page.locator('#project').selectOption(sourceProject);
+    await page.locator('#request').fill(question);
+    await page.locator('#prepare').click();
+    await page.waitForFunction(text => document.querySelector('#original-request').textContent === text,question);
+    assert.equal(await page.locator('#copy').isDisabled(),true);
+    assert.equal(await page.locator('#copy').getAttribute('aria-busy'),'true');
+    assert.match(await page.locator('#copy-status').innerText(),/copying a debugging brief/);
+    await page.locator('#copy').dispatchEvent('click');
+    assert.equal(await page.evaluate(() => window.__clipboardWrites.length),1);
+    assert.equal(await page.locator('#download-text').isEnabled(),true);
+    await page.evaluate(() => window.__clipboardWrites[0].finish());
+    await page.waitForFunction(() => !document.querySelector('#copy').disabled);
+    await page.locator('#copy').click();
+    assert.equal(await page.evaluate(() => window.__clipboardWrites.length),2);
+    await page.locator('#choose-failed-run').click();
+    assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+    assert.match(await page.locator('#failure-copy-status').innerText(),/copying a source brief/);
+    await page.locator('#copy-failure-brief').dispatchEvent('click');
+    assert.equal(await page.evaluate(() => window.__clipboardWrites.length),2);
+    assert.equal(await page.locator('#failure-output').inputValue(),output());
+    assert.equal(await page.locator('#download-failure-text').isEnabled(),true);
+    await page.evaluate(() => window.__clipboardWrites[1].finish());
+    await page.waitForFunction(() => !document.querySelector('#copy-failure-brief').disabled);
+    assert.equal(await page.locator('#copy-failure-brief').getAttribute('aria-busy'),'false');
+    assert.equal(await page.locator('#failure-copy-status').innerText(),'');
+    assert.match(await page.evaluate(() => window.__syntheticClipboard),/Find the retry limit/);
+    await page.locator('#choose-source-brief').click();
+    assert.equal(await page.locator('#request').inputValue(),question);
+    assert.match(await page.locator('#copy-status').innerText(),/Browser reported copying this brief/);
+  }, async page => {
+    await page.addInitScript(() => {
+      window.__clipboardWrites = [];
+      Object.defineProperty(navigator,'clipboard',{value:{writeText:text => new Promise(resolve => {
+        window.__clipboardWrites.push({text,finish(){window.__syntheticClipboard=text;resolve();}});
+      })},configurable:true});
+    });
+  }, 1);
   await scenario('the example needs explicit selection and cannot overwrite a real pasted error', async page => {
     const error = output();
     await page.locator('#failure-output').fill(error);

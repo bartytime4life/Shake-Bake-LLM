@@ -6,6 +6,17 @@ const REQUEST_TIMEOUT_MS = 15000;
 let csrf = '', state = null, active = null, pinned = null, models = [], timer = null, polling = false;
 let inventoryLoading = false, historySignature = '', serviceTimer = null, sessionSync = null;
 let copyState = null;
+// Clipboard promises cannot be cancelled. Share one write slot across both
+// workflows, including when the captured result or visible workflow changes.
+let clipboardWriteOwner = null;
+function clipboardOwner(){return clipboardWriteOwner;}
+function clipboardChanged(){window.dispatchEvent(new CustomEvent('sb-clipboard-state'));}
+async function writeClipboard(text, owner){
+  if(clipboardWriteOwner)throw new Error('A clipboard write is still pending.');
+  clipboardWriteOwner=owner;clipboardChanged();
+  try{await navigator.clipboard.writeText(text);}
+  finally{clipboardWriteOwner=null;clipboardChanged();}
+}
 let settingsPending = false, connected = null, stateRevision = 0, pinRevision = 0;
 let draftInitialized = false, draftProjectId = '';
 let sourceProjectSelectionRevision = 0;
@@ -703,8 +714,14 @@ function handoffView(){
 }
 function renderCopyStatus(){
   const pending=copyState?.status==='pending';
-  $('copy').disabled=!pinned?.packet?.evidence?.length||pending;
-  $('copy').setAttribute('aria-busy',String(pending));
+  const otherPending=clipboardOwner()==='failure';
+  $('copy').disabled=!pinned?.packet?.evidence?.length||pending||!!clipboardOwner();
+  $('copy').setAttribute('aria-busy',String(pending||!!clipboardOwner()));
+  if(otherPending){
+    $('copy-status').hidden=false;
+    $('copy-status').textContent='Waiting for the browser to finish copying a debugging brief. Review & export can still save or manually copy this source brief. The earlier request may still finish later.';
+    return;
+  }
   $('copy-status').hidden=!copyState;
   if(!copyState)return;
   const current=pinned?.job_id===copyState.job_id&&pinned?.project_id===copyState.project_id;
@@ -727,16 +744,17 @@ function renderHandoff(){
 function restoreBriefStyle(){try{const saved=localStorage.getItem('sb-brief-style');if(BRIEF_STYLES.has(saved))$('brief-style').value=saved;}catch{}}
 $('brief-style').addEventListener('change',()=>{if(!preview&&!fileLaunch)try{localStorage.setItem('sb-brief-style',briefStyle());}catch{}renderHandoff();});
 $('copy').addEventListener('click',async()=>{
-  if(!pinned?.packet?.evidence?.length||copyState?.status==='pending')return;
+  if(!pinned?.packet?.evidence?.length||copyState?.status==='pending'||clipboardOwner())return;
   // Capture the exact job before awaiting the browser. An unresolved clipboard request
   // cannot be cancelled; do not queue another or attribute a late result to a new pin.
   const text=handoffText(pinned);
   const attempt={job_id:pinned.job_id,project_id:pinned.project_id,status:'pending'};
   copyState=attempt;renderCopyStatus();
-  try{await navigator.clipboard.writeText(text);attempt.status='copied';}
+  try{await writeClipboard(text,'source');attempt.status='copied';}
   catch{attempt.status='failed';$('handoff-copy').open=true;if(pinned?.job_id===attempt.job_id&&pinned?.project_id===attempt.project_id)$('select-handoff').focus();}
   finally{renderCopyStatus();}
 });
+window.addEventListener('sb-clipboard-state',renderCopyStatus);
 $('select-handoff').addEventListener('click',()=>{
   if(!pinned?.packet)return;
   $('handoff-text').focus();$('handoff-text').select();
@@ -781,7 +799,7 @@ function selectConnectedSourceProject(id, expectedSelection){
   if(!state?.projects.includes(id)||!expectedSelection||$('project').value!==expectedSelection.id||sourceProjectSelectionRevision!==expectedSelection.revision)return false;
   $('project').value=id;sourceProjectSelectionRevision++;draftTouched.add('project');draftContext();void savePreferences();controls();return true;
 }
-window.sbWorkbench={api,syncSession,getState:()=>state,isPreview:()=>!!preview||fileLaunch,getSourceSelection,selectSourceProject:selectConnectedSourceProject};initialize();
+window.sbWorkbench={api,syncSession,getState:()=>state,isPreview:()=>!!preview||fileLaunch,getSourceSelection,selectSourceProject:selectConnectedSourceProject,clipboardOwner,writeClipboard};initialize();
 
 function memoryText(value){return typeof value==='number'?`${(value/1073741824).toFixed(1)} GiB`:'Not detected';}
 function facts(id,entries){const list=$(id);list.replaceChildren();for(const [name,value]of entries){const term=document.createElement('dt'),detail=document.createElement('dd');term.textContent=name;detail.textContent=value;list.append(term,detail);}}

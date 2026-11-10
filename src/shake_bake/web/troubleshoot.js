@@ -5,6 +5,7 @@
   let projects = [], busy = false, connecting = false, example = false, report = null;
   let projectSignature = '', sourceMode = false;
   let inputRevision = 0, reportRevision = -1, copyAttempt = 0;
+  let pendingCopy = null, waitingForOtherCopy = false;
   let failureProjectSelectionRevision = 0;
   let loadedError = null, fileReadAttempt = 0, fileReading = false;
   const syntheticOutput = 'Traceback (most recent call last):\n  File "validator.py", line 6, in validate_structure\n    return len(reported_slices) <= slices_detected\nTypeError: object of type \'NoneType\' has no len()\n';
@@ -34,8 +35,20 @@
     el('failure-credential-warning').hidden = !warning;
   }
   function reportControls() {
-    for (const id of ['copy-failure-brief', 'download-failure-text', 'download-failure-json']) el(id).disabled = !currentReport();
+    const owner = bridge()?.clipboardOwner();
+    el('copy-failure-brief').disabled = !currentReport() || !!owner;
+    el('copy-failure-brief').setAttribute('aria-busy', String(!!owner));
+    for (const id of ['download-failure-text', 'download-failure-json']) el(id).disabled = !currentReport();
+    const earlierCopy = owner === 'failure' && pendingCopy && (pendingCopy.revision !== inputRevision || pendingCopy.value !== report);
+    if (owner === 'source' || earlierCopy) {
+      waitingForOtherCopy = true;
+      el('failure-copy-status').textContent = `Waiting for the browser to finish copying ${owner === 'source' ? 'a source brief' : 'an earlier captured debugging brief'}. You can review or save the current report while it finishes. This request may still finish later.`;
+    } else if (waitingForOtherCopy) {
+      waitingForOtherCopy = false;
+      el('failure-copy-status').textContent = '';
+    }
   }
+  window.addEventListener('sb-clipboard-state', reportControls);
   function inputsChanged() {
     inputRevision++;
     fileReadAttempt++;
@@ -404,8 +417,9 @@
     ].join('\n');
   }
   el('copy-failure-brief').addEventListener('click', async () => {
-    if (!currentReport()) return;
+    if (!currentReport() || bridge()?.clipboardOwner()) return;
     const value = report, revision = inputRevision, attempt = ++copyAttempt;
+    pendingCopy = {value, revision};
     const text = debuggingBrief(value);
     el('failure-copy-status').textContent = 'Waiting for the browser to copy this captured debugging brief…';
     const waiting = setTimeout(() => {
@@ -414,7 +428,7 @@
       el('failure-copy-review').open = true;
     }, 1500);
     try {
-      await navigator.clipboard.writeText(text);
+      await bridge().writeClipboard(text, 'failure');
       if (attempt !== copyAttempt || revision !== inputRevision || report !== value) {
         notice('The browser finished copying an earlier captured debugging brief. Your current inputs are unchanged; check the captured project before sharing the clipboard.');
         return;
@@ -428,6 +442,8 @@
       el('failure-copy-text').select();
     } finally {
       clearTimeout(waiting);
+      pendingCopy = null;
+      reportControls();
     }
   });
   function saveReport(json) {

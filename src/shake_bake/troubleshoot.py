@@ -70,7 +70,7 @@ def _input(value: str, limit: int, code: str, *, required: bool = False) -> None
         raise Refusal(code)
 
 
-def _parse(error_output: str) -> tuple[list[dict], list[dict], list[dict], list[str]]:
+def _parse(error_output: str) -> tuple[list[dict], list[dict], list[dict], list[str], int]:
     lines = [line.rstrip("\r\n") for line in _lines(error_output)]
     frames: list[dict] = []
     exceptions: list[dict] = []
@@ -79,9 +79,23 @@ def _parse(error_output: str) -> tuple[list[dict], list[dict], list[dict], list[
     chain = 0
     in_traceback = False
     saw_traceback = False
+    block_started = False
+    pending_chain_block = False
     frame_number = 0
+
+    def start_block() -> None:
+        nonlocal chain, block_started, pending_chain_block
+        # Logs and test runners can contain several independent failures. Their
+        # locations must not be presented as frames of the final failure. An
+        # explicit cause/handling marker has already advanced the chain once.
+        if block_started and not pending_chain_block:
+            chain += 1
+        block_started = True
+        pending_chain_block = False
+
     for index, line in enumerate(lines):
         if line == "Traceback (most recent call last):":
+            start_block()
             in_traceback = saw_traceback = True
             continue
         if line in _CHAIN_MARKERS:
@@ -89,10 +103,13 @@ def _parse(error_output: str) -> tuple[list[dict], list[dict], list[dict], list[
                               "relation": _CHAIN_MARKERS[line]})
             chain += 1
             in_traceback = False
+            pending_chain_block = True
             continue
         match = _FRAME.fullmatch(line)
         if match:
             # A standalone File block is also how Python displays SyntaxError.
+            if not in_traceback:
+                start_block()
             in_traceback = saw_traceback = True
             statement = None
             if index + 1 < len(lines):
@@ -129,10 +146,12 @@ def _parse(error_output: str) -> tuple[list[dict], list[dict], list[dict], list[
                 exceptions.pop(0)
                 cutoffs.add("exception_budget")
             in_traceback = False
+            block_started = True
+            pending_chain_block = False
     if len(relations) > MAX_FRAMES:
         relations = relations[-MAX_FRAMES:]
         cutoffs.add("chain_budget")
-    return frames, exceptions, relations, sorted(cutoffs)
+    return frames, exceptions, relations, sorted(cutoffs), chain
 
 
 def _relative_path(root: Path, reported: str) -> str:
@@ -242,7 +261,7 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
         raise Refusal("invalid_project_root") from None
     if not root.is_absolute() or ".." in root.parts:
         raise Refusal("invalid_project_root")
-    frames, exceptions, relations, parsed_cutoffs = _parse(strip_terminal_controls(error_output))
+    frames, exceptions, relations, parsed_cutoffs, parsed_final_chain = _parse(strip_terminal_controls(error_output))
     format_name = "python" if frames or exceptions else None
     javascript = parse_javascript(error_output)
     if not frames and javascript["format"] and (javascript["frames"] or not exceptions or javascript["format"] == "typescript"):
@@ -327,7 +346,8 @@ def locate_failure(root: Path, error_output: str, command: str = "") -> dict:
             if refusal.code == "excerpt_budget":
                 cutoffs.add("evidence_byte_budget")
     final_chain = max([item["chain_index"] for item in frames + exceptions]
-                      + [item["to_chain"] for item in relations] + [0])
+                      + [item["to_chain"] for item in relations]
+                      + [parsed_final_chain if format_name == "python" else 0])
     terminal = exceptions[-1] if exceptions and exceptions[-1]["chain_index"] == final_chain else None
     primary = next((frame for frame in capture_order
                     if frame["chain_index"] == final_chain and frame["status"] == "located"), None)
