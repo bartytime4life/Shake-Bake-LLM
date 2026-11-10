@@ -89,7 +89,7 @@
 
   function controls() {
     const selected = projects.find(project => project.id === el('failure-project').value);
-    const ready = !!bridge() && projects.length > 0 && !preview;
+    const ready = !!bridge() && bridge().isConnected?.() !== false && projects.length > 0 && !preview;
     el('diagnose-run').disabled = busy || connecting || fileReading || !ready || !selected || (selected.demo && !example);
     el('connect-project-button').disabled = busy || connecting || !ready;
     el('load-failure-file').disabled = preview;
@@ -219,11 +219,20 @@
     const targetSource = sourceMode;
     const previousSource = bridge().getSourceSelection();
     const previousFailure = {id:el('failure-project').value, revision:failureProjectSelectionRevision};
+    const requestSession = bridge().getSessionGeneration?.();
     controls();
     el('project-connect-status').textContent = 'Connecting folder for read-only use…';
     try {
       const result = await bridge().api('/api/projects', {label:el('project-label').value, path});
+      if (requestSession !== bridge().getSessionGeneration?.()) {
+        el('project-connect-status').textContent = 'The local session changed while connecting. Your folder path and label are unchanged; connect the folder again in this session.';
+        return;
+      }
       await bridge().syncSession();
+      if (requestSession !== bridge().getSessionGeneration?.()) {
+        el('project-connect-status').textContent = 'The local session changed while connecting. Your folder path and label are unchanged; connect the folder again in this session.';
+        return;
+      }
       updateState(bridge().getState());
       const id = result.project_id || result.id;
       let selected = false;
@@ -240,7 +249,7 @@
         ? `Folder connected for this local session. ${targetSource ? 'Your source brief now uses this project; your request is unchanged.' : 'Your failed-run check now uses this project; your error is unchanged.'}`
         : 'Folder connected for this local session. Your newer project selection is unchanged; choose the connected folder when you need it.';
     } catch (error) {
-      el('project-connect-status').textContent = `Folder could not be connected. ${error.message}`;
+      el('project-connect-status').textContent = requestSession !== bridge().getSessionGeneration?.() ? 'The local session changed while connecting. Your folder path and label are unchanged; connect the folder again in this session.' : `Folder could not be connected. ${error.message}`;
     } finally {
       connecting = false;
       controls();
@@ -348,6 +357,8 @@
     const capturedExample = example;
     const capturedProject = {...project};
     const requestRevision = inputRevision;
+    const requestSession = bridge().getSessionGeneration?.();
+    const currentRequest = () => requestRevision === inputRevision && requestSession === bridge().getSessionGeneration?.();
     busy = true;
     controls();
     notice('');
@@ -362,8 +373,8 @@
     el('failure-progress').textContent = 'Matching the error to your current source…';
     try {
       const value = await bridge().api('/api/troubleshoot', payload);
-      if (requestRevision !== inputRevision) {
-        el('failure-progress').textContent = 'Your inputs changed during the check. Find failing source again to check the current error and project.';
+      if (!currentRequest()) {
+        el('failure-progress').textContent = requestRevision === inputRevision ? 'The local session changed during the check. Your inputs are unchanged; select Find failing source again for this session.' : 'Your inputs changed during the check. Find failing source again to check the current error and project.';
         return;
       }
       if (value.kind !== 'failure_source_report' || typeof value.error_output !== 'string' || !Array.isArray(value.frames)) throw new Error('The service returned an incomplete source report.');
@@ -371,18 +382,20 @@
       el('failure-progress').textContent = value.innermost_project_frame ? value.frames.find(item => item.frame_id === value.innermost_project_frame)?.location_kind === 'end_of_file' ? 'Source check complete. Review the preceding source context below.' : 'Source check complete. Review the captured line below.' : value.evidence?.length ? 'Check complete. Earlier source was captured; the final failure has no located project line.' : 'Check complete. No source line was located.';
       if (document.activeElement === el('diagnose-run') || document.activeElement === document.body) el('failure-result-title').focus();
     } catch (error) {
-      if (requestRevision === inputRevision) {
+      if (currentRequest()) {
         const folderRecovery = {
           working_directory_outside_project: 'That working folder is outside the connected project. Choose a folder inside this project, or clear the field to use the connected project folder.',
           working_directory_not_allowed: 'That working folder cannot be used. Choose a folder inside the connected project without parent-folder steps (..) or symbolic links, or clear the field to use the connected project folder.',
           working_directory_unavailable: 'That working folder could not be opened. Check that it exists and is a readable folder inside the connected project, or clear the field to use the connected project folder.',
           invalid_failure_working_directory: 'The working-folder text could not be used. Enter a plain folder path of up to 4 KiB, or clear the field to use the connected project folder.'
         }[error.code];
-        notice(folderRecovery ? `${folderRecovery} Your error, command and folder text are unchanged.` : `Could not check this error. ${error.message} Your pasted output is still here.`);
+        const sessionRecovery = error.code === 'session_required' || error.code === 'request_not_allowed';
+        if (sessionRecovery) bridge()?.connectionFailed?.();
+        notice(folderRecovery ? `${folderRecovery} Your error, command and folder text are unchanged.` : sessionRecovery ? 'The local session could not accept this check. Select Retry connection above, then select Find failing source again. Your error, command and working folder are unchanged; no check was retried automatically.' : `Could not check this error. ${error.message} Your pasted output is still here.`);
         el('failure-progress').textContent = 'Source check did not complete.';
         if (folderRecovery) el('failure-working-directory').focus();
       } else {
-        el('failure-progress').textContent = 'Your inputs changed during the check. Find failing source again to check the current error and project.';
+        el('failure-progress').textContent = requestRevision === inputRevision ? 'The local session changed during the check. Your inputs are unchanged; select Find failing source again for this session.' : 'Your inputs changed during the check. Find failing source again to check the current error and project.';
       }
     } finally {
       busy = false;

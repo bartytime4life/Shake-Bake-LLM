@@ -2,7 +2,7 @@
 
 Check a failed run against the code on your computer, then take a precise debugging brief into your AI chat. The workbench reads approved source folders, preserves the original error and shows the exact lines it found. No model is needed for this workflow.
 
-**Development preview: `0.4.0.dev30`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
+**Development preview: `0.4.0.dev31`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
 
 ## Open the app
 
@@ -49,7 +49,7 @@ An optional Ollama worker can draft unverified preparation notes for source brie
 
 ## Local data and scope
 
-- Connected folders and failure reports are session-only. A restart requires reconnecting folders unless supplied at launch. Failure reports also disappear when their tab closes; save an export you need.
+- Connected folders are session-only. A restart requires reconnecting folders unless supplied at launch. Use **Retry connection** to reconnect without reloading: entered failures and captured reports stay in the open tab. Missing project approvals make the old report outdated; reconnect the folder and check again. Closing or reloading the tab discards its failure text and reports; save an export you need.
 - Source-brief drafts save in this browser by default. **Options → Task draft** lets you disable saving or clear a draft. Recent source briefs last up to eight jobs and approximately five minutes in the running service.
 - Local AI on/off persists in private service settings. Models, reviewed profiles and durable job recovery are separate.
 - Possible credential formats are flagged with masked previews before sharing, including in pasted errors and recorded commands. This warns without changing exact evidence; no match is not proof that content is safe. See [credential screening](docs/credential-screening-2026-11-09.md).

@@ -817,6 +817,11 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#failure-result').isVisible(),true);
   });
   console.log(`${passed} failed-run browser scenarios passed.`);
+  const recovery = spawn(process.execPath,[path.join(__dirname,'browser_session_recovery_test.cjs'),...process.argv.slice(2)],{env:process.env,stdio:'inherit'});
+  await new Promise((resolve,reject) => {
+    recovery.once('error',reject);
+    recovery.once('exit',(code,signal) => code === 0 ? resolve() : reject(new Error(`Session-recovery browser checks failed (${signal || code}).`)));
+  });
 })().catch(error => {console.error(error);process.exitCode=1;}).finally(async () => {
   if (browser) await browser.close();
   if (server) server.kill('SIGTERM');
