@@ -34,6 +34,10 @@ _NODE_EXCEPTION = re.compile(
     r"(?: \[(?P<code>[A-Z][A-Z_0-9]{0,79})\])?(?:: ?(?P<message>.*))?$"
 )
 _NODE_CAUSE = re.compile(r"^ +\[cause\]: (?P<header>.+)$")
+_NODE_BRACKET_AGGREGATE = re.compile(
+    r"^\[(?P<header>AggregateError(?:: ?.*)?)\] (?:\{|\{ \[errors\]: \[\] \})$"
+)
+_NODE_ERRORS_PROPERTY = re.compile(r"^(?P<indent> +)\[errors\]: (?P<body>.*)$")
 _TS_POSITIONAL = re.compile(
     rf"^(?P<path>.+)\((?P<line>{_POSITION}),(?P<column>{_POSITION})\): "
     r"error (?P<type>TS[0-9]{3,6}): ?(?P<message>.*)$"
@@ -140,6 +144,101 @@ def _v8_location(line: str) -> tuple[str, int, int, str | None] | None:
     return position["path"], int(position["line"]), int(position["column"]), function
 
 
+def _node_bindings(lines: list[str], exceptions: list[dict], cutoffs: set[str]) -> tuple[dict, dict, set]:
+    """Bind one-level Node inspect arrays without flattening unknown structures.
+
+    Aggregate members are recognized only inside an explicitly framed [errors]
+    array belonging to AggregateError. Generic indented Error-looking log text
+    cannot acquire an exception identity. Nested/member-property structures are
+    deliberately incomplete rather than inheriting an outer error's frames.
+    """
+    headers: dict[int, int | None] = {}
+    bindings: dict[int, int | None] = {}
+    blocked_frames: set[int] = set()
+    active = None
+    active_is_aggregate = False
+    scope = None
+
+    def record(index, match, parent=None):
+        if len(exceptions) >= MAX_FRAMES:
+            cutoffs.add("exception_budget")
+            headers[index] = None
+            return None
+        item = _exception(match["type"], match["message"] or "", cutoffs, code=match["code"])
+        if parent is not None:
+            item["aggregate_parent_index"] = parent
+        headers[index] = len(exceptions)
+        exceptions.append(item)
+        return headers[index]
+
+    for index, line in enumerate(lines):
+        cause = _NODE_CAUSE.fullmatch(line)
+        bracket = _NODE_BRACKET_AGGREGATE.fullmatch(line)
+        root_match = _NODE_EXCEPTION.fullmatch(cause["header"] if cause else
+                                                bracket["header"] if bracket else line)
+        if root_match and (scope is None or not line.startswith(" ")):
+            if scope is not None:
+                cutoffs.add("node_aggregate_format_unsupported")
+                scope = None
+            active = record(index, root_match)
+            active_is_aggregate = root_match["type"] == "AggregateError"
+            continue
+        property_match = _NODE_ERRORS_PROPERTY.fullmatch(line)
+        if property_match:
+            if scope is None and active_is_aggregate and property_match["body"] == "[]":
+                active = None
+                active_is_aggregate = False
+                continue
+            if scope is not None:
+                scope["blocked"] = True
+                cutoffs.add("node_aggregate_format_unsupported")
+            else:
+                valid = active_is_aggregate and property_match["body"] == "["
+                scope = {"indent": len(property_match["indent"]), "parent": active, "blocked": not valid}
+                if not valid:
+                    cutoffs.add("node_aggregate_format_unsupported")
+            active = None
+            active_is_aggregate = False
+            continue
+        if scope is not None:
+            indentation = len(line) - len(line.lstrip(" "))
+            member_indent = scope["indent"] + 2
+            if line == " " * scope["indent"] + "]":
+                scope = None
+                active = None
+                continue
+            member = _NODE_EXCEPTION.fullmatch(line[member_indent:]) if indentation == member_indent else None
+            if member and not scope["blocked"] and not line.endswith(" {"):
+                active = record(index, member, scope["parent"])
+                continue
+            # The comma belongs to Node's inspect array, not the location.
+            stack_line = line.removesuffix(",")
+            location = _v8_location(stack_line)
+            if location is not None:
+                bindings[index] = active
+                if scope["blocked"] or active is None or indentation < member_indent + 4:
+                    blocked_frames.add(index)
+                    bindings[index] = None
+                    if active is not None:
+                        cutoffs.add("node_aggregate_format_unsupported")
+                continue
+            if not line.strip():
+                continue
+            # Multiline messages, nested causes/aggregates, primitive members,
+            # and unrecognized delimiters must not borrow the previous member.
+            scope["blocked"] = True
+            active = None
+            cutoffs.add("node_aggregate_format_unsupported")
+            continue
+        # Node appends an inspect-object brace to its final outer stack line
+        # when the error has [errors], [cause] or other displayed properties.
+        if _v8_location(line.removesuffix(" {")) is not None:
+            bindings[index] = active
+    if scope is not None:
+        cutoffs.add("node_aggregate_format_unsupported")
+    return headers, bindings, blocked_frames
+
+
 def parse_javascript(error_output: str) -> dict:
     """Return bounded location metadata, with explicit V8/diagnostic ordering.
 
@@ -178,18 +277,7 @@ def parse_javascript(error_output: str) -> dict:
             frames.append(frame)
     kind = "typescript" if exceptions else None
     if kind is None:
-        exception_indices: dict[int, int | None] = {}
-        for index, line in enumerate(lines):
-            cause = _NODE_CAUSE.fullmatch(line)
-            match = _NODE_EXCEPTION.fullmatch(cause["header"] if cause else line)
-            if match:
-                if len(exceptions) < MAX_FRAMES:
-                    exception_indices[index] = len(exceptions)
-                    exceptions.append(_exception(match["type"], match["message"] or "", cutoffs,
-                                                 code=match["code"]))
-                else:
-                    exception_indices[index] = None
-                    cutoffs.add("exception_budget")
+        exception_indices, bindings, blocked_frames = _node_bindings(lines, exceptions, cutoffs)
         # A syntax/runtime header is printed before its source/caret block. It
         # supplies the project location even when the remaining stack is internal.
         if exception_indices:
@@ -215,18 +303,17 @@ def parse_javascript(error_output: str) -> dict:
                     frame["exception_index"] = 0
                     frames.append(frame)
                     break
-        active_exception = None
         for index, line in enumerate(lines):
-            if index in exception_indices:
-                active_exception = exception_indices[index]
-            location = _v8_location(line)
-            if location is None:
+            if index not in bindings:
                 continue
+            location = _v8_location(line.removesuffix(",").removesuffix(" {"))
             if len(frames) >= MAX_FRAMES:
                 cutoffs.add("frame_budget")
                 continue
             frame = _frame(*location, len(frames) + 1, "node", cutoffs)
-            frame["exception_index"] = active_exception
+            frame["exception_index"] = bindings[index]
+            if index in blocked_frames:
+                frame["path_status"] = "node_aggregate_format_unsupported"
             frames.append(frame)
         # Node prints source/caret headers for runtime errors too. Prefer a
         # same-location stack frame, which additionally supplies its function

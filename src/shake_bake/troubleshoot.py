@@ -425,6 +425,12 @@ def locate_failure(root: Path, error_output: str, command: str = "", *, working_
                         and 0 <= exception_index < len(exceptions) else None)
     guidance = (_javascript_guidance(format_name, terminal, primary, frames)
                 if format_name in ("node", "typescript") else _guidance(terminal, primary, frames))
+    if format_name == "node" and any("aggregate_parent_index" in item for item in exceptions):
+        guidance.append({"title": "Review aggregate members separately",
+                         "detail": "This Node.js AggregateError groups separate errors. Each supported member's frames are associated with that member's message; the array order does not establish a cause or a sequence of failures. Read the aggregate and other members in the original error too."})
+    if "node_aggregate_format_unsupported" in cutoffs:
+        guidance.insert(0, {"title": "Part of this Node.js error could not be interpreted",
+                            "detail": "A nested, incomplete or unsupported aggregate structure remains in the original error. Unrecognized member frames were not captured or assigned another error's message. Use the full original output when investigating; this report covers only supported locations."})
     if format_name == "pytest":
         guidance = [{"title": "Review the final pytest failure and its callers",
                      "detail": "The main result refers to the final failure section. Other captured tests and callers are in matching details. Confirm the exact test, input and environment before changing code; no tests were run by this check."}]
