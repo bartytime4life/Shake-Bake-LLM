@@ -41,7 +41,7 @@
       <h1>Start with the thing that failed.</h1>
       <p class="workflow-intro muted">Paste an error, connect its project, and find the source line to inspect. Everything stays on this computer.</p>
       <div class="workflow-choices" role="group" aria-label="Choose a job">
-        <button type="button" id="choose-failed-run" class="workflow-choice selected" aria-pressed="true" aria-controls="failed-run-workflow"><strong>Diagnose a failed run</strong><span>Check Python, Node.js and TypeScript errors against current source.</span></button>
+        <button type="button" id="choose-failed-run" class="workflow-choice selected" aria-pressed="true" aria-controls="failed-run-workflow"><strong>Diagnose a failed run</strong><span>Check Python, pytest, Node.js and TypeScript errors against current source.</span></button>
         <button type="button" id="choose-source-brief" class="workflow-choice" aria-pressed="false" aria-controls="source-brief-workflow"><strong>Prepare source brief</strong><span>Package source for an AI chat. Does not diagnose or fix it.</span></button>
       </div>
         <details id="connect-project" class="connect-project">
@@ -57,7 +57,7 @@
 
       <section id="failed-run-workflow" aria-labelledby="failed-run-heading">
         <div class="workflow-heading"><h2 id="failed-run-heading">Where did it fail?</h2><button type="button" id="try-failure-example" class="text-button">Try a labelled example</button></div>
-        <p class="small muted">Supports Python tracebacks, Node.js stack traces and TypeScript compiler errors. The command is recorded for context and is never run.</p>
+        <p class="small muted">Supports Python tracebacks, default, long or short pytest failure reports, Node.js stack traces and TypeScript compiler errors. The command is recorded for context and is never run.</p>
         <form id="failure-form" autocomplete="off">
           <div class="error-input-heading"><label for="failure-output" class="request-label">Paste the complete error output</label><button type="button" id="load-failure-file" class="secondary compact">Load error file</button></div>
           <input id="failure-file" type="file" accept=".txt,.log,text/plain" aria-label="Load a UTF-8 error file" hidden>
@@ -69,6 +69,8 @@
             <div><label for="failure-project">Project containing the failing code</label><select id="failure-project" name="project_id" required aria-describedby="failure-project-help"><option value="">Connecting to local session…</option></select></div>
           </div>
           <p id="failure-project-help" class="small muted">Choose a connected project, or use Connect project folder above. Source is read only after you ask for a diagnosis.</p>
+          <label for="failure-working-directory">Folder where the command ran <span class="muted">(optional)</span></label><input id="failure-working-directory" name="working_directory" type="text" spellcheck="false" aria-describedby="failure-working-directory-help" placeholder="Connected project folder by default">
+          <p id="failure-working-directory-help" class="small muted">Leave blank for the connected project folder, or enter a subfolder such as services/api. An absolute folder must stay inside the connected project. This is not inferred from the command.</p>
           <p id="failure-example-notice" class="notice" hidden>Labelled synthetic example. This traceback is invented for the bundled demo; it is not a failure observed on your computer.</p>
           <div class="action-row"><button type="submit" id="diagnose-run" class="primary" disabled>Find failing source <span aria-hidden="true">→</span></button><span id="failure-progress" class="small muted" role="status" aria-live="polite"></span></div>
         </form>
@@ -78,16 +80,17 @@
           <p id="failure-stale" class="notice" role="status" hidden>Inputs changed. This result belongs to the captured project and error below. Find failing source again before copying or exporting.</p>
           <h2 id="failure-result-title" tabindex="-1"></h2>
           <p id="failure-captured-project" class="small muted"></p>
+          <p id="failure-captured-working-directory" class="small muted"></p>
           <p id="failure-format" class="small muted"></p>
           <p id="failure-exception" class="failure-exception"></p>
           <p id="failure-result-context" class="small muted"></p>
           <p id="failure-credential-warning" class="notice credential-warning" role="alert" hidden></p>
           <div class="failure-handoff"><button type="button" id="copy-failure-brief" class="primary" disabled>Copy debugging brief</button><p class="small muted">Take the original error and captured source into your existing AI chat to investigate the cause and a verifiable fix.</p></div>
           <p id="failure-copy-status" class="small" role="status" aria-live="polite"></p>
-          <details id="failure-copy-review" class="handoff-copy" hidden><summary>Review debugging brief or copy manually</summary><label for="failure-copy-text" class="sr-only">Captured debugging brief</label><textarea id="failure-copy-text" rows="12" readonly spellcheck="false"></textarea><p class="small muted">This includes the original error, recorded command, project folder and captured source. Review before sharing. Clipboard and chat clients can change line endings; the JSON report preserves exact contents.</p></details>
+          <details id="failure-copy-review" class="handoff-copy" hidden><summary>Review debugging brief or copy manually</summary><label for="failure-copy-text" class="sr-only">Captured debugging brief</label><textarea id="failure-copy-text" rows="12" readonly spellcheck="false"></textarea><p class="small muted">This includes the original error, recorded command, project folder, working folder and captured source. Review before sharing. Clipboard and chat clients can change line endings; the JSON report preserves exact contents.</p></details>
           <div id="failure-source"></div>
           <section class="failure-next" aria-labelledby="failure-next-heading"><h3 id="failure-next-heading">What to check next</h3><div id="failure-guidance"></div></section>
-          <details id="failure-frames" class="technical"><summary>Traceback frames &amp; matching details</summary><ol id="failure-frame-list"></ol></details>
+          <details id="failure-frames" class="technical"><summary>Error locations &amp; matching details</summary><ol id="failure-frame-list"></ol></details>
           <details class="technical"><summary>Original error &amp; report</summary><p class="small muted">The output below is the exact captured text you pasted or loaded. A source match points to a place to inspect; it does not establish a cause or prove a fix.</p><pre id="failure-original"></pre><p id="failure-captured-command" class="small muted"></p><div class="export-actions"><button type="button" id="download-failure-text" class="secondary compact">Save report as .txt</button><button type="button" id="download-failure-json" class="text-button">Download JSON report</button></div></details>
           <div id="failure-limits" class="failure-limits small muted"></div>
         </section>

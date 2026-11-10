@@ -18,6 +18,18 @@ SLACK = "xo" + "xb-" + "1234567890-abcdefghij"
 
 
 class FailureScreeningTests(unittest.TestCase):
+    def test_recorded_working_folder_is_screened_without_rewriting_or_repeating_it(self):
+        report = {"working_directory": "./services/" + AWS,
+                  "working_directory_path": "services/" + AWS, "error_output": "ValueError: bad"}
+        original = deepcopy(report)
+        findings = screen_failure(report)
+        self.assertEqual(report, original)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0]["where"], "recorded working folder")
+        self.assertIsNone(findings[0]["path"])
+        self.assertIsNone(findings[0]["line"])
+        self.assertNotIn(AWS, str(findings))
+
     def test_legacy_three_argument_screening_remains_bounded_and_compatible(self):
         findings = screen_failure("Error: " + AWS, "launch " + GITHUB, [])
         self.assertEqual([(item["where"], item["line"]) for item in findings], [("error output", 1), ("command", None)])

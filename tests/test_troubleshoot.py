@@ -2,6 +2,8 @@
 
 import hashlib
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import traceback
 import unittest
@@ -162,6 +164,83 @@ class FailureLocatorTests(unittest.TestCase):
         self.assertIsNone(result["innermost_project_frame"])
         self.assertIsNone(result["terminal_exception"])
         self.assertEqual(result["exceptions"][0]["type"], "NameError")
+
+    def test_independent_tracebacks_keep_final_failure_and_source_together(self):
+        self.source()
+        self.source("entry.py", "raise RuntimeError('last failure')\n")
+        raw = self.trace() + "\n" + self.trace("entry.py", 1, "raise RuntimeError('last failure')", "RuntimeError: last failure")
+        result = locate_failure(self.root, raw)
+        self.assertEqual([frame["chain_index"] for frame in result["frames"]], [0, 1])
+        self.assertEqual([item["chain_index"] for item in result["exceptions"]], [0, 1])
+        self.assertEqual(result["terminal_exception"]["type"], "RuntimeError")
+        self.assertEqual(result["innermost_project_frame"], "F2")
+        self.assertEqual(result["chain_relations"], [])
+        self.assertEqual(result["error_output"], raw)
+        self.assertEqual(result["error_sha256"], hashlib.sha256(raw.encode()).hexdigest())
+
+    def test_generated_unittest_output_does_not_attribute_final_failure_to_earlier_source(self):
+        # Execute only these disposable fixtures to get the standard runner's
+        # real multiple-error format. The locator never executes inspected code.
+        suite = self.root.parent / "generated suite"
+        for package, exception in (("first", "ValueError"), ("last", "PermissionError")):
+            folder = suite / package
+            folder.mkdir(parents=True)
+            (folder / "__init__.py").write_text("", encoding="utf-8")
+            (folder / "test_case.py").write_text(
+                "import unittest\nclass Cases(unittest.TestCase):\n"
+                f"    def test_failure(self):\n        raise {exception}('{package} failure')\n",
+                encoding="utf-8")
+        completed = subprocess.run(
+            [sys.executable, "-m", "unittest", "first.test_case", "last.test_case"],
+            cwd=suite, capture_output=True, text=True, timeout=10)
+        self.assertEqual(completed.returncode, 1)
+        self.assertEqual(completed.stderr.count("Traceback (most recent call last):"), 2)
+        result = locate_failure(suite / "first", completed.stderr)
+        self.assertEqual(result["terminal_exception"]["type"], "PermissionError")
+        self.assertTrue(result["source_located"])
+        self.assertIsNone(result["innermost_project_frame"])
+        self.assertEqual([frame["chain_index"] for frame in result["frames"]], [0, 1])
+        self.assertEqual([frame["status"] for frame in result["frames"]], ["located", "outside_project"])
+        self.assertEqual(result["chain_relations"], [])
+        self.assertEqual(result["error_output"], completed.stderr)
+        self.assertIn("No frame in the final traceback", result["guidance"][0]["detail"])
+
+    def test_truncated_independent_traceback_does_not_reuse_prior_terminal_or_source(self):
+        self.source()
+        raw = self.trace() + "\nTraceback (most recent call last):\n"
+        result = locate_failure(self.root, raw)
+        self.assertTrue(result["source_located"])
+        self.assertIsNone(result["terminal_exception"])
+        self.assertIsNone(result["innermost_project_frame"])
+        self.assertEqual(result["chain_relations"], [])
+        self.assertEqual(result["exceptions"][0]["type"], "NameError")
+
+    def test_independent_standalone_syntax_errors_do_not_share_final_source(self):
+        self.source(text="def run(:\n    pass\n")
+        raw = ('  File "app.py", line 1\n    def run(:\n            ^\nSyntaxError: first invalid syntax\n'
+               '\n  File "/external/later.py", line 9\n    return )\n           ^\nSyntaxError: final invalid syntax\n')
+        result = locate_failure(self.root, raw)
+        self.assertEqual([frame["chain_index"] for frame in result["frames"]], [0, 1])
+        self.assertEqual(result["terminal_exception"]["message"], "final invalid syntax")
+        self.assertTrue(result["source_located"])
+        self.assertIsNone(result["innermost_project_frame"])
+        self.assertEqual(result["chain_relations"], [])
+        self.assertEqual(result["error_output"], raw)
+
+    def test_explicit_chain_followed_by_standalone_syntax_block_advances_only_once(self):
+        self.source()
+        self.source("invalid.py", "def run(:\n")
+        markers = (("The above exception was the direct cause of the following exception:", "direct_cause"),
+                   ("During handling of the above exception, another exception occurred:", "during_handling"))
+        for marker, relation in markers:
+            with self.subTest(relation=relation):
+                raw = (self.trace() + "\n" + marker + "\n\n"
+                       + '  File "invalid.py", line 1\n    def run(:\n            ^\nSyntaxError: invalid syntax\n')
+                result = locate_failure(self.root, raw)
+                self.assertEqual([frame["chain_index"] for frame in result["frames"]], [0, 1])
+                self.assertEqual(result["innermost_project_frame"], "F2")
+                self.assertEqual(result["terminal_exception"]["type"], "SyntaxError")
+                self.assertEqual(result["chain_relations"], [{"from_chain": 0, "to_chain": 1, "relation": relation}])
 
     def test_missing_package_exception_only_has_actionable_bounded_guidance(self):
         raw = "ModuleNotFoundError: No module named 'example_package'\n"

@@ -113,6 +113,7 @@ def diagnose_main(argv):
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--error-file", required=True, type=Path, help="UTF-8 saved error output, outside the inspected project if private")
     parser.add_argument("--command", default="", help="Record the command that failed; never execute it")
+    parser.add_argument("--working-directory", default="", help="Exact run directory inside the approved project; relative source paths start here (default: project root)")
     args = parser.parse_args(argv)
     try:
         descriptor = os.open(args.error_file, os.O_RDONLY | os.O_NONBLOCK)
@@ -122,7 +123,8 @@ def diagnose_main(argv):
             raw = stream.read(65537)
         if len(raw) > 65536:
             raise Refusal("invalid_error_output")
-        report = locate_failure(args.root, raw.decode("utf-8"), args.command)
+        report = locate_failure(args.root, raw.decode("utf-8"), args.command,
+                                working_directory=args.working_directory)
     except (OSError, UnicodeError):
         print(json.dumps({"outcome": "DENY", "code": "error_output_unavailable"}))
         return 2

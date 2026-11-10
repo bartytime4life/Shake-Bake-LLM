@@ -93,7 +93,8 @@ function harness(clipboard,{style='evidence'}={}) {
   }
   const el=id=>elements[id] ||= new Element();
   const windowEvents={};
-  const context={document:{getElementById:el,createElement:()=>new Element(),querySelectorAll:()=>[]},window:{addEventListener(name,fn){windowEvents[name]=fn;}},
+  const context={document:{getElementById:el,createElement:()=>new Element(),querySelectorAll:()=>[]},window:{addEventListener(name,fn){windowEvents[name]=fn;},dispatchEvent(event){windowEvents[event.type]?.(event);}},
+    CustomEvent:class {constructor(type){this.type=type;}},
     navigator:{},localStorage:{getItem(){return null;}},setTimeout(fn){timers.push(fn);},clearTimeout(){},setInterval(){},clearInterval(){},
     Blob,URL:{createObjectURL(blob){context.downloadBlob=blob;return 'blob:synthetic';},revokeObjectURL(){}}};
   if(clipboard)context.navigator.clipboard={writeText(text){writes.push(text);return clipboard(text);}};

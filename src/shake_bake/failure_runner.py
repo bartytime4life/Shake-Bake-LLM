@@ -32,9 +32,11 @@ def main():
         from .worker import parse_json
         from .troubleshoot import locate_failure
         request = parse_json(raw.decode("utf-8"))
-        if not isinstance(request, dict) or set(request) != {"root", "error_output", "command"}:
+        if (not isinstance(request, dict) or not {"root", "error_output", "command"} <= set(request)
+                or set(request) - {"root", "error_output", "command", "working_directory"}):
             raise Refusal("invalid_failure_request")
-        result = locate_failure(Path(request["root"]), request["error_output"], request["command"])
+        result = locate_failure(Path(request["root"]), request["error_output"], request["command"],
+                                working_directory=request.get("working_directory", ""))
     except Refusal as error:
         result = {"outcome": "DENY", "code": error.code}
     except Exception:
