@@ -10,6 +10,8 @@ const {chromium} = require('playwright');
 let browser, server, baseURL, fixture, sourceFixture, passed = 0;
 const connectionFixtures = [];
 const source = '"""Synthetic failed-run source. Never imported by this test."""\n\ndef parse_count(value):\n    return int(value)\n';
+const nestedSource = '"""Synthetic nested source. Never imported by this test."""\n\ndef parse_count(value):\n    return int(value.strip())\n';
+const nestedWorkingDirectory = 'services/api workspace';
 const output = (statement='return int(value)',filename=path.join(fixture,'parse.py')) =>
   `Traceback (most recent call last):\n  File "${filename}", line 4, in parse_count\n    ${statement}\nValueError: invalid literal for int() with base 10: 'many'\n`;
 const pytestSection = title => ` ${title} `.padStart(Math.floor((79 + title.length + 2) / 2),'=').padEnd(79,'=') + '\n';
@@ -53,6 +55,8 @@ async function diagnose(page, error=output()) {
   sourceFixture = await fs.mkdtemp(path.join(os.tmpdir(),'sb-source-brief-browser-'));
   await fs.writeFile(path.join(sourceFixture,'retry.py'),'RETRY_LIMIT = 3\n');
   await fs.writeFile(path.join(fixture,'parse.py'),source);
+  await fs.mkdir(path.join(fixture,nestedWorkingDirectory),{recursive:true});
+  await fs.writeFile(path.join(fixture,nestedWorkingDirectory,'parse.py'),nestedSource);
   await fs.writeFile(path.join(fixture,'unicode.py'),'def parse_count(value):\n    marker = \"first\u2028second\"\n    return int(value)\n');
   await fs.writeFile(path.join(fixture,'worker.js'),'function parseCount(value) {\n  throw new TypeError("synthetic failure");\n}\nparseCount(null);\n');
   await fs.writeFile(path.join(fixture,'eof.js'),'function incomplete() {\n');
@@ -71,6 +75,7 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#choose-failed-run').getAttribute('aria-pressed'),'true');
     assert.equal(await page.locator('#failure-output').inputValue(),'');
     assert.equal(await page.locator('#failure-command').inputValue(),'');
+    assert.equal(await page.locator('#failure-working-directory').inputValue(),'');
     assert.equal(await page.locator('#failure-project').inputValue(),'');
     assert.equal(await page.locator('#diagnose-run').isDisabled(),true);
     await page.locator('#failure-project').selectOption('starter-demo');
@@ -82,12 +87,14 @@ async function diagnose(page, error=output()) {
     await page.locator('#request').fill('Preserve this separate source-brief draft.');
     await page.locator('#choose-failed-run').click();
     await page.locator('#failure-output').fill(output());
+    await page.locator('#failure-working-directory').fill(nestedWorkingDirectory);
     await page.locator('#connect-project > summary').click();
     await page.locator('#project-label').fill('Synthetic failure fixture');
     await page.locator('#project-path').fill(fixture);
     await page.locator('#connect-project-button').click();
     await page.waitForFunction(() => document.querySelector('#project-connect-status').textContent.includes('Folder connected'));
     assert.equal(await page.locator('#failure-output').inputValue(),output());
+    assert.equal(await page.locator('#failure-working-directory').inputValue(),nestedWorkingDirectory);
     assert.notEqual(await page.locator('#failure-project').inputValue(),'starter-demo');
     assert.notEqual(await page.locator('#failure-project').inputValue(),'');
     assert.match(await page.locator('#failure-project-help').innerText(),new RegExp(fixture));
@@ -96,6 +103,7 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#request').inputValue(),'Preserve this separate source-brief draft.');
     await page.locator('#choose-failed-run').click();
     assert.equal(await page.locator('#failure-output').inputValue(),output());
+    assert.equal(await page.locator('#failure-working-directory').inputValue(),nestedWorkingDirectory);
     const storage = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
     assert.equal(Object.values(storage).some(value => value.includes('ValueError: invalid literal')),false);
   });
@@ -105,6 +113,7 @@ async function diagnose(page, error=output()) {
     assert.equal(failureProject,'');
     await page.locator('#failure-output').fill(output());
     await page.locator('#failure-command').fill('python parse.py --preserved');
+    await page.locator('#failure-working-directory').fill(nestedWorkingDirectory);
     await page.locator('#choose-source-brief').click();
     await page.locator('#request').fill('Where is RETRY_LIMIT defined? Preserve this source question.');
     assert.equal(await page.locator('#connect-project').isVisible(),true);
@@ -122,6 +131,7 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#failure-project').inputValue(),failureProject);
     assert.equal(await page.locator('#failure-output').inputValue(),output());
     assert.equal(await page.locator('#failure-command').inputValue(),'python parse.py --preserved');
+    assert.equal(await page.locator('#failure-working-directory').inputValue(),nestedWorkingDirectory);
     await page.reload();
     await page.waitForFunction(() => window.sbWorkbench?.getState()?.native?.csrf_token);
     await page.locator('#choose-source-brief').click();
@@ -195,6 +205,86 @@ async function diagnose(page, error=output()) {
     assert.equal(record.error_output,error);
     assert.equal(record.error_sha256,createHash('sha256').update(Buffer.from(error,'utf8')).digest('hex'));
     assert.equal(record.command,'python parse.py --recorded-only');
+    assert.equal(record.working_directory,'');
+    assert.equal(record.working_directory_path,'.');
+  });
+  await scenario('an explicit working folder selects the nested relative source instead of a same-named root file', async page => {
+    const error = output('return int(value.strip())','parse.py');
+    await diagnose(page,error);
+    assert.match(await page.locator('#failure-result-title').innerText(),/pasted statement differs/);
+    assert.match(await page.locator('#failure-source').innerText(),/return int\(value\)/);
+    assert.match(await page.locator('#failure-captured-working-directory').innerText(),/connected project folder \(\.\)/);
+    await page.locator('#failure-working-directory').fill('./' + nestedWorkingDirectory);
+    await page.locator('#diagnose-run').click();
+    await page.waitForFunction(() => !document.querySelector('#copy-failure-brief').disabled);
+    assert.equal(await page.locator('#failure-stale').isVisible(),false);
+    assert.match(await page.locator('#failure-result-title').innerText(),/Source located — check this line/);
+    assert.match(await page.locator('#failure-result-context').innerText(),/services\/api workspace\/parse.py:4/);
+    assert.match(await page.locator('#failure-source').innerText(),/return int\(value.strip\(\)\)/);
+    assert.match(await page.locator('#failure-captured-working-directory').innerText(),/services\/api workspace/);
+    assert.ok((await page.locator('#failure-copy-text').inputValue()).includes('"working_directory": "./services/api workspace"'));
+  });
+  await scenario('working-folder edits preserve a loaded exact error and captured folder in the report and brief', async page => {
+    const error = '\ufeff' + output('return int(value.strip())','parse.py').replace(/\n/g,'\r\n');
+    const directory = path.join(fixture,nestedWorkingDirectory);
+    await page.locator('#failure-file').setInputFiles({name:'nested-run.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
+    await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded nested-run.log'));
+    await page.locator('#failure-working-directory').fill(directory);
+    await page.locator('#diagnose-run').click();
+    await page.locator('#failure-result').waitFor({state:'visible'});
+    assert.equal(await page.locator('#failure-original').textContent(),error);
+    assert.match(await page.locator('#failure-result-context').innerText(),/services\/api workspace\/parse.py:4/);
+    const captured = await page.locator('#failure-captured-working-directory').innerText();
+    assert.ok(captured.includes(directory));
+    const brief = await page.locator('#failure-copy-text').inputValue();
+    assert.ok(brief.includes(JSON.stringify(directory)));
+    assert.ok(brief.includes('"working_directory_path": "services/api workspace"'));
+    await page.getByText('Original error & report',{exact:true}).click();
+    const downloading = page.waitForEvent('download');
+    await page.locator('#download-failure-json').click();
+    const record = JSON.parse(await fs.readFile(await (await downloading).path(),'utf8'));
+    assert.equal(record.error_output,error);
+    assert.equal(record.working_directory,directory);
+    assert.equal(record.working_directory_path,nestedWorkingDirectory);
+    await page.locator('#failure-working-directory').fill('');
+    assert.equal(await page.locator('#failure-captured-working-directory').innerText(),captured);
+    assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+    await page.locator('#diagnose-run').click();
+    await page.waitForFunction(() => !document.querySelector('#copy-failure-brief').disabled);
+    assert.equal(await page.locator('#failure-original').textContent(),error);
+    assert.match(await page.locator('#failure-result-title').innerText(),/pasted statement differs/);
+  });
+  await scenario('refused working folders explain how to recover and preserve exact inputs', async page => {
+    const error = '\ufeff' + output().replace(/\n/g,'\r\n');
+    const command = 'python parse.py --keep-this-command';
+    await page.locator('#failure-file').setInputFiles({name:'preserved-error.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
+    await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded preserved-error.log'));
+    await page.locator('#failure-command').fill(command);
+    for (const [directory,recovery] of [
+      [os.tmpdir(),/outside the connected project/],
+      ['../',/without parent-folder steps/],
+      ['missing-synthetic-folder',/Check that it exists and is a readable folder/]
+    ]) {
+      await page.locator('#failure-working-directory').fill(directory);
+      await page.locator('#diagnose-run').click();
+      await page.locator('#failure-notice').waitFor({state:'visible'});
+      const message = await page.locator('#failure-notice').innerText();
+      assert.match(message,recovery);
+      assert.match(message,/clear the field to use the connected project folder/);
+      assert.doesNotMatch(message,/working_directory_|invalid_failure_/);
+      assert.equal(await page.locator('#failure-working-directory').inputValue(),directory);
+      assert.equal(await page.locator('#failure-command').inputValue(),command);
+      assert.equal(await page.locator('#failure-output').inputValue(),error.replace(/\r\n/g,'\n'));
+      assert.equal(await page.evaluate(() => document.activeElement.id),'failure-working-directory');
+      assert.equal(await page.locator('#failure-result').isVisible(),false);
+    }
+    await page.locator('#failure-working-directory').fill('');
+    await page.locator('#diagnose-run').click();
+    await page.locator('#failure-result').waitFor({state:'visible'});
+    assert.match(await page.locator('#failure-result-title').innerText(),/Source located — check this line/);
+    assert.equal(await page.locator('#failure-original').textContent(),error);
+    assert.equal(await page.locator('#failure-command').inputValue(),command);
+    assert.equal(await page.locator('#failure-notice').isVisible(),false);
   });
   await scenario('editing a loaded error replaces its preserved file copy with the edited text', async page => {
     const loaded = output().replace(/\n/g,'\r\n');
@@ -449,13 +539,14 @@ async function diagnose(page, error=output()) {
     const storage = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
     assert.equal(Object.values(storage).some(value => value.includes(command) || value.includes('<img')),false);
   });
-  for (const changed of ['error', 'command', 'project']) {
+  for (const changed of ['error', 'command', 'project', 'working folder']) {
     await scenario(`editing the ${changed} marks the captured report outdated and disables handoff and exports`, async page => {
       await diagnose(page);
       const captured = await page.locator('#failure-captured-project').innerText();
       if (changed === 'error') await page.locator('#failure-output').fill(output('return 99'));
       if (changed === 'command') await page.locator('#failure-command').fill('python parse.py --changed');
       if (changed === 'project') await page.locator('#failure-project').selectOption('starter-demo');
+      if (changed === 'working folder') await page.locator('#failure-working-directory').fill(nestedWorkingDirectory);
       assert.equal(await page.locator('#failure-stale').isVisible(),true);
       assert.equal(await page.locator('#failure-captured-project').innerText(),captured);
       assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
@@ -677,8 +768,16 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#failure-output').inputValue(),error);
     assert.match(await page.locator('#failure-notice').innerText(),/unchanged/);
     await page.locator('#failure-output').fill('');
+    await page.locator('#failure-working-directory').fill(nestedWorkingDirectory);
+    await page.locator('#try-failure-example').click();
+    assert.equal(await page.locator('#failure-working-directory').inputValue(),nestedWorkingDirectory);
+    assert.equal(await page.locator('#failure-output').inputValue(),'');
+    assert.equal(await page.locator('#failure-example-notice').isVisible(),false);
+    assert.match(await page.locator('#failure-notice').innerText(),/working folder are unchanged/);
+    await page.locator('#failure-working-directory').fill('');
     await page.locator('#try-failure-example').click();
     assert.equal(await page.locator('#failure-example-notice').isVisible(),true);
+    assert.equal(await page.locator('#failure-working-directory').inputValue(),'');
     assert.equal(await page.locator('#failure-project').inputValue(),'starter-demo');
     await page.locator('#diagnose-run').click();
     await page.locator('#failure-result').waitFor({state:'visible'});

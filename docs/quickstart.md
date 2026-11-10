@@ -10,6 +10,7 @@ Keep that terminal open. The launcher chooses Python 3.11 or newer and opens the
 
 1. Open **Connect project folder** above either workflow. Enter the absolute folder path containing the failing code, then select **Connect folder**. The name is optional. Connection approves read-only inspection for this service session.
 2. Paste the complete error output, or select **Load error file** for a UTF-8 `.txt` or `.log` up to 64 KiB. Loading alone makes no service request. Optionally record the command that failed. The app never runs that command.
+   If you ran it in a project subfolder, enter that folder in **Folder where the command ran**. Blank uses the connected root; a relative folder such as `services/api` stays inside that root. The recorded command never chooses the folder for you.
 3. Select **Find failing source**. Inspect the highlighted line and whether it matches the statement in the traceback. A mismatch can mean the error came from a different source version.
 4. Read the suggested next checks and limits. Select **Copy debugging brief** for your AI chat, or save the text/JSON report if you need it after closing the page. If copying fails, select the exact handoff text shown on the page. Review any possible-credential warning before sharing. Nothing is sent automatically.
 
