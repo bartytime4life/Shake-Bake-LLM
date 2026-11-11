@@ -1,0 +1,333 @@
+{
+  "schema_version": "1",
+  "kind": "paired_source_span_development",
+  "measurement_commit": "e04125dab1676421139daff8cc51a3a046c3c9cf",
+  "collector_baseline_commit": "cd2abe67c4bde1c3bfc0bad777bbe71e195475c3",
+  "collector_candidate_base_commit": "505c47ed5c99160945d43728e815b0d8ed8f0412",
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+  "python_hash_seed": "0",
+  "measurement_sources_sha256": {
+    "run_task_lab.py": "6ed4854e4cffca29d26728462f29283e25f23287a8d29babd3a6c77a56491d8a",
+    "source_span_development.py": "52a5d7f9866b6b0f7637579e4a9d75b7d5fae0f45e843332f56db47659e267d7"
+  },
+  "collector_sources": {
+    "before": {
+      "revision": "cd2abe67c4bde1c3bfc0bad777bbe71e195475c3",
+      "tree": "7c1ed0e429b0acd256106db338b02bbefed15a07",
+      "package_sources_sha256": {
+        "src/shake_bake/__init__.py": "a1e15c647e0ef46e1ea28b9aa1dd41bb2e00300900d885343613423f504853f2",
+        "src/shake_bake/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+        "src/shake_bake/briefing.py": "cbb6b9345437c0ea928f65ee7137d38283dc1be041e2af7ac52610b67ae9831d",
+        "src/shake_bake/capabilities.py": "ed23b13fd509afcfaa4a706c2e21c79f4cd390e71645f5008e524b3401909d3f",
+        "src/shake_bake/change_review.py": "4de572a16ddebb52a8acbf7653d71c65d58df5445c59d7701ba46523b608a1e7",
+        "src/shake_bake/cli.py": "9de55110191a06271ccc384b691bd2376465a80efca01da0636aaf0b74da46f8",
+        "src/shake_bake/collector.py": "3423133996c20ad5d8bfacae49b0d2e115fffed623a412fcd7cf846ae1d9b0eb",
+        "src/shake_bake/contracts.py": "55ca71215d7b827c1bb43c1e636998817455c9fa69b2f467c735c73ce34ff10c",
+        "src/shake_bake/demo/validator.py": "0661539c11dbd15405b5a2a0a186ed8408db75cc685256b004dc3cbe79d8097c",
+        "src/shake_bake/doctor.py": "710f76a896f13b9faf1948607301cd54e5d18a512b7c3e493559e3d5a36624bf",
+        "src/shake_bake/error_formats.py": "b692227b992fa4a713a352cc170b6f0ca4518b549cd85c98a41f3e8b52f42efc",
+        "src/shake_bake/failure_runner.py": "8390c7e575bc8b629aa4728411dd60b5f9bd010ad6b4baa3a4acffc7e734dbca",
+        "src/shake_bake/failure_service.py": "e2be1fe4eec0a0d9a3de480903ea715923928d94c3c96270989b0dd366a699c7",
+        "src/shake_bake/gui.py": "392885e91279fbc549a627129a6bbd2ec54a5250e6d8923ce3cb533e2d201c92",
+        "src/shake_bake/helper.py": "164bc804f7cfce4347784357c445e478de23eb9527ac58f02eb0e5e6a02f7705",
+        "src/shake_bake/job_runner.py": "d9bc225fda9de1ed9ec9415499baa33d856128b67dba21e2dc66a4e6278f0a49",
+        "src/shake_bake/mcp_server.py": "d1b23d0584cc6bbd62797c8541487c24924ed99f9230e6aaa2dde80871e63b43",
+        "src/shake_bake/preferences.py": "0c42ff846cb18f697107ce67c3347b0bd747340429d4c0119c7dd7cfaa8a6b7f",
+        "src/shake_bake/pytest_formats.py": "af27871bbc5711a87a5370f8480f3b9d9aa42ba488a069594dd76196cf5c1744",
+        "src/shake_bake/rerank.py": "6636c1adec412e7e6c762f41e90fff8a68e6b7cdfa2dd3ffdd42cf8a08edb6b6",
+        "src/shake_bake/routing.py": "5c8b1af4a359702afd4a9f903d1aab2c59636f65a832843fc1d16c54d8109a24",
+        "src/shake_bake/screening.py": "f260d8fbeebb6ebba1c7d9a4bf48235a373fb3dfa479a46e2e9cadef5d0783e6",
+        "src/shake_bake/search.py": "796d5f18df23b4d50e8bb1e4d108c6e27da040fdab1e6874fbd7f46533e67935",
+        "src/shake_bake/shared.py": "90f87a55067ca4b682926eff4fc06c660ce21e182caba63826e420f2f00aad4b",
+        "src/shake_bake/task_protocol.py": "1a76db717293fee2acc513705caf0e99150caf89d358046197e8a62444ff912a",
+        "src/shake_bake/troubleshoot.py": "55da0fbcf6f8a134f2b4add47886c90e0b608ca82cfabf11f9b782cf115c8654",
+        "src/shake_bake/worker.py": "ffb2c95eb92603472ea4611d4d680582aed09ad12c09813f06261a7c31cd8f05"
+      }
+    },
+    "after": {
+      "revision": "e04125dab1676421139daff8cc51a3a046c3c9cf",
+      "tree": "33e87af54d5689c4a71cd594fa889a9153611fb3",
+      "package_sources_sha256": {
+        "src/shake_bake/__init__.py": "6e9b6830019b6e76cf9039669a8d74d78281774f29ed8e6e40efb8a680a4fe8b",
+        "src/shake_bake/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+        "src/shake_bake/briefing.py": "7af692654b368a26dd05c28cdfb29347626306e9bd8f82b94ff78de630f9170d",
+        "src/shake_bake/capabilities.py": "ed23b13fd509afcfaa4a706c2e21c79f4cd390e71645f5008e524b3401909d3f",
+        "src/shake_bake/change_review.py": "4de572a16ddebb52a8acbf7653d71c65d58df5445c59d7701ba46523b608a1e7",
+        "src/shake_bake/cli.py": "9de55110191a06271ccc384b691bd2376465a80efca01da0636aaf0b74da46f8",
+        "src/shake_bake/collector.py": "3423133996c20ad5d8bfacae49b0d2e115fffed623a412fcd7cf846ae1d9b0eb",
+        "src/shake_bake/contracts.py": "55ca71215d7b827c1bb43c1e636998817455c9fa69b2f467c735c73ce34ff10c",
+        "src/shake_bake/demo/validator.py": "0661539c11dbd15405b5a2a0a186ed8408db75cc685256b004dc3cbe79d8097c",
+        "src/shake_bake/doctor.py": "710f76a896f13b9faf1948607301cd54e5d18a512b7c3e493559e3d5a36624bf",
+        "src/shake_bake/error_formats.py": "b692227b992fa4a713a352cc170b6f0ca4518b549cd85c98a41f3e8b52f42efc",
+        "src/shake_bake/failure_runner.py": "8390c7e575bc8b629aa4728411dd60b5f9bd010ad6b4baa3a4acffc7e734dbca",
+        "src/shake_bake/failure_service.py": "e2be1fe4eec0a0d9a3de480903ea715923928d94c3c96270989b0dd366a699c7",
+        "src/shake_bake/gui.py": "392885e91279fbc549a627129a6bbd2ec54a5250e6d8923ce3cb533e2d201c92",
+        "src/shake_bake/helper.py": "164bc804f7cfce4347784357c445e478de23eb9527ac58f02eb0e5e6a02f7705",
+        "src/shake_bake/job_runner.py": "d9bc225fda9de1ed9ec9415499baa33d856128b67dba21e2dc66a4e6278f0a49",
+        "src/shake_bake/mcp_server.py": "d1b23d0584cc6bbd62797c8541487c24924ed99f9230e6aaa2dde80871e63b43",
+        "src/shake_bake/preferences.py": "0c42ff846cb18f697107ce67c3347b0bd747340429d4c0119c7dd7cfaa8a6b7f",
+        "src/shake_bake/pytest_formats.py": "af27871bbc5711a87a5370f8480f3b9d9aa42ba488a069594dd76196cf5c1744",
+        "src/shake_bake/rerank.py": "4f7ab9de6095d7d3e5d2383e9c08cef505626285a5de82a49ad9828c8593c035",
+        "src/shake_bake/routing.py": "5c8b1af4a359702afd4a9f903d1aab2c59636f65a832843fc1d16c54d8109a24",
+        "src/shake_bake/screening.py": "f260d8fbeebb6ebba1c7d9a4bf48235a373fb3dfa479a46e2e9cadef5d0783e6",
+        "src/shake_bake/search.py": "ea8f8359944a840664aac884eece13de3d4f67e67bd19ed56ee5f8ef20b254b4",
+        "src/shake_bake/shared.py": "90f87a55067ca4b682926eff4fc06c660ce21e182caba63826e420f2f00aad4b",
+        "src/shake_bake/task_protocol.py": "1a76db717293fee2acc513705caf0e99150caf89d358046197e8a62444ff912a",
+        "src/shake_bake/troubleshoot.py": "55da0fbcf6f8a134f2b4add47886c90e0b608ca82cfabf11f9b782cf115c8654",
+        "src/shake_bake/worker.py": "ffb2c95eb92603472ea4611d4d680582aed09ad12c09813f06261a7c31cd8f05"
+      }
+    }
+  },
+  "input_and_source_hashes_unchanged_before_and_after_each_arm": true,
+  "source_identity_scope": "Quiescent on-disk source, adapter and dataset readback; not loaded-code attestation.",
+  "preliminary_pair_retained": true,
+  "unique_cases": 6,
+  "reported_frozen_pairs": 1,
+  "semantic_model_accuracy": null,
+  "cloud_usage_measured": false,
+  "warning": "Exposed, authored synthetic development cases tailored to known mechanisms. Span/file coverage is not semantic accuracy, unseen qualification or workflow savings. Collector revision and execution provenance must be recorded separately.",
+  "arms": {
+    "before": {
+      "kind": "source_span_development_audit",
+      "dataset": {
+        "dataset_id": "source-span-development-20261111-v1",
+        "split": "development",
+        "split_is_owner_declared": true,
+        "manifest_sha256": "14826bb796f4425a3c76ca2d5055e2b65b8ea798a61667216dcaff6f533fc813",
+        "grading_keys_sha256": "83d1bcb05c829bf1a9e1d8ba633547bda2b1694969a762c70472919a87080607"
+      },
+      "dataset_files_sha256": {
+        "fixtures/clustered-policy/policy.py": "f31af0304a497c929897f8cecff859acc8f5d1d7825a420254e6f24ce34a1759",
+        "fixtures/definition-control/main.py": "90fe92c1d68de101c4e6866e3dec72ad2fabe1dcb6141ea01f3a370c50c33b33",
+        "fixtures/definition-control/queue.py": "2a6d3799bd446829fa771c8022e78e6996b8fbe689668071e5fc21845385f55c",
+        "fixtures/definition-control/settings.py": "2eee8e836ce481197868743449120f905701c2a62cdf05defef9b1ba44f6f7e1",
+        "fixtures/definition-control/tests/test_publish_job.py": "3803c1d9ea5335ccd09a26ed10035ae10127291c78f8a26cf8a90dbcfb421fcd",
+        "fixtures/four-file-guard/a_worker.py": "fa8debb33f8b15ec31f9d451a7eca8ac9ae999fadc93f4270a32aa9829a70d48",
+        "fixtures/four-file-guard/b_api.py": "ad8744f521e99fca733cf9f53d3ded13a82d6e8313cb25fbf16dfa75bde2bdd2",
+        "fixtures/four-file-guard/c_queue.py": "cf580147031c66cbaeab17ac9ee21c36240d5a88619c4cd3bc5e19fe73d23bd9",
+        "fixtures/four-file-guard/d_route.py": "6fd37c575c9aaebcce030713c1ac74c9c9ea9993f0cca82327a53a9ebfdfab9c",
+        "fixtures/large-neighbor/rules.py": "d596a919645c44ec30d32bfd45e1839fd206756ed92a8ab91a9f8469cdf81ac9",
+        "fixtures/overlapping-policy/policy.py": "13176d91e597e62441ccac573e9a6d503918ab3d467262acd3371d9ad9ac01b5",
+        "fixtures/oversized-anchor/rules.py": "a482825daca62d30a6d77a1753976baf9bf7d85bc8d76ef9fd7f0dddeddf47c2",
+        "grading-keys.json": "83d1bcb05c829bf1a9e1d8ba633547bda2b1694969a762c70472919a87080607",
+        "manifest.json": "14826bb796f4425a3c76ca2d5055e2b65b8ea798a61667216dcaff6f533fc813"
+      },
+      "limits": {
+        "max_files": 1000,
+        "max_entries": 10000,
+        "max_depth": 8,
+        "seconds": 5.0,
+        "excerpt_bytes": 16384,
+        "context_bytes": 2048
+      },
+      "case_count": 6,
+      "mechanical_passes": 3,
+      "totals": {
+        "required_spans": 18,
+        "span_hits": 11,
+        "required_files": 12,
+        "file_hits": 10,
+        "duplicate_line_occurrences": 3
+      },
+      "cases": [
+        {
+          "id": "clustered-policy",
+          "required_spans": 6,
+          "span_hits": 1,
+          "required_files": 1,
+          "file_hits": 1,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": false,
+          "cutoffs": [
+            "window_budget"
+          ]
+        },
+        {
+          "id": "overlapping-policy",
+          "required_spans": 2,
+          "span_hits": 2,
+          "required_files": 1,
+          "file_hits": 1,
+          "duplicate_line_occurrences": 3,
+          "mechanical_pass": true,
+          "cutoffs": []
+        },
+        {
+          "id": "large-neighbor",
+          "required_spans": 1,
+          "span_hits": 0,
+          "required_files": 1,
+          "file_hits": 0,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": false,
+          "cutoffs": [
+            "excerpt_budget"
+          ]
+        },
+        {
+          "id": "four-file-guard",
+          "required_spans": 4,
+          "span_hits": 4,
+          "required_files": 4,
+          "file_hits": 4,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": true,
+          "cutoffs": [
+            "selection_budget",
+            "window_budget"
+          ]
+        },
+        {
+          "id": "oversized-anchor",
+          "required_spans": 1,
+          "span_hits": 0,
+          "required_files": 1,
+          "file_hits": 0,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": false,
+          "cutoffs": [
+            "excerpt_budget"
+          ]
+        },
+        {
+          "id": "definition-control",
+          "required_spans": 4,
+          "span_hits": 4,
+          "required_files": 4,
+          "file_hits": 4,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": true,
+          "cutoffs": []
+        }
+      ],
+      "semantic_model_accuracy": null,
+      "warning": "Exposed, authored synthetic development cases tailored to known mechanisms. Span/file coverage is not semantic accuracy, unseen qualification or workflow savings. Collector revision and execution provenance must be recorded separately.",
+      "receipt_sha256": "458f70d4ea502d9a874d9187ff540bda926820aa59e67d706b50dcef4df69ac4",
+      "helper_version": "0.4.0.dev32",
+      "task_lab_exit_code": 1,
+      "fixture_and_dataset_unchanged": true
+    },
+    "after": {
+      "kind": "source_span_development_audit",
+      "dataset": {
+        "dataset_id": "source-span-development-20261111-v1",
+        "split": "development",
+        "split_is_owner_declared": true,
+        "manifest_sha256": "14826bb796f4425a3c76ca2d5055e2b65b8ea798a61667216dcaff6f533fc813",
+        "grading_keys_sha256": "83d1bcb05c829bf1a9e1d8ba633547bda2b1694969a762c70472919a87080607"
+      },
+      "dataset_files_sha256": {
+        "fixtures/clustered-policy/policy.py": "f31af0304a497c929897f8cecff859acc8f5d1d7825a420254e6f24ce34a1759",
+        "fixtures/definition-control/main.py": "90fe92c1d68de101c4e6866e3dec72ad2fabe1dcb6141ea01f3a370c50c33b33",
+        "fixtures/definition-control/queue.py": "2a6d3799bd446829fa771c8022e78e6996b8fbe689668071e5fc21845385f55c",
+        "fixtures/definition-control/settings.py": "2eee8e836ce481197868743449120f905701c2a62cdf05defef9b1ba44f6f7e1",
+        "fixtures/definition-control/tests/test_publish_job.py": "3803c1d9ea5335ccd09a26ed10035ae10127291c78f8a26cf8a90dbcfb421fcd",
+        "fixtures/four-file-guard/a_worker.py": "fa8debb33f8b15ec31f9d451a7eca8ac9ae999fadc93f4270a32aa9829a70d48",
+        "fixtures/four-file-guard/b_api.py": "ad8744f521e99fca733cf9f53d3ded13a82d6e8313cb25fbf16dfa75bde2bdd2",
+        "fixtures/four-file-guard/c_queue.py": "cf580147031c66cbaeab17ac9ee21c36240d5a88619c4cd3bc5e19fe73d23bd9",
+        "fixtures/four-file-guard/d_route.py": "6fd37c575c9aaebcce030713c1ac74c9c9ea9993f0cca82327a53a9ebfdfab9c",
+        "fixtures/large-neighbor/rules.py": "d596a919645c44ec30d32bfd45e1839fd206756ed92a8ab91a9f8469cdf81ac9",
+        "fixtures/overlapping-policy/policy.py": "13176d91e597e62441ccac573e9a6d503918ab3d467262acd3371d9ad9ac01b5",
+        "fixtures/oversized-anchor/rules.py": "a482825daca62d30a6d77a1753976baf9bf7d85bc8d76ef9fd7f0dddeddf47c2",
+        "grading-keys.json": "83d1bcb05c829bf1a9e1d8ba633547bda2b1694969a762c70472919a87080607",
+        "manifest.json": "14826bb796f4425a3c76ca2d5055e2b65b8ea798a61667216dcaff6f533fc813"
+      },
+      "limits": {
+        "max_files": 1000,
+        "max_entries": 10000,
+        "max_depth": 8,
+        "seconds": 5.0,
+        "excerpt_bytes": 16384,
+        "context_bytes": 2048
+      },
+      "case_count": 6,
+      "mechanical_passes": 5,
+      "totals": {
+        "required_spans": 18,
+        "span_hits": 17,
+        "required_files": 12,
+        "file_hits": 11,
+        "duplicate_line_occurrences": 0
+      },
+      "cases": [
+        {
+          "id": "clustered-policy",
+          "required_spans": 6,
+          "span_hits": 6,
+          "required_files": 1,
+          "file_hits": 1,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": true,
+          "cutoffs": [
+            "window_budget"
+          ]
+        },
+        {
+          "id": "overlapping-policy",
+          "required_spans": 2,
+          "span_hits": 2,
+          "required_files": 1,
+          "file_hits": 1,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": true,
+          "cutoffs": []
+        },
+        {
+          "id": "large-neighbor",
+          "required_spans": 1,
+          "span_hits": 1,
+          "required_files": 1,
+          "file_hits": 1,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": true,
+          "cutoffs": [
+            "excerpt_budget",
+            "excerpt_window_shortened"
+          ]
+        },
+        {
+          "id": "four-file-guard",
+          "required_spans": 4,
+          "span_hits": 4,
+          "required_files": 4,
+          "file_hits": 4,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": true,
+          "cutoffs": [
+            "selection_budget",
+            "window_budget"
+          ]
+        },
+        {
+          "id": "oversized-anchor",
+          "required_spans": 1,
+          "span_hits": 0,
+          "required_files": 1,
+          "file_hits": 0,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": false,
+          "cutoffs": [
+            "excerpt_budget"
+          ]
+        },
+        {
+          "id": "definition-control",
+          "required_spans": 4,
+          "span_hits": 4,
+          "required_files": 4,
+          "file_hits": 4,
+          "duplicate_line_occurrences": 0,
+          "mechanical_pass": true,
+          "cutoffs": []
+        }
+      ],
+      "semantic_model_accuracy": null,
+      "warning": "Exposed, authored synthetic development cases tailored to known mechanisms. Span/file coverage is not semantic accuracy, unseen qualification or workflow savings. Collector revision and execution provenance must be recorded separately.",
+      "receipt_sha256": "ad00830fc75fa6ccfc148563643079fe882fda71811ec38e997007b412f83cab",
+      "helper_version": "0.4.0.dev35",
+      "task_lab_exit_code": 1,
+      "fixture_and_dataset_unchanged": true
+    }
+  }
+}

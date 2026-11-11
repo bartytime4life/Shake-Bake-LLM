@@ -1,8 +1,10 @@
 # Current evaluation status
 
-Updated November 9, 2026 for `0.4.0.dev25`. No local model profile is qualified for automatic selection.
+Updated November 11, 2026 for `0.4.0.dev35`. No local model profile is qualified for automatic selection.
 
 Collector file recall, frozen and held out (November 8): the `dev20` collector beat the PR #30 collector on twelve reserved Long Code Arena Python cases under a pre-registered rule, 26 against 23 of 41 changed files reached including the map, with 3 case-level wins and 2 losses. See [the frozen-run record](frozen-recall-2026-11-08.md). This qualifies no model and measures no answer.
+
+Source-span development diagnostic (November 11): on six authored synthetic cases tailored to the recent selection changes, dev35 retains 17/18 required spans versus dev32's 11/18. Required-file hits are 11/12 versus 10/12, repeated source-line occurrences are zero versus three, and mechanical case passes are 5/6 versus 3/6. The oversized anchor remains a counted miss. The [exact-source comparison](source-span-development-2026-11-11.md) records pinned inputs, independent packet readback and all denominators. These exposed checks do not update held-out, model or host qualification.
 
 Host comparison (November 8): on six real issues with Claude Code subagents, the evidence-only brief did not reduce host tokens or mean tool calls and the hosts named fewer of the changed files (7 against 14 of 25). The pre-registered rule was not met. See [the host-comparison record](host-comparison-2026-11-08.md). The no-tools paste path showed no benefit either (9 against 10 of 25); see [the paste-path record](paste-comparison-2026-11-08.md). A reframed orientation brief then lost no case in twelve paired comparisons on fresh cases but showed no clear gain; see [the orientation record](orientation-comparison-2026-11-08.md). On eight fresh multi-file fixes it met both pre-registered gain rules. It scored 11 against 9 of 19 files with tools, where the extra files were tests, and 13 against 9 on the paste path. It used more tokens in every arm. See [the multi-file record](orientation-multifile-2026-11-08.md). Adding the local model's draft to that brief showed no effect on six further fresh cases: 8 against 8 with tools and 9 against 9 pasted. See [the draft comparison](draft-comparison-2026-11-08.md).
 
