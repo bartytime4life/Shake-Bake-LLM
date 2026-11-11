@@ -231,10 +231,13 @@ class Controller:
             recent = []
             for identifier, metadata in list(self.records.items()):
                 try:
-                    state = self._session.get_result(identifier)["state"]
+                    result = self._session.get_result(identifier)
                 except Refusal:
-                    state = "EXPIRED"
-                recent.append({**metadata, "task_id": identifier, "state": state})
+                    result = {"state": "EXPIRED"}
+                outcome = result.get("outcome")
+                recent.append({**metadata, "task_id": identifier, "state": result["state"],
+                               "outcome": outcome,
+                               "evidence_available": result["state"] == "DONE" and outcome in ("ANSWER", "ABSTAIN") and bool(result.get("evidence"))})
             policy = self._policy()
             return {"version": __version__, "projects": [{"id": name, "label": self.project_labels.get(name, name), "path": str(root), "demo": root == DEMO} for name, root in self.projects.items()],
                     "local_ai_enabled": not self.disabled and policy["enabled"], "policy": policy,
