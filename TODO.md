@@ -28,6 +28,8 @@ The [November 11 algorithm upgrade](docs/algorithm-upgrades-2026-11-11.md) keeps
 
 The dev35 [excerpt byte-budget follow-up](docs/excerpt-budget-fitting-2026-11-11.md) retains whole-line source around the strongest match when its surrounding window exceeds the remaining byte cap. It preserves exact source and hashes, discloses shortening in the workbench and both handoffs, and still omits an anchor line that cannot fit. This adds mechanical coverage; semantic completeness and workflow savings remain unqualified.
 
+The [reproducible source-span diagnostic](docs/source-span-development-2026-11-11.md) compares dev32 with dev35 on six exposed synthetic cases. Required spans improve from 11/18 to 17/18 while required-file hits move only from 10/12 to 11/12; repeated source-line occurrences fall from three to zero. The oversized anchor remains a counted miss. Exact-source audits and 515 tests support these bounded mechanical results; no unseen, model, host or savings gate is closed.
+
 ## Next qualification steps
 
 The [recall-comparison compatibility follow-up](docs/recall-comparison-limits-2026-11-11.md) repairs an older validator ceiling that rejected current default and expanded collector receipts. Producer-to-comparer regressions cover the real CLI path while preserving exact pair identity and budget requirements. This improves the evaluation tooling; it does not supply new retrieval or model-quality results.
