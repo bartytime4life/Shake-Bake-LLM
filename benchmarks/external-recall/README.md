@@ -31,9 +31,9 @@ Add `--rerank-model <installed embedding model>` to reorder the top lexical
 candidates with a loopback Ollama embedding model before selection; the
 receipt then records the rerank outcome per case. Nothing is downloaded.
 
-The default collector limits (200 files, 5 seconds) are the application's
-defaults and will hit `file_budget` on most real repositories; the receipt
-counts how many cases did. Raising the limits up to the ceilings in
+The current collector defaults include 1,000 files, 20,000 directory entries
+and 5 seconds. The receipt reports whether the scan hit those limits.
+Raising the limits up to the ceilings in
 `SearchLimits.validate` shows what the collector can reach when allowed, which
 is a different number from what the shipped defaults reach.
 
@@ -107,7 +107,9 @@ checkouts. It supports the three-argument lexical `prepare` interface from befor
 PR #30 and treats missing later rerank/line-index fields as absent. No model is
 run unless the operator explicitly supplies `--rerank-model`.
 
-For example, after preparing approved case roots outside all three checkouts:
+The following example reproduces the historical pilot's explicit 200-file,
+4,000-entry profile, not today's defaults. After preparing approved case roots
+outside all three checkouts:
 
 ```bash
 measurement=/abs/current-measurement-checkout
@@ -132,6 +134,13 @@ The comparer refuses different file bytes, selected cases, root locations,
 budgets, rerank configuration, Python/platform identities or adapter hashes, and refuses legacy receipts
 without source/selection provenance. It does not compare helper-version strings
 as proof of the scoring implementation.
+
+The comparer accepts the current supported ceilings of 5,000 files and 100,000
+directory entries, as well as the older profiles below those ceilings. Both
+receipts must still declare exactly the same limits. The [receipt-limit
+compatibility fix](../../docs/recall-comparison-limits-2026-11-11.md) includes
+real producer-to-comparer regressions for current defaults and expanded limits;
+it does not change the historical receipts or scoring formulas.
 
 The strict comparer is lexical-only. It refuses rerank receipts even when their
 model tags match: a mutable tag does not establish identical weights/runtime.

@@ -37,7 +37,9 @@ def _validate(receipt):
              and all(_digest(value) for value in sources.values()), "receipt_source_identity_required")
     limits = receipt.get("limits")
     _require(isinstance(limits, dict) and set(limits) == {"max_files", "max_entries", "max_depth", "seconds", "excerpt_bytes", "context_bytes"}, "invalid_receipt_limits")
-    for key, ceiling in (("max_files", 1000), ("max_entries", 10000), ("max_depth", 16), ("excerpt_bytes", 65536), ("context_bytes", 16384)):
+    # Match SearchLimits.validate while keeping this receipt-only CLI independent
+    # of the collector package. Producer/consumer regressions exercise real receipts.
+    for key, ceiling in (("max_files", 5000), ("max_entries", 100000), ("max_depth", 16), ("excerpt_bytes", 65536), ("context_bytes", 16384)):
         floor = 0 if key == "context_bytes" else 1
         _require(type(limits[key]) is int and floor <= limits[key] <= ceiling, "invalid_receipt_limits")
     _require(type(limits["seconds"]) in (int, float) and math.isfinite(limits["seconds"]) and 0 < limits["seconds"] <= 30, "invalid_receipt_limits")
