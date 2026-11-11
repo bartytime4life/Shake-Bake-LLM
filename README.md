@@ -2,7 +2,7 @@
 
 Check a failed run against the code on your computer, then take a precise debugging brief into your AI chat. The workbench reads approved source folders, preserves the original error and shows the exact lines it found. No model is needed for this workflow.
 
-**Development preview: `0.4.0.dev32`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
+**Development preview: `0.4.0.dev34`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
 
 ## Open the app
 
@@ -44,6 +44,8 @@ The optional **Try a labelled example** uses invented errors and bundled inert s
 When there is no traceback, choose **Prepare source brief**, select your connected project and ask a concrete question, such as “Where is the retry limit applied after a failed sign-in?” Inspect the collected source before copying the brief into your AI chat. An empty result cannot be copied as a successful source handoff.
 
 Selection is bounded lexical retrieval and may miss important context. Your receiving assistant supplies the final reasoning and may need more source. If that assistant already has full repository tools, direct inspection can be more useful; no general time, token or accuracy improvement is established.
+
+Within each matching file, selection keeps the strongest request-term anchor first, maximizes additional weighted matching-line coverage in a second window, and removes overlapping source lines. Optional embedding scoring uses scaled cosine normalization to handle very large and very small finite coordinates. See [the algorithms and synthetic validation](docs/algorithm-upgrades-2026-11-11.md).
 
 An optional Ollama worker can draft unverified preparation notes for source briefs. It is separate from failed-run checks. New installations start with Local AI off; an existing installation retains its saved choice. No shipped model profile is qualified for automatic selection. Read [model setup and trial boundaries](docs/pc-readiness-and-trials.md), [routing](docs/routing-implementation.md) and [evaluation status](docs/evaluation-status.md) before enabling model trials.
 

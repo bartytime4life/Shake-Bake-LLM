@@ -141,6 +141,44 @@ def _first_line(lines: list[str]) -> str:
     return ""
 
 
+def _coverage_windows(matches, line_count: int, idf: dict[str, float]) -> list[tuple[int, int]]:
+    """Preserve the strongest anchor, then maximize additional weighted coverage.
+
+    The global selector prefers one window per file, so optimizing a pair first
+    can displace the original primary with dense repeated comments. Keep the
+    highest-IDF matching line (earliest on ties) as the primary. Compare every
+    centered candidate for the second window, counting only uncovered lines.
+    With fixed window width and count, this takes O(m) time and space for m
+    matching lines. This optimizes lexical coverage, not semantic relevance or
+    byte packing. Trim overlap without changing the selected source-line union.
+    """
+    if not matches:
+        return [(0, min(line_count, WINDOW_LINES // 2 + 1))] if line_count else []
+    weights = {index: math.fsum(idf[term] for term in sorted(terms)) for index, terms, *_ in matches}
+
+    def centered(index):
+        return max(0, index - WINDOW_LINES // 2), min(line_count, index + WINDOW_LINES // 2 + 1)
+
+    anchor = max(weights, key=lambda index: (weights[index], -index))
+    first_begin, first_end = centered(anchor)
+    best_key, second = None, None
+    for index, weight in weights.items():
+        begin, end = centered(index)
+        # Equal-width centered windows have monotone starts and ends. An
+        # overlapping candidate can add lines on at most one side of the first.
+        if begin < first_begin:
+            end = min(end, first_begin)
+        else:
+            begin = max(begin, first_end)
+        if begin >= end:
+            continue
+        gain = math.fsum(weights.get(line, 0.0) for line in range(begin, end))
+        key = gain, weight, -index
+        if gain > 0 and (best_key is None or key > best_key):
+            best_key, second = key, (begin, end)
+    return [(first_begin, first_end)] + ([second] if second is not None else [])
+
+
 @dataclass(frozen=True)
 class SearchLimits:
     # A 1,000-file walk took under half a second on the thirteen external repositories
@@ -362,16 +400,9 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         lines = file_lines[path]
         if not lines:
             continue
-        # Preserve distinct nearby evidence, including a distant branch in
-        # the same file. Never replace source with a generated summary.
-        windows = []
-        ranked_lines = sorted(matches, key=lambda item: (-sum(idf[term] for term in item[1]), item[0])) or [(0, frozenset(), "")]
-        for best, *_ in ranked_lines:
-            if any(begin <= best < end for begin, end in windows):
-                continue
-            windows.append((max(0, best - 3), min(len(lines), best + 4)))
-            if len(windows) == 2:
-                break
+        # Keep the strongest anchor first; use remaining windows for maximal
+        # additional coverage without repeating exact source lines.
+        windows = _coverage_windows(matches, len(lines), idf)
         if any(not any(begin <= index < end for begin, end in windows) for index, *_ in matches):
             cutoffs.add("window_budget")
         for rank, (begin, end) in enumerate(windows):

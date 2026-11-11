@@ -25,6 +25,26 @@ BATCH = 8
 KEEP_ALIVE_BETWEEN_BATCHES_SECONDS = 30
 
 
+def _unit_vector(vector: list[float]) -> list[float]:
+    """Normalize after scaling: finite coordinates may still overflow when squared.
+
+    At least one scaled coordinate has magnitude one, preventing a nonzero
+    vector's norm from underflowing. The norm is at most sqrt(MAX_DIMENSIONS).
+    Reject integers outside the finite float range as malformed model output.
+    """
+    try:
+        if not all(type(value) in (int, float) and math.isfinite(value) for value in vector):
+            raise Refusal("embedding_invalid_vector")
+    except OverflowError:
+        raise Refusal("embedding_invalid_vector") from None
+    scale = max(abs(value) for value in vector)
+    if scale == 0:
+        raise Refusal("embedding_invalid_vector")
+    scaled = [value / scale for value in vector]
+    norm = math.hypot(*scaled)
+    return [value / norm for value in scaled]
+
+
 class EmbeddingScorer:
     """Callable(request, texts) -> similarities; fills `record` after each call."""
 
@@ -98,18 +118,19 @@ class EmbeddingScorer:
             for key, value in batch_usage.items():
                 usage[key] = usage.get(key, 0) + value
         dimensions = None
+        units = []
         for vector in vectors:
             if not isinstance(vector, list) or not vector or len(vector) > MAX_DIMENSIONS:
                 raise Refusal("embedding_invalid_vector")
             if dimensions is None:
                 dimensions = len(vector)
-            if len(vector) != dimensions or not all(type(value) in (int, float) and math.isfinite(value) for value in vector):
+            if len(vector) != dimensions:
                 raise Refusal("embedding_invalid_vector")
-        norms = [math.sqrt(sum(value * value for value in vector)) for vector in vectors]
-        if any(norm == 0 for norm in norms):
-            raise Refusal("embedding_invalid_vector")
-        query = vectors[0]
-        similarities = [sum(a * b for a, b in zip(query, vector)) / (norms[0] * norm) for vector, norm in zip(vectors[1:], norms[1:])]
+            units.append(_unit_vector(vector))
+        query = units[0]
+        # fsum reduces cancellation error; clamp only final floating-point
+        # roundoff at the mathematical cosine bounds.
+        similarities = [max(-1.0, min(1.0, math.fsum(a * b for a, b in zip(query, vector)))) for vector in units[1:]]
         self.record.update({"dimensions": dimensions, "windows_scored": len(texts),
                             "keep_alive_between_batches_seconds": KEEP_ALIVE_BETWEEN_BATCHES_SECONDS if self.record["embed_calls"] > 1 else 0})
         return similarities
