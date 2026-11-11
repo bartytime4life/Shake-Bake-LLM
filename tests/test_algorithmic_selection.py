@@ -1,7 +1,6 @@
 """Synthetic coverage and exact-byte contracts for bounded lexical windows."""
 
 import hashlib
-import itertools
 import math
 from pathlib import Path
 import random
@@ -74,9 +73,31 @@ class WindowCoverage(unittest.TestCase):
         self.assertEqual(first.packet, second.packet)
         self.assertEqual(first.cutoffs, second.cutoffs)
 
-    def test_weighted_coverage_matches_a_brute_force_oracle(self):
-        # Independently enumerate every possible pair on small synthetic files.
-        # Include sparse/clustered matches and unequal rare/common term weights.
+    def test_four_matching_files_do_not_displace_the_strongest_anchor(self):
+        lines = ['# filler\n'] * 100
+        lines[:4] = ['def cancel_task(worker, job):\n', '    if worker.busy:\n',
+                     '        return False\n', '    return True\n']
+        for index in list(range(40, 45)) + list(range(80, 85)):
+            lines[index] = '# cancel_task worker job audit note\n'
+        raw = ''.join(lines).encode()
+        (self.root / 'a_worker.py').write_bytes(raw)
+        for name in ('b_api.py', 'c_queue.py', 'd_route.py'):
+            (self.root / name).write_text('# cancel_task worker job\n', encoding='utf-8')
+        for context_bytes in (0, 2048):
+            with self.subTest(context_bytes=context_bytes):
+                result = prepare(self.root, 'Inspect cancel_task worker job', SearchLimits(context_bytes=context_bytes))
+                primary = [r for number, r in enumerate(result.packet.evidence, 1)
+                           if f'E{number}' not in {item['evidence_id'] for item in result.context}]
+                self.assertEqual({r.path for r in primary}, {'a_worker.py', 'b_api.py', 'c_queue.py', 'd_route.py'})
+                worker = next(r for r in primary if r.path == 'a_worker.py')
+                self.assertEqual((worker.start_line, worker.end_line), (1, 4))
+                self.assertIn('if worker.busy:', worker.text)
+                self.assertEqual(worker.file_sha256, hashlib.sha256(raw).hexdigest())
+                self.assertIn('selection_budget', result.cutoffs)
+
+    def test_anchored_weighted_coverage_matches_a_brute_force_oracle(self):
+        # Enumerate all partners while requiring the strongest original anchor.
+        # This independently checks the objective, not the selection procedure.
         rng = random.Random(731)
         layouts = [list(range(15)), [0, 4, 8, 12, 16, 20]]
         layouts += [rng.sample(range(35), rng.randint(1, 14)) for _ in range(200)]
@@ -86,7 +107,9 @@ class WindowCoverage(unittest.TestCase):
             matches = [(index, frozenset({'rare' if index % 3 == 0 else 'common'}), '') for index in locations]
             weights = {index: sum(idf[term] for term in terms) for index, terms, _ in matches}
             candidates = [set(range(max(0, index - 3), min(35, index + 4))) for index in locations]
-            possibilities = candidates + [a | b for a, b in itertools.combinations(candidates, 2)]
+            anchor = max(locations, key=lambda index: (weights[index], -index))
+            first = set(range(max(0, anchor - 3), min(35, anchor + 4)))
+            possibilities = [first] + [first | candidate for candidate in candidates]
             optimum = max(math.fsum(weights.get(line, 0) for line in sorted(lines)) for lines in possibilities)
             windows = _coverage_windows(matches, 35, idf)
             covered = [line for begin, end in windows for line in range(begin, end)]
@@ -94,4 +117,5 @@ class WindowCoverage(unittest.TestCase):
                 self.assertEqual(len(covered), len(set(covered)))
                 self.assertLessEqual(len(windows), 2)
                 self.assertTrue(all(0 <= begin < end <= 35 and end - begin <= 7 for begin, end in windows))
+                self.assertEqual(set(range(*windows[0])), first)
                 self.assertEqual(math.fsum(weights.get(line, 0) for line in sorted(covered)), optimum)

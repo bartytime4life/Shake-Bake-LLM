@@ -142,59 +142,41 @@ def _first_line(lines: list[str]) -> str:
 
 
 def _coverage_windows(matches, line_count: int, idf: dict[str, float]) -> list[tuple[int, int]]:
-    """Maximize IDF-weighted line coverage over at most two centered windows.
+    """Preserve the strongest anchor, then maximize additional weighted coverage.
 
-    Window starts and ends increase together. For each right window, the best
-    disjoint partner is a prefix maximum; among overlapping partners, the
-    earliest start covers a superset of every later start. A sweep therefore
-    finds an optimal pair without enumerating all pairs. Sorting costs O(m log m)
-    and the sweep O(m), since windows have fixed width, for m matching lines.
-    Ties prefer one record, then stronger windows/anchors and earlier positions.
-    This optimizes lexical coverage only, not semantic relevance or byte packing.
+    The global selector prefers one window per file, so optimizing a pair first
+    can displace the original primary with dense repeated comments. Keep the
+    highest-IDF matching line (earliest on ties) as the primary. Compare every
+    centered candidate for the second window, counting only uncovered lines.
+    With fixed window width and count, this takes O(m) time and space for m
+    matching lines. This optimizes lexical coverage, not semantic relevance or
+    byte packing. Trim overlap without changing the selected source-line union.
     """
     if not matches:
         return [(0, min(line_count, WINDOW_LINES // 2 + 1))] if line_count else []
     weights = {index: math.fsum(idf[term] for term in sorted(terms)) for index, terms, *_ in matches}
-    candidates = []
-    for index in sorted(weights):
-        begin, end = max(0, index - WINDOW_LINES // 2), min(line_count, index + WINDOW_LINES // 2 + 1)
-        score = math.fsum(weights.get(line, 0.0) for line in range(begin, end))
-        candidates.append((begin, end, index, score))
 
-    def priority(window):
-        return window[3], weights[window[2]], -window[2]
+    def centered(index):
+        return max(0, index - WINDOW_LINES // 2), min(line_count, index + WINDOW_LINES // 2 + 1)
 
-    first_overlap, best_disjoint = 0, None
-    best_key, best = None, ()
-    for number, current in enumerate(candidates):
-        while first_overlap < number and candidates[first_overlap][1] <= current[0]:
-            partner = candidates[first_overlap]
-            if best_disjoint is None or priority(partner) > priority(best_disjoint):
-                best_disjoint = partner
-            first_overlap += 1
-        choices = [(current,)]
-        if best_disjoint is not None:
-            choices.append((best_disjoint, current))
-        if first_overlap < number:
-            choices.append((candidates[first_overlap], current))
-        for choice in choices:
-            covered = {line for begin, end, *_ in choice for line in range(begin, end)}
-            score = math.fsum(weights.get(line, 0.0) for line in sorted(covered))
-            ranked = tuple(sorted(choice, key=priority, reverse=True))
-            key = score, -len(choice), tuple(priority(window) for window in ranked)
-            if best_key is None or key > best_key:
-                best_key, best = key, ranked
-    windows = []
-    for begin, end, *_ in best:
-        # Trim overlap at the second window's edge; the covered union is unchanged.
-        if windows:
-            covered_begin, covered_end = windows[0]
-            if begin < covered_begin:
-                end = min(end, covered_begin)
-            else:
-                begin = max(begin, covered_end)
-        windows.append((begin, end))
-    return windows
+    anchor = max(weights, key=lambda index: (weights[index], -index))
+    first_begin, first_end = centered(anchor)
+    best_key, second = None, None
+    for index, weight in weights.items():
+        begin, end = centered(index)
+        # Equal-width centered windows have monotone starts and ends. An
+        # overlapping candidate can add lines on at most one side of the first.
+        if begin < first_begin:
+            end = min(end, first_begin)
+        else:
+            begin = max(begin, first_end)
+        if begin >= end:
+            continue
+        gain = math.fsum(weights.get(line, 0.0) for line in range(begin, end))
+        key = gain, weight, -index
+        if gain > 0 and (best_key is None or key > best_key):
+            best_key, second = key, (begin, end)
+    return [(first_begin, first_end)] + ([second] if second is not None else [])
 
 
 @dataclass(frozen=True)
@@ -418,8 +400,8 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         lines = file_lines[path]
         if not lines:
             continue
-        # Cover dense matching regions before isolated hits; preserve exact,
-        # non-overlapping source, including distant branches in the same file.
+        # Keep the strongest anchor first; use remaining windows for maximal
+        # additional coverage without repeating exact source lines.
         windows = _coverage_windows(matches, len(lines), idf)
         if any(not any(begin <= index < end for begin, end in windows) for index, *_ in matches):
             cutoffs.add("window_budget")
