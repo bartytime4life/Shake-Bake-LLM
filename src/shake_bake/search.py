@@ -141,6 +141,62 @@ def _first_line(lines: list[str]) -> str:
     return ""
 
 
+def _coverage_windows(matches, line_count: int, idf: dict[str, float]) -> list[tuple[int, int]]:
+    """Maximize IDF-weighted line coverage over at most two centered windows.
+
+    Window starts and ends increase together. For each right window, the best
+    disjoint partner is a prefix maximum; among overlapping partners, the
+    earliest start covers a superset of every later start. A sweep therefore
+    finds an optimal pair without enumerating all pairs. Sorting costs O(m log m)
+    and the sweep O(m), since windows have fixed width, for m matching lines.
+    Ties prefer one record, then stronger windows/anchors and earlier positions.
+    This optimizes lexical coverage only, not semantic relevance or byte packing.
+    """
+    if not matches:
+        return [(0, min(line_count, WINDOW_LINES // 2 + 1))] if line_count else []
+    weights = {index: math.fsum(idf[term] for term in sorted(terms)) for index, terms, *_ in matches}
+    candidates = []
+    for index in sorted(weights):
+        begin, end = max(0, index - WINDOW_LINES // 2), min(line_count, index + WINDOW_LINES // 2 + 1)
+        score = math.fsum(weights.get(line, 0.0) for line in range(begin, end))
+        candidates.append((begin, end, index, score))
+
+    def priority(window):
+        return window[3], weights[window[2]], -window[2]
+
+    first_overlap, best_disjoint = 0, None
+    best_key, best = None, ()
+    for number, current in enumerate(candidates):
+        while first_overlap < number and candidates[first_overlap][1] <= current[0]:
+            partner = candidates[first_overlap]
+            if best_disjoint is None or priority(partner) > priority(best_disjoint):
+                best_disjoint = partner
+            first_overlap += 1
+        choices = [(current,)]
+        if best_disjoint is not None:
+            choices.append((best_disjoint, current))
+        if first_overlap < number:
+            choices.append((candidates[first_overlap], current))
+        for choice in choices:
+            covered = {line for begin, end, *_ in choice for line in range(begin, end)}
+            score = math.fsum(weights.get(line, 0.0) for line in sorted(covered))
+            ranked = tuple(sorted(choice, key=priority, reverse=True))
+            key = score, -len(choice), tuple(priority(window) for window in ranked)
+            if best_key is None or key > best_key:
+                best_key, best = key, ranked
+    windows = []
+    for begin, end, *_ in best:
+        # Trim overlap at the second window's edge; the covered union is unchanged.
+        if windows:
+            covered_begin, covered_end = windows[0]
+            if begin < covered_begin:
+                end = min(end, covered_begin)
+            else:
+                begin = max(begin, covered_end)
+        windows.append((begin, end))
+    return windows
+
+
 @dataclass(frozen=True)
 class SearchLimits:
     # A 1,000-file walk took under half a second on the thirteen external repositories
@@ -362,16 +418,9 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
         lines = file_lines[path]
         if not lines:
             continue
-        # Preserve distinct nearby evidence, including a distant branch in
-        # the same file. Never replace source with a generated summary.
-        windows = []
-        ranked_lines = sorted(matches, key=lambda item: (-sum(idf[term] for term in item[1]), item[0])) or [(0, frozenset(), "")]
-        for best, *_ in ranked_lines:
-            if any(begin <= best < end for begin, end in windows):
-                continue
-            windows.append((max(0, best - 3), min(len(lines), best + 4)))
-            if len(windows) == 2:
-                break
+        # Cover dense matching regions before isolated hits; preserve exact,
+        # non-overlapping source, including distant branches in the same file.
+        windows = _coverage_windows(matches, len(lines), idf)
         if any(not any(begin <= index < end for begin, end in windows) for index, *_ in matches):
             cutoffs.add("window_budget")
         for rank, (begin, end) in enumerate(windows):
