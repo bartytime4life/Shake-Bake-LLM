@@ -4,6 +4,7 @@ import copy
 import io
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -11,6 +12,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "benchmarks"))
 import compare_recall_receipts as paired
+import external_recall as producer
+from shake_bake.search import SearchLimits
 
 
 def case(identifier, gold, hits):
@@ -34,6 +37,59 @@ def receipt(rows):
 
 
 class PairedRecallTests(unittest.TestCase):
+    def collect(self, base, *options):
+        root = base / "repo"
+        root.mkdir(exist_ok=True)
+        (root / "fixture.py").write_text("# needle\n", encoding="utf-8")
+        cases = base / "cases.jsonl"
+        cases.write_text(json.dumps({"id": "synthetic-current-limits", "root": str(root),
+                                     "request": "needle", "changed_files": ["fixture.py"]}) + "\n", encoding="utf-8")
+        output = base / "receipt.json"
+        with contextlib.redirect_stdout(io.StringIO()):
+            producer.main(["--cases", str(cases), "--output", str(output), *options])
+        return output, json.loads(output.read_text(encoding="utf-8"))
+
+    def test_current_default_producer_receipt_reaches_comparison_cli(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            output, value = self.collect(base)
+            self.assertEqual(value["limits"], SearchLimits().__dict__)
+            compared = base / "comparison.json"
+            original = output.read_bytes()
+            completed = subprocess.run([sys.executable, "-I", str(ROOT / "benchmarks" / "compare_recall_receipts.py"),
+                                        "--before", str(output), "--after", str(output), "--output", str(compared)],
+                                       capture_output=True, text=True, timeout=10, check=True)
+            self.assertEqual(json.loads(completed.stdout)["paired_scored_cases"], 1)
+            report = json.loads(compared.read_text(encoding="utf-8"))
+            self.assertEqual(report["limits"], value["limits"])
+            self.assertEqual(report["paired_scored_cases"], 1)
+            self.assertEqual(report["metrics"]["primary"]["ties"], 1)
+            self.assertEqual(report["before_receipt_sha256"], report["after_receipt_sha256"])
+            self.assertEqual(output.read_bytes(), original)
+
+    def test_supported_expanded_producer_limits_can_be_compared(self):
+        with tempfile.TemporaryDirectory() as directory:
+            _, value = self.collect(Path(directory), "--max-files", "5000", "--max-entries", "100000")
+            report = paired.compare(value, value)
+            self.assertEqual(report["limits"]["max_files"], 5000)
+            self.assertEqual(report["limits"]["max_entries"], 100000)
+            self.assertEqual(report["paired_scored_cases"], 1)
+
+    def test_values_above_supported_scan_ceilings_still_refuse(self):
+        for field, value in (("max_files", 5001), ("max_entries", 100001)):
+            bad = receipt([case("one", 1, 1)])
+            bad["limits"][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "invalid_receipt_limits"):
+                paired.compare(bad, bad)
+
+    def test_expanded_receipts_still_require_identical_limits(self):
+        before = receipt([case("one", 1, 1)])
+        before["limits"].update({"max_files": 5000, "max_entries": 100000})
+        after = copy.deepcopy(before)
+        after["limits"]["max_entries"] = 99999
+        with self.assertRaisesRegex(ValueError, "comparison_input_mismatch:limits"):
+            paired.compare(before, after)
+
     def test_macro_gain_does_not_hide_unchanged_total_hits_or_a_regression(self):
         before = receipt([case("single", 1, 0), case("multiple", 3, 1)])
         after = receipt([case("single", 1, 1), case("multiple", 3, 0)])
