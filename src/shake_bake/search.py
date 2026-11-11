@@ -179,6 +179,37 @@ def _coverage_windows(matches, line_count: int, idf: dict[str, float]) -> list[t
     return [(first_begin, first_end)] + ([second] if second is not None else [])
 
 
+def _fit_excerpt(text: str, start_line: int, weights: dict[int, float], budget: int) -> tuple[int, int, str] | None:
+    """Best whole-line subrange containing the strongest remaining anchor.
+
+    Called only when a candidate exceeds the remaining UTF-8 byte budget.
+    Candidates have at most seven lines, so at most sixteen anchored ranges
+    need comparison. Maximize weighted matching-line coverage, then context
+    line count, balance around the anchor and earlier position. A path-only
+    match keeps its first line. Never replace an oversized anchor with another
+    matching line or shorten text inside a line.
+    """
+    lines = text.splitlines(keepends=True)
+    offset = start_line - 1
+    anchor = max(weights, key=lambda index: (weights[index], -index), default=offset) - offset
+    sizes = [len(line.encode("utf-8")) for line in lines]
+    if not lines or sizes[anchor] > budget:
+        return None
+    prefix = [0]
+    for size in sizes:
+        prefix.append(prefix[-1] + size)
+    best_key, best = None, None
+    for begin in range(anchor + 1):
+        for end in range(anchor + 1, len(lines) + 1):
+            if prefix[end] - prefix[begin] > budget:
+                continue
+            coverage = math.fsum(weights.get(offset + line, 0.0) for line in range(begin, end))
+            key = coverage, end - begin, -abs(begin + end - 1 - 2 * anchor), -begin
+            if best_key is None or key > best_key:
+                best_key, best = key, (start_line + begin, offset + end, "".join(lines[begin:end]))
+    return best
+
+
 @dataclass(frozen=True)
 class SearchLimits:
     # A 1,000-file walk took under half a second on the thirteen external repositories
@@ -444,7 +475,15 @@ def prepare(root: Path, request: str, limits: SearchLimits | None = None, scorer
             break
         if total + candidate[5] > limits.excerpt_bytes:
             cutoffs.add("excerpt_budget")
-            continue
+            weights = {index: math.fsum(idf[term] for term in sorted(hit))
+                       for index, hit, *_ in file_matches[candidate[1]] if candidate[2] - 1 <= index < candidate[3]}
+            fitted = _fit_excerpt(candidate[8], candidate[2], weights, limits.excerpt_bytes - total)
+            if fitted is None:
+                continue
+            begin, end, text = fitted
+            candidate = (candidate[0], candidate[1], begin, end, candidate[4], len(text.encode("utf-8")),
+                         candidate[6], _identifiers(text), text)
+            cutoffs.add("excerpt_window_shortened")
         selected.append(candidate)
         total += candidate[5]
     selections = [Selection(c[1], c[2], c[3]) for c in selected]

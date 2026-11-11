@@ -376,14 +376,15 @@ function renderBrief(previous = false) {
   }
   if(!packet.evidence.length){ const empty=document.createElement('div'); empty.className='empty'; const p=document.createElement('p');p.textContent='No source was captured. Review the gaps and clarify the request.';empty.append(p);grid.append(empty); }
   // Scan stops (time, file, entry, depth budgets) mean part of the project was never read and deserve a
-  // warning; selection caps (window counts, context bytes, map and index sizes) are routine and stay quiet.
+  // warning, as does shortening an excerpt's surrounding source. Other selection caps stay quiet.
   const discovery=packet.receipt.discovery,cutoffs=discovery?.cutoffs||[];
   const stops=cutoffs.filter(c=>SCAN_STOP_CUTOFFS.has(c)),caps=cutoffs.filter(c=>!SCAN_STOP_CUTOFFS.has(c));
   $('scan-limits').textContent=discovery?`Bounded lexical scan: ${discovery.files_read} files read. ${stops.length?`Stopped early: ${stops.join(', ')}.`:'The scan completed.'} ${caps.length?`Selection caps applied: ${caps.join(', ')}.`:''} Exclusions: ${JSON.stringify(discovery.refusals)}. This is not an exhaustive review.`:'';
   const refusals=Object.entries(discovery?.refusals||{}).filter(([,value])=>typeof value==='number'?value>0:!!value).filter(([name])=>!ROUTINE_EXCLUSIONS.has(name));
-  $('gaps-section').hidden=!packet.gaps.length&&!stops.length&&!refusals.length; $('gaps').replaceChildren();
-  $('collection-warning').textContent=[stops.length?`The scan stopped before reading everything: ${stops.join(', ')}. Files beyond that point were not seen.`:'',refusals.length?`Some sources were excluded: ${refusals.map(([name,count])=>`${name} (${count})`).join(', ')}.`:''].filter(Boolean).join(' ');
-  $('collection-warning').hidden=!stops.length&&!refusals.length;
+  const shortened=excerptLimitLines(packet);
+  $('gaps-section').hidden=!packet.gaps.length&&!stops.length&&!refusals.length&&!shortened.length; $('gaps').replaceChildren();
+  $('collection-warning').textContent=[stops.length?`The scan stopped before reading everything: ${stops.join(', ')}. Files beyond that point were not seen.`:'',refusals.length?`Some sources were excluded: ${refusals.map(([name,count])=>`${name} (${count})`).join(', ')}.`:'',...shortened].filter(Boolean).join(' ');
+  $('collection-warning').hidden=!stops.length&&!refusals.length&&!shortened.length;
   for(const gap of packet.gaps){const li=document.createElement('li');li.textContent=`${gap.selection?.path?gap.selection.path+' — ':''}${gap.code}: ${gap.message}`;$('gaps').append(li);}
   const notes=packet.model_notes,prompt=notes?.prompt||null; $('notes-section').hidden=!notes; $('notes').replaceChildren();$('uncertainties').replaceChildren();
   if(notes){ for(const item of notes.notes){const li=document.createElement('li');li.textContent=`${item.text}\nEvidence: ${item.evidence_ids.map(id=>packet.evidence.find(e=>e.evidence_id===id)?.path||id).join(', ')}`;$('notes').append(li);} for(const text of notes.uncertainties){const li=document.createElement('li');li.textContent=text;$('uncertainties').append(li);} }
@@ -642,6 +643,10 @@ function notesLines(p){
   for(const question of notes.uncertainties||[])if(typeof question==='string'&&question.trim())body.push(`- Open question: ${question}`);
   return ['','## Local model notes (unverified; a suggestion, not a verified fact)',...fenced(body.join('\n')),...viewLines(p)];
 }
+function excerptLimitLines(p){
+  return (p.receipt?.discovery?.cutoffs||[]).includes('excerpt_window_shortened')
+    ? ['Some excerpts were shortened to fit the source-byte limit. Only whole source lines are included; ask for surrounding lines if needed.'] : [];
+}
 function limitLines(p){
   const discovery=p.receipt?.discovery||{},cutoffs=discovery.cutoffs||[];
   const refusals=Object.entries(discovery.refusals||{}).filter(([,value])=>typeof value==='number'?value>0:!!value);
@@ -650,7 +655,7 @@ function limitLines(p){
     `- Scan stopped early: ${cutoffs.filter(c=>SCAN_STOP_CUTOFFS.has(c)).join(', ')||'no, the scan completed'}.`,
     `- Selection caps applied: ${cutoffs.filter(c=>!SCAN_STOP_CUTOFFS.has(c)).join(', ')||'none'}.`,
     `- Excluded during the scan: ${refusals.length?refusals.map(([key,value])=>`${key} (${value})`).join(', '):'none'}.`,
-    `- Preparation: ${p.routing?.status||'evidence_only'}; ${p.routing?.reason||'exact evidence only'}.`];
+    `- Preparation: ${p.routing?.status||'evidence_only'}; ${p.routing?.reason||'exact evidence only'}.`,...excerptLimitLines(p)];
   for(const gap of p.gaps||[])lines.push(`- Gap: ${gap.message||gap.code}`);
   return lines;
 }
@@ -742,7 +747,7 @@ function orientationText(job){const p=job.packet,receipt=p.receipt||{};
   lines.push('','## Scan limits',
     `Lexical search over ${receipt.discovery?.files_read??receipt.files_examined??'an unknown number of'} files; ${receipt.matching_files??'an unknown number'} matched. `
     +(stops.length?`The scan stopped early (${stops.join(', ')}), so part of the repository was not read.`:'The scan read every eligible file.')
-    +' It is not an exhaustive review.');
+    +' It is not an exhaustive review.',...excerptLimitLines(p));
   for(const gap of p.gaps||[])lines.push(`- Gap: ${gap.message||gap.code}`);
   lines.push('','## Exact values for verification',
     'Fenced text above may be reflowed or have line endings normalized by a clipboard or chat client. The JSON brief download keeps every captured byte; the hashes below let an exact copy be verified.',

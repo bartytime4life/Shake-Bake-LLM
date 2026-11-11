@@ -96,6 +96,10 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
         run: node scripts/browser_workbench_test.cjs
+      - name: Verify source excerpt byte fitting and exact export
+        env:
+          NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
+        run: node scripts/browser_excerpt_budget_test.cjs
       - name: Verify source failed-run source location
         env:
           NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
@@ -119,6 +123,10 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
         run: node scripts/browser_workbench_test.cjs /tmp/sb-browser-installed/bin/python
+      - name: Verify installed excerpt byte fitting and exact export
+        env:
+          NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules
+        run: node scripts/browser_excerpt_budget_test.cjs /tmp/sb-browser-installed/bin/python
       - name: Verify installed failed-run source location
         env:
           NODE_PATH: ${{ runner.temp }}/sb-browser/node_modules

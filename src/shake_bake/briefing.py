@@ -49,6 +49,12 @@ def context_lines(search) -> dict[str, str]:
     return lines
 
 
+def excerpt_limit_lines(search) -> list[str]:
+    if "excerpt_window_shortened" in search.cutoffs:
+        return ["Some excerpts were shortened to fit the source-byte limit. Only whole source lines are included; ask for surrounding lines if needed."]
+    return []
+
+
 def build_brief(root: Path, task: str, *, model: str | None = None, port: int = 11434, limits: SearchLimits | None = None, expected_digest: str | None = None, expected_runtime: str | None = None, task_kind: str | None = None, rerank_model: str | None = None, rerank_seconds: float = 20.0) -> Brief:
     scorer = None
     if rerank_model is not None:
@@ -224,7 +230,7 @@ def render_orientation(brief: Brief) -> str:
     lines.extend(["", "## Scan limits",
                   f"Lexical search over {search.files_examined} files; {search.matching_files} matched. "
                   + (f"The scan stopped early ({', '.join(stops)}), so part of the repository was not read." if stops else "The scan read every eligible file.")
-                  + " It is not an exhaustive review.", *_rerank_lines(search.rerank)])
+                  + " It is not an exhaustive review.", *excerpt_limit_lines(search), *_rerank_lines(search.rerank)])
     return "\n".join(lines) + "\n"
 
 
@@ -278,6 +284,7 @@ def render(brief: Brief) -> str:
                   f"Source bytes read: {search.source_bytes_read}; selected excerpt bytes: {search.selected_excerpt_bytes}.",
                   "Scan stopped early: " + (", ".join(c for c in search.cutoffs if c in SCAN_STOP_CUTOFFS) or "no, the scan completed") + ".",
                   "Selection caps applied: " + (", ".join(c for c in search.cutoffs if c not in SCAN_STOP_CUTOFFS) or "none") + ".",
+                  *excerpt_limit_lines(search),
                   "Exclusions: " + str(search.exclusions),
                   *_rerank_lines(search.rerank),
                   "Cloud tokens and savings: not measured. No direct cloud-provider client is implemented.",

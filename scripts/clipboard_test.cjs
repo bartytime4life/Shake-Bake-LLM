@@ -370,3 +370,21 @@ test('credential findings are shown beside Copy and never enter the copied brief
     '[{"kind":"k","where":"request","path":null,"line":null,"preview":"p"}]');
   assert.equal(vm.runInContext('JSON.stringify(screeningView("bad"))',h.context),'[]');
 });
+
+test('shortened source windows are disclosed in the visible gaps and both copied layouts',()=>{
+  const notice='Some excerpts were shortened to fit the source-byte limit. Only whole source lines are included; ask for surrounding lines if needed.';
+  for(const style of ['orientation','evidence']){
+    const h=harness(()=>Promise.resolve(),{style}),j=job('source-budget-'+style);
+    j.packet.receipt.discovery.cutoffs=['excerpt_budget','excerpt_window_shortened'];
+    h.pin(j);
+    assert.equal(h.el('gaps-section').hidden,false);
+    assert.equal(h.el('collection-warning').hidden,false);
+    assert.equal(h.el('collection-warning').textContent,notice);
+    assert.ok(h.el('handoff-text').value.split('\n').includes(notice));
+    assert.equal(verbatimRequest(h.el('handoff-text').value),j.packet.original_request);
+    j.packet.receipt.discovery.cutoffs=[];h.pin(j);
+    assert.equal(h.el('collection-warning').hidden,true);
+    assert.equal(h.el('gaps-section').hidden,true);
+    assert.ok(!h.el('handoff-text').value.includes(notice));
+  }
+});
