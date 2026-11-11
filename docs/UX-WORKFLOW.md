@@ -4,6 +4,8 @@ November 4 design plan, with implementation status refreshed November 6, 2026 fo
 
 This plan joins setup, local preparation, evidence review, assistant handoff and recovery into one product journey. It is grounded in the current HTML/JavaScript, GUI controller, helper and prepared SDK adapter. It is not a screenshot audit or a completed user test. The earlier cloud-browser inspection was blocked and remains a historical limitation. Later [installed readiness](pc-readiness-2026-11-05.md) and [copy-recovery](copy-and-screening-2026-11-05.md) walkthroughs cover selected local flows; broader desktop/phone and accessibility qualification remains open.
 
+The November 11 dev36 [workbench follow-up](workbench-usability-2026-11-11.md) adds a current screenshot/interaction audit and a more compact implementation: required work first, optional run details and proof on demand, contextual folder connection, visible cross-workflow activity and exact copy/error identity. Source and isolated installed regressions pass; the original plan and dated evidence below remain historical. This is not a representative user study or full accessibility qualification.
+
 ## The experience we want
 
 A user should be able to describe the task, prepare a brief from permitted source, and copy it into an existing assistant chat. The primary screen should make three things clear: what the app does, what source it uses, and the next useful action. Task type and optional model controls belong in **Options**; ordinary use must not require opening it. Source review, exports and recent briefs remain available on demand.

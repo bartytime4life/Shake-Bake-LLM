@@ -10,6 +10,7 @@
   let loadedError = null, fileReadAttempt = 0, fileReading = false;
   const syntheticOutput = 'Traceback (most recent call last):\n  File "validator.py", line 6, in validate_structure\n    return len(reported_slices) <= slices_detected\nTypeError: object of type \'NoneType\' has no len()\n';
   const bridge = () => window.sbWorkbench;
+  const preparingSource = () => bridge()?.isPreparing?.() === true;
   const preview = !!window.__SB_RECORDED_PREVIEW__;
   const node = (tag, text, className) => {
     const result = document.createElement(tag);
@@ -20,6 +21,16 @@
   function notice(text) {
     el('failure-notice').textContent = text;
     el('failure-notice').hidden = !text;
+  }
+  function revealRunDetails() {
+    const details = el('failure-run-details');
+    if (details) details.open = true;
+  }
+  for (const button of document.querySelectorAll('[data-connect-project]')) {
+    button.addEventListener('click', () => {
+      el('connect-project').open = true;
+      el('project-path').focus();
+    });
   }
   const currentReport = () => report && reportRevision === inputRevision;
   // Textareas normalize CRLF/CR to LF. Keep a loaded file's decoded text intact
@@ -90,7 +101,7 @@
   function controls() {
     const selected = projects.find(project => project.id === el('failure-project').value);
     const ready = !!bridge() && bridge().isConnected?.() !== false && projects.length > 0 && !preview;
-    el('diagnose-run').disabled = busy || connecting || fileReading || !ready || !selected || (selected.demo && !example);
+    el('diagnose-run').disabled = busy || connecting || fileReading || preparingSource() || !ready || !selected || (selected.demo && !example);
     el('connect-project-button').disabled = busy || connecting || !ready;
     el('load-failure-file').disabled = preview;
     el('try-failure-example').disabled = busy || connecting || !ready || !projects.some(project => project.demo);
@@ -128,6 +139,7 @@
     controls();
   }
   window.addEventListener('sb-workbench-state', event => updateState(event.detail));
+  window.addEventListener('sb-preparation-state', controls);
   if (bridge()?.getState()) updateState(bridge().getState());
   controls();
   el('failure-project').addEventListener('change', () => {
@@ -279,6 +291,25 @@
     grid.append(source);
     return grid;
   }
+  // Only an explicit, valid index can bind a frame to an exception. Python
+  // chains and unsupported members can omit it; array order is not a fallback.
+  function associatedException(value, frame) {
+    const index = frame.exception_index;
+    if (!Number.isInteger(index) || index < 0 || !Array.isArray(value.exceptions) || index >= value.exceptions.length) return null;
+    const exception = value.exceptions[index];
+    if (Number.isInteger(frame.chain_index) && Number.isInteger(exception?.chain_index) && frame.chain_index !== exception.chain_index) return null;
+    return exception && typeof exception === 'object' && typeof exception.type === 'string' && typeof exception.message === 'string'
+      ? {index, exception} : null;
+  }
+  function errorIdentity(value, frame) {
+    const chain = Number.isInteger(frame.chain_index) && frame.chain_index >= 0 ? `Chain ${frame.chain_index}` : 'Chain not supplied';
+    const association = associatedException(value, frame);
+    if (!association) return `${chain} · no explicit error association`;
+    const {index, exception} = association;
+    const parent = Number.isInteger(exception.aggregate_parent_index) && exception.aggregate_parent_index >= 0 && exception.aggregate_parent_index < value.exceptions.length
+      ? ` · member of error ${exception.aggregate_parent_index}` : '';
+    return `Error ${index} · ${chain}${parent} · ${exception.type}${exception.message ? ': ' + exception.message : ''}${exception.message_truncated ? ' [Summary shortened; complete message is in Original output.]' : ''}`;
+  }
   function renderReport(value, capturedExample, capturedProject, revision) {
     const identity = value.project && typeof value.project === 'object' ? value.project : capturedProject;
     const project = Object.fromEntries(['id', 'label', 'path'].map(key => [key, typeof identity[key] === 'string' ? identity[key] : capturedProject[key] || '']));
@@ -316,7 +347,8 @@
     for (const item of value.frames || []) {
       const source = value.evidence?.find(entry => entry.evidence_id === item.evidence_id);
       const li = node('li');
-      li.append(node('strong', `${item.reported_path}:${item.line}${item.column ? ':' + item.column : ''}${item.function ? ' in ' + item.function : ''}`));
+      li.append(node('strong', `${item.frame_id} · ${item.reported_path}:${item.line}${item.column ? ':' + item.column : ''}${item.function ? ' in ' + item.function : ''}`));
+      li.append(node('div', errorIdentity(value, item), 'small muted'));
       li.append(node('div', `${item.status}${item.path ? ' · ' + item.path : ''}${item.location_kind === 'end_of_file' ? ' · end of file reported; preceding context through line ' + item.context_line : source ? ' · source statement ' + item.source_comparison : ''}`));
       if (item.statement) li.append(node('div', item.statement));
       if (source && item !== frame) li.append(renderSource(source, item, value.format));
@@ -326,11 +358,22 @@
     el('failure-original').textContent = value.error_output;
     el('failure-captured-command').textContent = value.command ? `Recorded command (not run): ${value.command}` : 'No command supplied.';
     el('failure-limits').replaceChildren(node('p', 'A source match identifies a place to inspect. It does not prove the cause, run the failing command, or apply a fix.'));
-    const limits = [...(value.cutoffs || []).map(item => item === 'exception_message_budget' ? 'Exception summary shortened to 2 KiB. Original output is unchanged.' : 'Check limit reached: ' + item), ...(value.limitations || [])];
-    if (limits.length) {
+    const cutoffs = (value.cutoffs || []).map(item => item === 'exception_message_budget' ? 'Exception summary shortened to 2 KiB. Original output is unchanged.' : 'Check limit reached: ' + item);
+    const missing = (value.frames || []).filter(item => item.status !== 'located');
+    if (missing.length) el('failure-limits').append(node('p', `${missing.length} of ${value.frames.length} reported locations were not captured. Review Error locations & matching details for the missing source.`));
+    if (cutoffs.length) {
       const list = node('ul');
-      for (const limit of limits) list.append(node('li', limit));
+      for (const cutoff of cutoffs) list.append(node('li', cutoff));
       el('failure-limits').append(list);
+    }
+    if (value.limitations?.length) {
+      const details = node('details', undefined, 'technical');
+      details.id = 'failure-technical-limits';
+      details.append(node('summary', 'Source-check boundaries'));
+      const list = node('ul');
+      for (const limit of value.limitations) list.append(node('li', limit));
+      details.append(list);
+      el('failure-limits').append(details);
     }
     el('failure-result').hidden = false;
     credentialWarning(value.screening);
@@ -343,6 +386,10 @@
   el('failure-form').addEventListener('submit', async event => {
     event.preventDefault();
     if (busy || connecting || fileReading || !bridge()) return;
+    if (preparingSource()) {
+      notice('A source brief is still preparing, or its status is unknown. Select View preparation to wait or use Stop, then check this error. Your error and run details are unchanged.');
+      return;
+    }
     const project = projects.find(item => item.id === el('failure-project').value);
     if (!project || (project.demo && !example)) {
       notice('Choose or connect the project that actually failed. The synthetic demo is available only through Try a labelled example.');
@@ -382,6 +429,10 @@
       el('failure-progress').textContent = value.innermost_project_frame ? value.frames.find(item => item.frame_id === value.innermost_project_frame)?.location_kind === 'end_of_file' ? 'Source check complete. Review the preceding source context below.' : 'Source check complete. Review the captured line below.' : value.evidence?.length ? 'Check complete. Earlier source was captured; the final failure has no located project line.' : 'Check complete. No source line was located.';
       if (document.activeElement === el('diagnose-run') || document.activeElement === document.body) el('failure-result-title').focus();
     } catch (error) {
+      if (error.code === 'helper_busy' && currentRequest()) {
+        // Read the shared job state, without retrying this check or any task.
+        try {await bridge()?.syncSession?.(false);} catch (_) {}
+      }
       if (currentRequest()) {
         const folderRecovery = {
           working_directory_outside_project: 'That working folder is outside the connected project. Choose a folder inside this project, or clear the field to use the connected project folder.',
@@ -391,9 +442,9 @@
         }[error.code];
         const sessionRecovery = error.code === 'session_required' || error.code === 'request_not_allowed';
         if (sessionRecovery) bridge()?.connectionFailed?.();
-        notice(folderRecovery ? `${folderRecovery} Your error, command and folder text are unchanged.` : sessionRecovery ? 'The local session could not accept this check. Select Retry connection above, then select Find failing source again. Your error, command and working folder are unchanged; no check was retried automatically.' : `Could not check this error. ${error.message} Your pasted output is still here.`);
+        notice(folderRecovery ? `${folderRecovery} Your error, command and folder text are unchanged.` : error.code === 'helper_busy' ? 'The local service was busy preparing another source brief. Wait for it to finish; if View preparation is available, open it to use Stop. Then select Find failing source again. Your error, command and working folder are unchanged; no check was retried automatically.' : sessionRecovery ? 'The local session could not accept this check. Select Retry connection above, then select Find failing source again. Your error, command and working folder are unchanged; no check was retried automatically.' : `Could not check this error. ${error.message} Your pasted output is still here.`);
         el('failure-progress').textContent = 'Source check did not complete.';
-        if (folderRecovery) el('failure-working-directory').focus();
+        if (folderRecovery) {revealRunDetails();el('failure-working-directory').focus();}
       } else {
         el('failure-progress').textContent = requestRevision === inputRevision ? 'The local session changed during the check. Your inputs are unchanged; select Find failing source again for this session.' : 'Your inputs changed during the check. Find failing source again to check the current error and project.';
       }
@@ -421,14 +472,17 @@
       fenced(`Error SHA-256: ${value.error_sha256}`),
       '', '## Captured current source',
       ...(value.evidence || []).flatMap(item => [
-        fenced(JSON.stringify({path:item.path, start_line:item.start_line, end_line:item.end_line}, null, 2)),
+        fenced(JSON.stringify({evidence_id:item.evidence_id, path:item.path, start_line:item.start_line, end_line:item.end_line}, null, 2)),
         fenced(item.text),
         fenced(`File SHA-256: ${item.file_sha256}\nExcerpt SHA-256: ${item.excerpt_sha256}`)
       ]),
       ...(!value.evidence?.length ? ['No source was located. This is an incomplete debugging handoff.'] : []),
       ...(value.evidence?.length && !value.innermost_project_frame ? ['Only earlier source was captured. No project line was located for the final failure; this is an incomplete debugging handoff.'] : []),
+      '', '## Parsed errors and explicit associations',
+      'Error indexes are zero-based identities from this report. An absent explicit frame association remains unknown; neither array order nor a nearby message establishes an association or cause.',
+      fenced(JSON.stringify({exceptions:value.exceptions || [], terminal_exception:value.terminal_exception || null, chain_relations:value.chain_relations || []}, null, 2)),
       '', '## Locations and source comparison',
-      fenced(JSON.stringify((value.frames || []).map(frame => ({reported_path:frame.reported_path, line:frame.line, column:frame.column, status:frame.status, location_kind:frame.location_kind, context_line:frame.context_line, source_comparison:frame.source_comparison || 'unknown'})), null, 2)),
+      fenced(JSON.stringify((value.frames || []).map(frame => ({frame_id:frame.frame_id, evidence_id:frame.evidence_id, chain_index:frame.chain_index, exception_index:associatedException(value, frame)?.index ?? null, reported_path:frame.reported_path, line:frame.line, column:frame.column, status:frame.status, location_kind:frame.location_kind, context_line:frame.context_line, source_comparison:frame.source_comparison || 'unknown'})), null, 2)),
       '', '## Missing or excluded evidence',
       missing.length ? fenced(JSON.stringify(missing.map(frame => ({reported_path:frame.reported_path, line:frame.line, status:frame.status})), null, 2)) : 'No uncaptured frames were reported. This does not establish complete evidence or the root cause.',
       '', '## Suggested next checks (not performed)',

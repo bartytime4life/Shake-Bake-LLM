@@ -45,6 +45,17 @@ async function scenario(label, run, setup, expectedTaskRequests = 0) {
     await context.close();
   }
 }
+async function fillRunDetail(page, selector, value) {
+  const details = page.locator('#failure-run-details');
+  if (!await details.evaluate(node => node.open)) await details.locator('summary').click();
+  await page.locator(selector).fill(value);
+}
+function briefJson(brief, heading) {
+  const section = brief.split(`## ${heading}\n`)[1]?.split('\n## ')[0];
+  const fenced = section?.match(/(`{3,})\n([\s\S]*?)\n\1/);
+  assert.ok(fenced, `Missing structured brief section: ${heading}`);
+  return JSON.parse(fenced[2]);
+}
 async function diagnose(page, error=output()) {
   await page.locator('#failure-output').fill(error);
   await page.locator('#diagnose-run').click();
@@ -81,13 +92,22 @@ async function diagnose(page, error=output()) {
     await page.locator('#failure-project').selectOption('starter-demo');
     assert.equal(await page.locator('#diagnose-run').isDisabled(),true);
     assert.match(await page.locator('#failure-project-help').innerText(),/example/i);
+    assert.equal(await page.locator('#failure-run-details').evaluate(node => node.open),false);
+    await page.locator('#connect-failure-project').click();
+    assert.equal(await page.locator('#connect-project').evaluate(node => node.open),true);
+    assert.equal(await page.evaluate(() => document.activeElement.id),'project-path');
+    await page.locator('#connect-project > summary').click();
+    await page.locator('#choose-source-brief').click();
+    await page.locator('#connect-source-project').click();
+    assert.equal(await page.locator('#connect-project').evaluate(node => node.open),true);
+    assert.equal(await page.evaluate(() => document.activeElement.id),'project-path');
   });
   await scenario('connecting a project preserves the pasted error and the existing source-brief draft', async page => {
     await page.locator('#choose-source-brief').click();
     await page.locator('#request').fill('Preserve this separate source-brief draft.');
     await page.locator('#choose-failed-run').click();
     await page.locator('#failure-output').fill(output());
-    await page.locator('#failure-working-directory').fill(nestedWorkingDirectory);
+    await fillRunDetail(page, '#failure-working-directory', nestedWorkingDirectory);
     await page.locator('#connect-project > summary').click();
     await page.locator('#project-label').fill('Synthetic failure fixture');
     await page.locator('#project-path').fill(fixture);
@@ -112,8 +132,8 @@ async function diagnose(page, error=output()) {
     const failureProject = await page.locator('#failure-project').inputValue();
     assert.equal(failureProject,'');
     await page.locator('#failure-output').fill(output());
-    await page.locator('#failure-command').fill('python parse.py --preserved');
-    await page.locator('#failure-working-directory').fill(nestedWorkingDirectory);
+    await fillRunDetail(page, '#failure-command', 'python parse.py --preserved');
+    await fillRunDetail(page, '#failure-working-directory', nestedWorkingDirectory);
     await page.locator('#choose-source-brief').click();
     await page.locator('#request').fill('Where is RETRY_LIMIT defined? Preserve this source question.');
     assert.equal(await page.locator('#connect-project').isVisible(),true);
@@ -190,7 +210,7 @@ async function diagnose(page, error=output()) {
     await page.locator('#failure-file').setInputFiles({name:'complete-error.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
     await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded complete-error.log'));
     assert.equal(await page.locator('#failure-output').inputValue(),error.replace(/\r\n/g,'\n'));
-    await page.locator('#failure-command').fill('python parse.py --recorded-only');
+    await fillRunDetail(page, '#failure-command', 'python parse.py --recorded-only');
     assert.equal(requests.includes('/api/troubleshoot'),false);
     const storage = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
     assert.equal(Object.values(storage).some(value => value.includes('ValueError: invalid literal')),false);
@@ -214,7 +234,7 @@ async function diagnose(page, error=output()) {
     assert.match(await page.locator('#failure-result-title').innerText(),/pasted statement differs/);
     assert.match(await page.locator('#failure-source').innerText(),/return int\(value\)/);
     assert.match(await page.locator('#failure-captured-working-directory').innerText(),/connected project folder \(\.\)/);
-    await page.locator('#failure-working-directory').fill('./' + nestedWorkingDirectory);
+    await fillRunDetail(page, '#failure-working-directory', './' + nestedWorkingDirectory);
     await page.locator('#diagnose-run').click();
     await page.waitForFunction(() => !document.querySelector('#copy-failure-brief').disabled);
     assert.equal(await page.locator('#failure-stale').isVisible(),false);
@@ -229,7 +249,7 @@ async function diagnose(page, error=output()) {
     const directory = path.join(fixture,nestedWorkingDirectory);
     await page.locator('#failure-file').setInputFiles({name:'nested-run.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
     await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded nested-run.log'));
-    await page.locator('#failure-working-directory').fill(directory);
+    await fillRunDetail(page, '#failure-working-directory', directory);
     await page.locator('#diagnose-run').click();
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.equal(await page.locator('#failure-original').textContent(),error);
@@ -246,7 +266,7 @@ async function diagnose(page, error=output()) {
     assert.equal(record.error_output,error);
     assert.equal(record.working_directory,directory);
     assert.equal(record.working_directory_path,nestedWorkingDirectory);
-    await page.locator('#failure-working-directory').fill('');
+    await fillRunDetail(page, '#failure-working-directory', '');
     assert.equal(await page.locator('#failure-captured-working-directory').innerText(),captured);
     assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
     await page.locator('#diagnose-run').click();
@@ -259,13 +279,14 @@ async function diagnose(page, error=output()) {
     const command = 'python parse.py --keep-this-command';
     await page.locator('#failure-file').setInputFiles({name:'preserved-error.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
     await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded preserved-error.log'));
-    await page.locator('#failure-command').fill(command);
+    await fillRunDetail(page, '#failure-command', command);
     for (const [directory,recovery] of [
       [os.tmpdir(),/outside the connected project/],
       ['../',/without parent-folder steps/],
       ['missing-synthetic-folder',/Check that it exists and is a readable folder/]
     ]) {
-      await page.locator('#failure-working-directory').fill(directory);
+      await fillRunDetail(page, '#failure-working-directory', directory);
+      await page.locator('#failure-run-details > summary').click();
       await page.locator('#diagnose-run').click();
       await page.locator('#failure-notice').waitFor({state:'visible'});
       const message = await page.locator('#failure-notice').innerText();
@@ -276,9 +297,10 @@ async function diagnose(page, error=output()) {
       assert.equal(await page.locator('#failure-command').inputValue(),command);
       assert.equal(await page.locator('#failure-output').inputValue(),error.replace(/\r\n/g,'\n'));
       assert.equal(await page.evaluate(() => document.activeElement.id),'failure-working-directory');
+      assert.equal(await page.locator('#failure-run-details').evaluate(node => node.open),true);
       assert.equal(await page.locator('#failure-result').isVisible(),false);
     }
-    await page.locator('#failure-working-directory').fill('');
+    await fillRunDetail(page, '#failure-working-directory', '');
     await page.locator('#diagnose-run').click();
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.match(await page.locator('#failure-result-title').innerText(),/Source located — check this line/);
@@ -360,6 +382,8 @@ async function diagnose(page, error=output()) {
     assert.match(await page.locator('#failure-source .hash').innerText(),/File SHA-256: [a-f0-9]{64}/);
     assert.equal(await page.locator('#failure-original').textContent(),error);
     assert.match(await page.locator('#failure-limits').innerText(),/does not prove the cause/);
+    assert.equal(await page.locator('#failure-technical-limits').evaluate(node => node.open),false);
+    assert.equal(await page.locator('#failure-technical-limits li').first().isVisible(),false);
     assert.doesNotMatch(await page.locator('#failure-result-title').innerText(),/fixed|ready|root cause/i);
     assert.equal(await page.locator('#failure-result-title').evaluate(el => el === document.activeElement),true);
     assert.match(await page.locator('#failure-captured-project').innerText(),/Synthetic failure fixture/);
@@ -371,7 +395,7 @@ async function diagnose(page, error=output()) {
       const raw = pytestSection('FAILURES') + pytestHeading('test_parse_count') + pytestFailure(undefined,short)
         + pytestSection('short test summary info') + 'FAILED tests/test_parse.py::test_parse_count - ValueError: invalid literal\n';
       const error = short ? raw.replaceAll('\n','\r\n') : raw;
-      await page.locator('#failure-command').fill(short ? 'pytest --tb=short' : 'pytest');
+      await fillRunDetail(page, '#failure-command', short ? 'pytest --tb=short' : 'pytest');
       if (short) {
         await page.locator('#failure-file').setInputFiles({name:'pytest-short.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
         await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded pytest-short.log'));
@@ -491,6 +515,69 @@ async function diagnose(page, error=output()) {
     assert.match(await page.locator('#failure-frame-list').innerText(),/example.invalid/);
     assert.match(await page.locator('#failure-frame-list').innerText(),/node:internal/);
     assert.equal(await page.locator('#failure-original').textContent(),error);
+    assert.match(await page.locator('#failure-limits').innerText(),/2 of 3 reported locations were not captured/);
+  });
+  for (const externalFirst of [false,true]) {
+    await scenario(`aggregate member labels and copied identities stay bound${externalFirst ? ' when the first member is outside the project' : ''}`, async page => {
+      const first = externalFirst ? '/outside-approved-project/first.js' : path.join(fixture,'worker.js');
+      const second = path.join(fixture,'unicode.js');
+      const error = `[AggregateError: All promises were rejected] {\n  [errors]: [\n    TypeError: first input failed\n        at first (${first}:2:9),\n    RangeError: second input failed\n        at second (${second}:3:7)\n  ]\n}\n`;
+      await diagnose(page,error);
+      assert.equal(await page.locator('#failure-exception').innerText(),externalFirst ? 'RangeError: second input failed' : 'TypeError: first input failed');
+      await page.locator('#failure-frames > summary').click();
+      const frames = page.locator('#failure-frame-list > li');
+      assert.match(await frames.nth(0).innerText(),/Error 1 · Chain 0 · member of error 0 · TypeError: first input failed/);
+      assert.doesNotMatch(await frames.nth(0).innerText(),/RangeError: second input failed/);
+      assert.match(await frames.nth(1).innerText(),/Error 2 · Chain 0 · member of error 0 · RangeError: second input failed/);
+      assert.doesNotMatch(await frames.nth(1).innerText(),/TypeError: first input failed/);
+      assert.equal(await page.locator('#failure-original').textContent(),error);
+      const brief = await page.locator('#failure-copy-text').inputValue();
+      const errors = briefJson(brief,'Parsed errors and explicit associations');
+      const locations = briefJson(brief,'Locations and source comparison');
+      assert.equal(briefJson(brief,'Captured current source').evidence_id,'E1');
+      assert.deepEqual(errors.exceptions.map(item => [item.type,item.message]),[['AggregateError','All promises were rejected'],['TypeError','first input failed'],['RangeError','second input failed']]);
+      assert.deepEqual(locations.map(item => [item.frame_id,item.chain_index,item.exception_index]),[['F1',0,1],['F2',0,2]]);
+      assert.equal(locations[0].status,externalFirst ? 'outside_project' : 'located');
+      assert.equal(locations[0].evidence_id,externalFirst ? null : 'E1');
+      assert.equal(locations[1].evidence_id,externalFirst ? 'E1' : 'E2');
+      assert.equal(errors.terminal_exception.type,externalFirst ? 'RangeError' : 'TypeError');
+    });
+  }
+  await scenario('invalid or absent error indexes never inherit a neighboring member message', async page => {
+    await page.route('**/api/troubleshoot',async route => {
+      const response = await route.fetch(), value = await response.json();
+      value.frames[0].exception_index = value.exceptions.length;
+      value.frames.push({...value.frames[0],frame_id:'F2',exception_index:-1});
+      value.frames.push({...value.frames[0],frame_id:'F3',exception_index:'0'});
+      value.frames.push({...value.frames[0],frame_id:'F4',exception_index:null});
+      value.frames.push({...value.frames[0],frame_id:'F5',chain_index:1,exception_index:0});
+      await route.fulfill({response,json:value});
+    });
+    await diagnose(page,`TypeError: do not lend this message\n    at ${path.join(fixture,'worker.js')}:2:9\n`);
+    await page.locator('#failure-frames > summary').click();
+    const frames = page.locator('#failure-frame-list > li');
+    assert.equal(await frames.count(),5);
+    for (let index=0;index<5;index++) {
+      assert.match(await frames.nth(index).innerText(),new RegExp(`F${index+1}.*worker.js`));
+      assert.match(await frames.nth(index).innerText(),new RegExp(`Chain ${index === 4 ? 1 : 0} · no explicit error association`));
+      assert.doesNotMatch(await frames.nth(index).innerText(),/do not lend this message/);
+    }
+    const locations = briefJson(await page.locator('#failure-copy-text').inputValue(),'Locations and source comparison');
+    assert.deepEqual(locations.map(item => item.exception_index),[null,null,null,null,null]);
+  });
+  await scenario('unsupported nested aggregate members retain their gap and never borrow a sibling error', async page => {
+    const error = `AggregateError: outer\n  [errors]: [\n    AggregateError: nested {\n      [errors]: [\n        TypeError: inner\n            at ${path.join(fixture,'worker.js')}:2:9\n      ]\n    }\n  ]\n}\n`;
+    await diagnose(page,error);
+    assert.equal(await page.locator('#failure-result-title').innerText(),'No source located');
+    assert.match(await page.locator('#failure-guidance').innerText(),/could not be interpreted/);
+    assert.match(await page.locator('#failure-limits').innerText(),/node_aggregate_format_unsupported/);
+    const locations = briefJson(await page.locator('#failure-copy-text').inputValue(),'Locations and source comparison');
+    assert.equal(locations[0].status,'node_aggregate_format_unsupported');
+    assert.equal(locations[0].exception_index,null);
+    await page.locator('#failure-frames > summary').click();
+    assert.match(await page.locator('#failure-frame-list').innerText(),/no explicit error association/);
+    assert.doesNotMatch(await page.locator('#failure-frame-list').innerText(),/TypeError: inner/);
+    assert.equal(await page.locator('#failure-original').textContent(),error);
   });
   await scenario('JavaScript Unicode separators retain the parser line numbering in the source viewer', async page => {
     await diagnose(page,`Error: synthetic separators\n    at ${path.join(fixture,'unicode.js')}:3:7\n`);
@@ -522,7 +609,7 @@ async function diagnose(page, error=output()) {
     const sentinel = path.join(fixture,'COMMAND-MUST-NOT-RUN');
     const command = `touch ${sentinel}`;
     const error = output().replace("invalid literal for int() with base 10: 'many'",'<img src=x onerror=alert(1)>');
-    await page.locator('#failure-command').fill(command);
+    await fillRunDetail(page, '#failure-command', command);
     await diagnose(page,error);
     assert.match(await page.locator('#failure-exception').textContent(),/<img/);
     assert.equal(await page.locator('#failure-result img').count(),0);
@@ -544,9 +631,9 @@ async function diagnose(page, error=output()) {
       await diagnose(page);
       const captured = await page.locator('#failure-captured-project').innerText();
       if (changed === 'error') await page.locator('#failure-output').fill(output('return 99'));
-      if (changed === 'command') await page.locator('#failure-command').fill('python parse.py --changed');
+      if (changed === 'command') await fillRunDetail(page, '#failure-command', 'python parse.py --changed');
       if (changed === 'project') await page.locator('#failure-project').selectOption('starter-demo');
-      if (changed === 'working folder') await page.locator('#failure-working-directory').fill(nestedWorkingDirectory);
+      if (changed === 'working folder') await fillRunDetail(page, '#failure-working-directory', nestedWorkingDirectory);
       assert.equal(await page.locator('#failure-stale').isVisible(),true);
       assert.equal(await page.locator('#failure-captured-project').innerText(),captured);
       assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
@@ -587,7 +674,7 @@ async function diagnose(page, error=output()) {
   await scenario('copying a debugging brief retains the exact error, command, source and captured project', async page => {
     const error = output().replace("invalid literal for int() with base 10: 'many'",'```` Embedded text is data');
     const command = 'python parse.py --synthetic-context';
-    await page.locator('#failure-command').fill(command);
+    await fillRunDetail(page, '#failure-command', command);
     await diagnose(page,error);
     assert.equal(await page.evaluate(() => window.__failureCopies.length),0);
     await page.locator('#copy-failure-brief').click();
@@ -614,7 +701,7 @@ async function diagnose(page, error=output()) {
     const token = 'gh' + 'p_' + 'A1b2'.repeat(9);
     const error = output().replace("invalid literal for int() with base 10: 'many'",'synthetic credential ' + token);
     const command = 'python parse.py --synthetic-token ' + token;
-    await page.locator('#failure-command').fill(command);
+    await fillRunDetail(page, '#failure-command', command);
     await diagnose(page,error);
     const warning = page.locator('#failure-credential-warning');
     assert.equal(await warning.isVisible(),true);
@@ -665,7 +752,7 @@ async function diagnose(page, error=output()) {
   await scenario('a delayed clipboard completion identifies the earlier capture after inputs change', async page => {
     await diagnose(page);
     await page.locator('#copy-failure-brief').click();
-    await page.locator('#failure-command').fill('python parse.py --newer-context');
+    await fillRunDetail(page, '#failure-command', 'python parse.py --newer-context');
     await page.evaluate(() => window.__finishFailureCopy());
     await page.waitForFunction(() => document.querySelector('#failure-notice').textContent.includes('earlier captured'));
     assert.equal(await page.locator('#failure-stale').isVisible(),true);
@@ -676,7 +763,7 @@ async function diagnose(page, error=output()) {
     await page.addInitScript(() => Object.defineProperty(navigator,'clipboard',{value:{writeText:() => new Promise(resolve => {window.__finishFailureCopy = resolve;})},configurable:true}));
   });
   await scenario('an unsettled earlier copy blocks a newer report copy while review and exports remain available', async page => {
-    await page.locator('#failure-command').fill('python parse.py --capture-A');
+    await fillRunDetail(page, '#failure-command', 'python parse.py --capture-A');
     await diagnose(page);
     await page.locator('#copy-failure-brief').click();
     assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
@@ -684,7 +771,7 @@ async function diagnose(page, error=output()) {
     // Repeated or scripted clicks cannot queue another uncancellable write.
     await page.locator('#copy-failure-brief').dispatchEvent('click');
     assert.equal(await page.evaluate(() => window.__clipboardWrites.length),1);
-    await page.locator('#failure-command').fill('python parse.py --capture-B');
+    await fillRunDetail(page, '#failure-command', 'python parse.py --capture-B');
     await page.locator('#diagnose-run').click();
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
@@ -768,13 +855,13 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#failure-output').inputValue(),error);
     assert.match(await page.locator('#failure-notice').innerText(),/unchanged/);
     await page.locator('#failure-output').fill('');
-    await page.locator('#failure-working-directory').fill(nestedWorkingDirectory);
+    await fillRunDetail(page, '#failure-working-directory', nestedWorkingDirectory);
     await page.locator('#try-failure-example').click();
     assert.equal(await page.locator('#failure-working-directory').inputValue(),nestedWorkingDirectory);
     assert.equal(await page.locator('#failure-output').inputValue(),'');
     assert.equal(await page.locator('#failure-example-notice').isVisible(),false);
     assert.match(await page.locator('#failure-notice').innerText(),/working folder are unchanged/);
-    await page.locator('#failure-working-directory').fill('');
+    await fillRunDetail(page, '#failure-working-directory', '');
     await page.locator('#try-failure-example').click();
     assert.equal(await page.locator('#failure-example-notice').isVisible(),true);
     assert.equal(await page.locator('#failure-working-directory').inputValue(),'');
@@ -795,6 +882,82 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#failure-output').inputValue(),error);
     assert.equal(requests.includes('/api/troubleshoot'),false);
     assert.equal(await page.locator('#failure-result').isVisible(),false);
+  });
+  await scenario('source preparation stays visible across workflows and preserves editable error inputs through stop', async (page,{requests}) => {
+    const job = 'c4'.repeat(16);
+    let releaseAcknowledgement, startSeen, status = 'RUNNING';
+    const acknowledgement = new Promise(resolve => {releaseAcknowledgement=resolve;});
+    const started = new Promise(resolve => {startSeen=resolve;});
+    await page.route('**/api/tasks',async route => {
+      startSeen();
+      await acknowledgement;
+      await route.fulfill({json:{task_id:job,state:'RUNNING'}});
+    });
+    await page.route(`**/api/tasks/${job}`,route => route.fulfill({json:{task_id:job,state:status}}));
+    await page.route(`**/api/tasks/${job}/cancel`,route => {
+      status='CANCELLED';
+      return route.fulfill({json:{task_id:job,state:status}});
+    });
+    const error = output(), command = 'python parse.py --preserved';
+    await page.locator('#failure-output').fill(error);
+    await fillRunDetail(page,'#failure-command',command);
+    await fillRunDetail(page,'#failure-working-directory',nestedWorkingDirectory);
+    await page.locator('#choose-source-brief').click();
+    const project = await page.evaluate(root => window.sbWorkbench.getState().native.projects.find(item => item.path === root).id,sourceFixture);
+    await page.locator('#project').selectOption(project);
+    await page.locator('#request').fill('Inspect the synthetic retry limit.');
+    try {
+      await page.locator('#prepare').click();
+      await started;
+      await page.locator('#choose-failed-run').click();
+      assert.equal(await page.locator('#preparation-activity').isVisible(),true);
+      assert.equal(await page.locator('#diagnose-run').isDisabled(),true);
+      assert.equal(await page.locator('#failure-output').isEditable(),true);
+      await page.locator('#failure-form').dispatchEvent('submit');
+      assert.match(await page.locator('#failure-notice').innerText(),/View preparation.*Stop/);
+      assert.equal(requests.includes('/api/troubleshoot'),false);
+      releaseAcknowledgement();
+      await page.waitForFunction(() => !document.querySelector('#stop').disabled);
+      assert.equal(await page.locator('#diagnose-run').isDisabled(),true);
+      const newer = output('return 99');
+      await page.locator('#failure-output').fill(newer);
+      assert.equal(await page.locator('#failure-command').inputValue(),command);
+      assert.equal(await page.locator('#failure-working-directory').inputValue(),nestedWorkingDirectory);
+      await page.evaluate(() => window.sbWorkbench.connectionFailed());
+      assert.equal(await page.locator('#diagnose-run').isDisabled(),true);
+      assert.match(await page.locator('#preparation-activity-text').innerText(),/unknown/i);
+      await page.locator('#retry-connection').click();
+      await page.waitForFunction(() => window.sbWorkbench.isConnected());
+      assert.equal(await page.locator('#diagnose-run').isDisabled(),true);
+      await page.locator('#activity-view').click();
+      assert.equal(await page.locator('#source-brief-workflow').isVisible(),true);
+      await page.locator('#stop').click();
+      await page.waitForFunction(() => !window.sbWorkbench.isPreparing());
+      assert.equal(await page.locator('#preparation-activity').isVisible(),false);
+      await page.locator('#choose-failed-run').click();
+      assert.equal(await page.locator('#diagnose-run').isEnabled(),true);
+      assert.equal(await page.locator('#failure-output').inputValue(),newer);
+      assert.equal(await page.locator('#failure-command').inputValue(),command);
+      assert.equal(await page.locator('#failure-working-directory').inputValue(),nestedWorkingDirectory);
+      assert.equal(requests.includes('/api/troubleshoot'),false);
+    } finally {releaseAcknowledgement?.();}
+  },undefined,1);
+  await scenario('a service busy race gives a useful wait or stop action without changing run inputs', async (page,{requests}) => {
+    await page.route('**/api/troubleshoot',route => route.fulfill({status:409,json:{error:'helper_busy'}}));
+    const error = output(), command = 'python parse.py --keep';
+    await page.locator('#failure-output').fill(error);
+    await fillRunDetail(page,'#failure-command',command);
+    await fillRunDetail(page,'#failure-working-directory',nestedWorkingDirectory);
+    await page.locator('#diagnose-run').click();
+    await page.locator('#failure-notice').waitFor({state:'visible'});
+    const message = await page.locator('#failure-notice').innerText();
+    assert.match(message,/View preparation.*Stop/);
+    assert.doesNotMatch(message,/helper_busy/);
+    assert.equal(await page.locator('#failure-output').inputValue(),error);
+    assert.equal(await page.locator('#failure-command').inputValue(),command);
+    assert.equal(await page.locator('#failure-working-directory').inputValue(),nestedWorkingDirectory);
+    assert.equal(await page.locator('#failure-result').isVisible(),false);
+    assert.equal(requests.filter(url => url === '/api/troubleshoot').length,1);
   });
   await scenario('a failed service request keeps pasted output and avoids a success report', async page => {
     await page.route('**/api/troubleshoot',route => route.fulfill({status:503,json:{error:'synthetic_unavailable'}}));

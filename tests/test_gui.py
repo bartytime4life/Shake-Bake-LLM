@@ -71,7 +71,7 @@ class WorkbenchAcceptance(unittest.TestCase):
     def test_page_and_assets_are_real_local_files_with_no_external_dependencies(self):
         status,headers,body=self.request("GET","/")
         self.assertEqual(status,200)
-        self.assertIn(b"Prepare a brief for Claude or ChatGPT.",body)
+        self.assertIn(b"Prepare a source brief.",body)
         self.assertIn("frame-ancestors 'none'",headers["Content-Security-Policy"])
         self.assertIn("SameSite=Strict",headers["Set-Cookie"])
         for path in ("/app.js","/styles.css","/icons/folder.svg"):

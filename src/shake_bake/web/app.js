@@ -25,6 +25,7 @@ let sourceProjectSelectionRevision = 0;
 const DRAFT_KEY = 'sb-workbench-draft', DRAFT_SAVING_KEY = 'sb-workbench-save-draft';
 let draftSaving = true, draftSavingPendingOff = false, draftPrivacyError = '';
 let focusPreparedBrief = false;
+let preparationActivitySignature = '';
 const draftTouched = new Set(), taskKinds = ['code','troubleshoot','documents','search'];
 function message(text, error = false) { $('notice').textContent = text; $('notice').classList.toggle('error', error); $('notice').hidden = !text; }
 function connectionMessage(text,error=false){$('session-notice').textContent=text;$('session-notice').classList.toggle('error',error);$('session-notice').hidden=!text;}
@@ -244,7 +245,7 @@ function draftContext(){
   $('project-help').classList.toggle('sr-only',projectValid&&kindValid&&$('project').value!=='starter-demo');
   $('project-help').textContent=!projectValid
     ? `The saved project${draftProjectId?' “'+draftProjectId+'”':''} is unavailable. Choose an approved project for this draft.${kindValid?'':' Choose a task type too.'}`
-    : !kindValid?'The saved task type is unavailable. Choose a task type for this draft.':$('project').value==='starter-demo'?'Synthetic demo selected: only bundled example files are available. Choose your real project above, or use Connect project folder above.':"Only projects you explicitly connected or approved at launch are available.";
+    : !kindValid?'The saved task type is unavailable. Choose a task type for this draft.':$('project').value==='starter-demo'?'Synthetic demo selected: only bundled example files are available. Choose your real project, or select Connect folder beside Project.':"Only projects you explicitly connected or approved at launch are available.";
 }
 function saveDraft(){
   if(preview||fileLaunch)return;
@@ -298,6 +299,23 @@ function restoreDraft(prefs){
 }
 function preferences() { return {project_id:$('project').value, task_kind:taskKind(), ai_mode:mode(), ...selectedModel()}; }
 async function savePreferences() { saveDraft();if(!draftInitialized)return;try { await api('/api/preferences', preferences()); } catch(error) { message(error.message, true); } }
+function renderPreparationActivity(){
+  const status=!active?'idle':!connected?'unknown':active.pending?'pending':'running';
+  const detail={preparing:!!active,project_id:active?.project_id||null,status};
+  const signature=JSON.stringify([status,detail.project_id,active?.job_id||null]);
+  if(signature===preparationActivitySignature)return;
+  // Set before notifying the other workflow: its controls may react immediately.
+  preparationActivitySignature=signature;
+  const section=$('preparation-activity'),text=$('preparation-activity-text');
+  if(section)section.hidden=!active||!!preview;
+  if(text){
+    const project=nativeState?.projects?.find(item=>item.id===detail.project_id);
+    const identity=project?.label&&project.label!==detail.project_id?`${project.label} (${detail.project_id})`:detail.project_id||'the captured project';
+    const value=!active?'':status==='pending'?`Starting source preparation for ${identity}…`:status==='unknown'?`Source preparation status is unknown for ${identity}. Retry the connection to check it.`:`Preparing a source brief for ${identity}…`;
+    if(text.textContent!==value)text.textContent=value;
+  }
+  if(window.dispatchEvent&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('sb-preparation-state',{detail}));
+}
 function controls() {
   draftPrivacyControls();
   $('prepare').disabled = !!active || !state || !connected || settingsPending || !!preview || !validDraftProject() || !taskKinds.includes(taskKind());
@@ -313,6 +331,7 @@ function controls() {
   $('download').disabled = !pinned?.packet;
   handoffView();
   readinessControls();
+  renderPreparationActivity();
 }
 async function loadBrief(item,{focus=false}={}){
   // Automatic restoration and explicit selections share the same result owner.
@@ -460,8 +479,8 @@ $('task-form').addEventListener('submit',async(event)=>{event.preventDefault();i
   // Disabling Prepare can move focus to the document body. Remember the user's
   // submit action, but revoke focus recovery if they move on to another control.
   focusPreparedBrief=document.activeElement===$('prepare');
-  const params={...preferences(),request:$('request').value};++pinRevision;++stateRevision;active={pending:true};controls();if(pinned)renderBrief(true);message('');
-  const job=await api('/api/start',params);if(generation!==sessionGeneration)return;active=job;await savePreferences();await poll();
+  const params={...preferences(),request:$('request').value};++pinRevision;++stateRevision;active={pending:true,project_id:params.project_id};controls();if(pinned)renderBrief(true);message('');
+  const job=await api('/api/start',params);if(generation!==sessionGeneration)return;active=job;controls();await savePreferences();await poll();
 }catch(error){
   if(generation!==sessionGeneration)return;
   active=null;focusPreparedBrief=false;
@@ -784,8 +803,9 @@ function renderCopyStatus(){
   }
   $('copy-status').hidden=!copyState;
   if(!copyState)return;
-  const current=pinned?.job_id===copyState.job_id&&pinned?.project_id===copyState.project_id;
-  const brief=current?'this brief':`the earlier brief (job ${copyState.job_id})`;
+  const sameJob=pinned?.job_id===copyState.job_id&&pinned?.project_id===copyState.project_id;
+  const current=sameJob&&!!pinned?.packet&&handoffText(pinned)===copyState.text;
+  const brief=current?'this brief':sameJob?'the earlier layout of this brief':`the earlier brief (job ${copyState.job_id})`;
   const text=pending
     ? `Waiting for the browser to copy ${brief}. Review & export has manual copy and a text download. This request may still finish later.`
     : copyState.status==='copied'
@@ -802,16 +822,16 @@ function renderHandoff(){
 }
 // The layout choice is a per-browser convenience; a file launch never touches storage and the inert demo never writes it.
 function restoreBriefStyle(){try{const saved=localStorage.getItem('sb-brief-style');if(BRIEF_STYLES.has(saved))$('brief-style').value=saved;}catch{}}
-$('brief-style').addEventListener('change',()=>{if(!preview&&!fileLaunch)try{localStorage.setItem('sb-brief-style',briefStyle());}catch{}renderHandoff();});
+$('brief-style').addEventListener('change',()=>{if(!preview&&!fileLaunch)try{localStorage.setItem('sb-brief-style',briefStyle());}catch{}renderHandoff();renderCopyStatus();});
 $('copy').addEventListener('click',async()=>{
   if(!pinned?.packet?.evidence?.length||copyState?.status==='pending'||clipboardOwner())return;
   // Capture the exact job before awaiting the browser. An unresolved clipboard request
   // cannot be cancelled; do not queue another or attribute a late result to a new pin.
   const text=handoffText(pinned);
-  const attempt={job_id:pinned.job_id,project_id:pinned.project_id,status:'pending'};
+  const attempt={job_id:pinned.job_id,project_id:pinned.project_id,text,status:'pending'};
   copyState=attempt;renderCopyStatus();
   try{await writeClipboard(text,'source');attempt.status='copied';}
-  catch{attempt.status='failed';$('handoff-copy').open=true;if(pinned?.job_id===attempt.job_id&&pinned?.project_id===attempt.project_id)$('select-handoff').focus();}
+  catch{attempt.status='failed';$('handoff-copy').open=true;if(pinned?.job_id===attempt.job_id&&pinned?.project_id===attempt.project_id&&pinned?.packet&&handoffText(pinned)===attempt.text)$('select-handoff').focus();}
   finally{renderCopyStatus();}
 });
 window.addEventListener('sb-clipboard-state',renderCopyStatus);
@@ -829,6 +849,7 @@ $('download').addEventListener('click',()=>{if(!pinned?.packet)return;const blob
 function showWorkspace(){$('recent-section').hidden=true;$('history-nav').setAttribute('aria-expanded','false');}
 $('history-nav').addEventListener('click',()=>{const open=$('recent-section').hidden;$('recent-section').hidden=!open;$('history-nav').setAttribute('aria-expanded',String(open));});
 $('workspace-nav').addEventListener('click',()=>{showWorkspace();$('request').focus();});
+$('activity-view')?.addEventListener('click',()=>{if(!active)return;$('choose-source-brief')?.click();showWorkspace();const progress=$('progress');if(progress){progress.setAttribute('tabindex','-1');progress.focus();}});
 function connectionFailed(){connected=false;$('connection-status').textContent='Local session unavailable — retry the connection.';connectionMessage('The local session is unavailable. Your open-tab inputs and captures remain here. Check that the workbench is running, then select Retry connection.',true);controls();if(window.dispatchEvent&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('sb-workbench-state',{detail:state}));}
 function syncSession(announce=true,{renewExpiredSession=false}={}){
   if(settingsPending)return Promise.resolve();
@@ -887,7 +908,7 @@ function selectConnectedSourceProject(id, expectedSelection){
   if(!state?.projects.includes(id)||!expectedSelection||$('project').value!==expectedSelection.id||sourceProjectSelectionRevision!==expectedSelection.revision)return false;
   $('project').value=id;sourceProjectSelectionRevision++;draftTouched.add('project');draftContext();void savePreferences();controls();return true;
 }
-window.sbWorkbench={api,syncSession,connectionFailed,getSessionGeneration:()=>sessionGeneration,isConnected:()=>connected===true,getState:()=>state,isPreview:()=>!!preview||fileLaunch,getSourceSelection,selectSourceProject:selectConnectedSourceProject,clipboardOwner,writeClipboard};initialize();
+window.sbWorkbench={api,syncSession,connectionFailed,getSessionGeneration:()=>sessionGeneration,isConnected:()=>connected===true,isPreparing:()=>!!active,getState:()=>state,isPreview:()=>!!preview||fileLaunch,getSourceSelection,selectSourceProject:selectConnectedSourceProject,clipboardOwner,writeClipboard};initialize();
 
 function memoryText(value){return typeof value==='number'?`${(value/1073741824).toFixed(1)} GiB`:'Not detected';}
 function facts(id,entries){const list=$(id);list.replaceChildren();for(const [name,value]of entries){const term=document.createElement('dt'),detail=document.createElement('dd');term.textContent=name;detail.textContent=value;list.append(term,detail);}}
