@@ -80,7 +80,7 @@
         <p id="failure-notice" class="notice error" role="status" aria-live="polite" hidden></p>
         <section id="failure-result" class="failure-result" aria-labelledby="failure-result-title" hidden>
           <p id="failure-result-status" class="eyebrow"></p>
-          <p id="failure-stale" class="notice" role="status" hidden>Inputs changed. This result belongs to the captured project and error below. Find failing source again before copying or exporting.</p>
+          <p id="failure-stale" class="notice" role="status" hidden>This earlier report belongs to the captured project and error below. You can save its exact JSON while checking the current inputs.</p>
           <h2 id="failure-result-title" tabindex="-1"></h2>
           <p id="failure-captured-project" class="small muted"></p>
           <p id="failure-captured-working-directory" class="small muted"></p>
@@ -94,7 +94,7 @@
           <div id="failure-source"></div>
           <section class="failure-next" aria-labelledby="failure-next-heading"><h3 id="failure-next-heading">What to check next</h3><div id="failure-guidance"></div></section>
           <details id="failure-frames" class="technical"><summary>Error locations &amp; matching details</summary><ol id="failure-frame-list"></ol></details>
-          <details class="technical"><summary>Original error &amp; report</summary><p class="small muted">The output below is the exact captured text you pasted or loaded. A source match points to a place to inspect; it does not establish a cause or prove a fix.</p><pre id="failure-original"></pre><p id="failure-captured-command" class="small muted"></p><div class="export-actions"><button type="button" id="download-failure-text" class="secondary compact">Save report as .txt</button><button type="button" id="download-failure-json" class="text-button">Download JSON report</button></div></details>
+          <details class="technical"><summary>Original error &amp; report</summary><p class="small muted">The output below is the exact captured text you pasted or loaded. JSON saves this displayed capture, including when a newer check fails or inputs change. A source match points to a place to inspect; it does not establish a cause or prove a fix.</p><pre id="failure-original"></pre><p id="failure-captured-command" class="small muted"></p><div class="export-actions"><button type="button" id="download-failure-text" class="secondary compact">Save report as .txt</button><button type="button" id="download-failure-json" class="text-button">Download captured JSON report</button></div></details>
           <div id="failure-limits" class="failure-limits small muted"></div>
         </section>
       </section>

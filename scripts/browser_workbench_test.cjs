@@ -2,6 +2,8 @@
 // No personal browser profile, Ollama, cloud host, or inspected user project.
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs/promises');
+const os = require('node:os');
 const {spawn} = require('node:child_process');
 const {waitForServer} = require('./browser_server.cjs');
 const {chromium} = require('playwright');
@@ -11,6 +13,7 @@ if(process.argv[2])delete env.PYTHONPATH;else env.PYTHONPATH=path.join(__dirname
 const server=spawn(process.argv[2]||'python3',['-u','-c',
   'from shake_bake.gui import Controller, DEMO, WorkbenchServer\nc=Controller({"starter-demo":DEMO})\nc.call("settings", {"enabled":False})\ns=WorkbenchServer(("127.0.0.1",0),c)\nprint(s.server_port,flush=True)\ntry: s.serve_forever()\nexcept KeyboardInterrupt: pass\nfinally: s.server_close(); c.close()'],{env,stdio:['ignore','pipe','inherit']});
 let browser,baseURL,passed=0;
+const generatedFixtures=[];
 const rendered=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
 async function openOptions(page){
   if(!await page.locator('#task-options').evaluate(el=>el.open))await page.locator('#task-options > summary').click();
@@ -121,6 +124,69 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     await h.page.keyboard.press('Tab');
     assert.equal(await h.page.locator('#copy').evaluate(el=>document.activeElement===el),true);
   },{setup:async h=>{h.enabled=false;}});
+  await scenario('reload restores exact retained evidence after a newer real denied preparation',async h=>{
+    const root=await fs.mkdtemp(path.join(os.tmpdir(),'sb-history-recovery-'));generatedFixtures.push(root);
+    const source='RETRY_LIMIT = 3\n';await fs.writeFile(path.join(root,'main.py'),source);
+    const project=await h.page.evaluate(async root=>{
+      const connected=await window.sbWorkbench.api('/api/projects',{label:'History recovery fixture',path:root});
+      await window.sbWorkbench.syncSession(false);return connected.project_id;
+    },root);
+    await h.page.locator('#project').selectOption(project);
+    const good='Find RETRY_LIMIT in this synthetic history fixture.';
+    await prepare(h.page,good);
+    const captured=await h.page.locator('#handoff-text').inputValue();
+    const before=await h.page.evaluate(async()=>{
+      const state=await window.sbWorkbench.api('/api/state');
+      return window.sbWorkbench.api('/api/result',{job_id:state.recent[0].job_id,project_id:state.recent[0].project_id});
+    });
+    assert.ok(before.packet.evidence.length);
+    await fs.rm(root,{recursive:true});
+    const denied='Find RETRY_LIMIT after this synthetic folder disappears.';
+    await h.page.locator('#request').fill(denied);await h.page.locator('#prepare').click();
+    await h.page.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Preparation failed.'));
+    await h.page.waitForFunction(()=>!document.querySelector('#prepare').disabled);
+    // Restore only our fixture folder; retained packets still belong to their captured bytes.
+    await fs.mkdir(root);await fs.writeFile(path.join(root,'main.py'),source);
+    await h.page.reload();await openHistory(h.page);
+    const failed=h.page.getByRole('button',{name:new RegExp(denied.replaceAll('.','\\.'))});
+    await failed.waitFor();assert.match(await failed.innerText(),/failed/);assert.doesNotMatch(await failed.innerText(),/prepared/);
+    await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,good);
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),captured);
+    const retained=await h.page.evaluate(job=>window.sbWorkbench.api('/api/result',{job_id:job.job_id,project_id:job.project_id}),before);
+    assert.deepEqual(retained.packet.evidence,before.packet.evidence);
+    assert.equal(await h.page.locator('#request').inputValue(),denied,'Restoring evidence must retain the newer task draft');
+    assert.equal(h.tasks,2,'Reload must not replay a successful or denied task');
+    // The same failure must remain reviewable when no earlier capture is retained.
+    h.stateTransform=value=>{value.recent=value.recent.filter(item=>item.task===denied);};
+    await h.page.reload();await openHistory(h.page);
+    await h.page.getByRole('button',{name:new RegExp(denied.replaceAll('.','\\.'))}).waitFor();
+    assert.equal(await h.page.locator('#brief-result').evaluate(el=>el.hidden),true);
+    assert.equal(await h.page.locator('#request').inputValue(),denied);assert.equal(h.tasks,2);
+  },{setup:async h=>{h.enabled=false;}});
+  await scenario('older completion metadata stays reviewable without claiming prepared evidence',async h=>{
+    const request='Find executable slice coverage with older retained-result metadata.';
+    await prepare(h.page,request);const exact=await h.page.locator('#handoff-text').inputValue();
+    await h.page.reload();await openHistory(h.page);
+    const older=h.page.getByRole('button',{name:new RegExp(request.replaceAll('.','\\.'))});
+    await older.waitFor();assert.match(await older.innerText(),/completed/);assert.doesNotMatch(await older.innerText(),/prepared/);
+    assert.equal(await h.page.locator('#brief-result').evaluate(el=>el.hidden),true);
+    await older.click();await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,request);
+    assert.equal(await h.page.locator('#handoff-text').inputValue(),exact);assert.equal(h.tasks,1);
+  },{setup:async h=>{
+    h.enabled=false;h.stateTransform=value=>{for(const item of value.recent){delete item.outcome;delete item.evidence_available;}};
+  }});
+  await scenario('mode selection stays disabled until the initial connection resolves its saved choice',async h=>{
+    await h.stateSeen.promise;await openOptions(h.page);
+    assert.equal(await h.page.locator('#ai-mode').isDisabled(),true);
+    assert.equal(h.tasks,0);assert.equal(h.settingsCalls,0);assert.equal(h.modelCalls,0);
+    h.releases[0].resolve();await h.page.waitForFunction(()=>!document.querySelector('#ai-mode').disabled);
+    assert.equal(await h.page.locator('#ai-mode').inputValue(),'trial');
+    assert.equal(await h.page.locator('#local-ai').isChecked(),true);
+    assert.equal(h.tasks,0);assert.equal(h.settingsCalls,0);assert.equal(h.modelCalls,0);
+  },{waitForStartup:false,setup:async h=>{
+    h.stateWait=h.defer();h.stateTransform=value=>{value.allow_candidate_trials=true;};
+    await h.page.addInitScript(()=>localStorage.setItem('shake-bake-preferences',JSON.stringify({ai_mode:'trial',model:'fixture:local',digest:'a'.repeat(64)})));
+  }});
   await scenario('preparation stays visible across workflows and View preparation returns to its status',async h=>{
     const request='Find executable slice coverage for the shared preparation activity.';
     const acknowledge=h.defer(),finish=h.defer(),startSeen=deferred(),resultSeen=deferred();let heldResult=false;
@@ -720,4 +786,4 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     await h.page.locator('#task-form').dispatchEvent('submit');assert.equal(h.apiCalls,0);
   },{preview:recorded});
   console.log(`${passed} workbench Chromium scenarios passed; these use synthetic source and do not qualify real models or all browsers.`);
-})().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();server.kill('SIGINT');});
+})().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();server.kill('SIGINT');for(const root of generatedFixtures)await fs.rm(root,{recursive:true,force:true});});

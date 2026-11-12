@@ -5,6 +5,7 @@
   let projects = [], busy = false, connecting = false, example = false, report = null;
   let projectSignature = '', sourceMode = false;
   let inputRevision = 0, reportRevision = -1, copyAttempt = 0;
+  let reportCheckState = null;
   let pendingCopy = null, waitingForOtherCopy = false;
   let failureProjectSelectionRevision = 0;
   let loadedError = null, fileReadAttempt = 0, fileReading = false;
@@ -47,9 +48,33 @@
   }
   function reportControls() {
     const owner = bridge()?.clipboardOwner();
-    el('copy-failure-brief').disabled = !currentReport() || !!owner;
+    const canHandoff = !!currentReport() && !busy;
+    el('copy-failure-brief').disabled = !canHandoff || !!owner;
     el('copy-failure-brief').setAttribute('aria-busy', String(!!owner));
-    for (const id of ['download-failure-text', 'download-failure-json']) el(id).disabled = !currentReport();
+    el('download-failure-text').disabled = !canHandoff;
+    el('download-failure-json').disabled = !report;
+    if (canHandoff) {
+      const text = debuggingBrief(report);
+      if (el('failure-copy-text').value !== text) el('failure-copy-text').value = text;
+      el('failure-copy-review').hidden = false;
+    } else {
+      el('failure-copy-text').value = '';
+      el('failure-copy-review').hidden = true;
+      el('failure-copy-review').open = false;
+    }
+    if (report) {
+      const stale = reportRevision !== inputRevision;
+      const text = reportCheckState === 'pending'
+        ? 'Showing the previous capture while a newer check is pending. This capture has not been refreshed. You can save its captured JSON report.'
+        : reportCheckState === 'failed'
+          ? 'The latest check did not complete. Showing the previous capture; it has not been refreshed. You can save its captured JSON report.'
+          : reportCheckState === 'obsolete'
+            ? 'The latest response was not accepted because the inputs or local session changed. Showing the previous capture; it has not been refreshed. You can save its captured JSON report.'
+            : stale ? 'Inputs changed. This result belongs to the captured project and error below. You can save its captured JSON report; check the current inputs again before copying or saving a text brief.' : '';
+      el('failure-stale').hidden = !text;
+      if (el('failure-stale').textContent !== text) el('failure-stale').textContent = text;
+      el('failure-result').classList.toggle('is-outdated', !!text);
+    }
     const earlierCopy = owner === 'failure' && pendingCopy && (pendingCopy.revision !== inputRevision || pendingCopy.value !== report);
     if (owner === 'source' || earlierCopy) {
       waitingForOtherCopy = true;
@@ -70,11 +95,7 @@
     el('failure-copy-text').value = '';
     el('failure-copy-review').open = false;
     el('failure-copy-review').hidden = true;
-    credentialWarning([]);
-    if (report) {
-      el('failure-stale').hidden = false;
-      el('failure-result').classList.add('is-outdated');
-    }
+    credentialWarning(report?.screening);
     reportControls();
   }
   function selectWorkflow(source) {
@@ -101,6 +122,7 @@
   function controls() {
     const selected = projects.find(project => project.id === el('failure-project').value);
     const ready = !!bridge() && bridge().isConnected?.() !== false && projects.length > 0 && !preview;
+    el('failure-form').setAttribute('aria-busy', String(busy));
     el('diagnose-run').disabled = busy || connecting || fileReading || preparingSource() || !ready || !selected || (selected.demo && !example);
     el('connect-project-button').disabled = busy || connecting || !ready;
     el('load-failure-file').disabled = preview;
@@ -272,7 +294,7 @@
     const grid = node('div', undefined, 'evidence-grid');
     const source = node('article', undefined, 'source');
     const header = node('header');
-    header.append(node('strong', evidence.path), node('span', `Lines ${evidence.start_line}–${evidence.end_line} · captured now`, 'source-meta'));
+    header.append(node('strong', evidence.path), node('span', `Lines ${evidence.start_line}–${evidence.end_line} · captured source`, 'source-meta'));
     const pre = node('pre');
     pre.tabIndex = 0;
     pre.setAttribute('aria-label', `Source excerpt from ${evidence.path}`);
@@ -315,8 +337,7 @@
     const project = Object.fromEntries(['id', 'label', 'path'].map(key => [key, typeof identity[key] === 'string' ? identity[key] : capturedProject[key] || '']));
     report = {...value, project};
     reportRevision = revision;
-    el('failure-stale').hidden = true;
-    el('failure-result').classList.remove('is-outdated');
+    reportCheckState = null;
     el('failure-captured-project').textContent = `Captured project: ${project.label || project.id}${project.path ? ' · ' + project.path : ''}`;
     el('failure-captured-working-directory').textContent = `Captured working folder: ${value.working_directory_path === '.' ? 'connected project folder (.)' : value.working_directory_path || 'not supplied'}${value.working_directory ? ' · recorded exactly: ' + value.working_directory : ''}`;
     const frame = value.frames?.find(item => item.frame_id === value.innermost_project_frame);
@@ -377,11 +398,24 @@
     }
     el('failure-result').hidden = false;
     credentialWarning(value.screening);
-    el('failure-copy-text').value = debuggingBrief(report);
-    el('failure-copy-review').hidden = false;
     el('failure-copy-review').open = false;
     el('failure-copy-status').textContent = '';
     reportControls();
+  }
+  function validReport(value, payload) {
+    const object = item => item && typeof item === 'object' && !Array.isArray(item);
+    const strings = items => Array.isArray(items) && items.every(item => typeof item === 'string');
+    const exception = item => object(item) && typeof item.type === 'string' && typeof item.message === 'string';
+    return object(value) && value.kind === 'failure_source_report'
+      && value.error_output === payload.error_output && value.command === payload.command && value.working_directory === payload.working_directory
+      && (!value.project || object(value.project) && value.project.id === payload.project_id)
+      && Array.isArray(value.frames) && value.frames.every(item => object(item) && typeof item.frame_id === 'string' && typeof item.reported_path === 'string' && Number.isInteger(item.line) && item.line > 0)
+      && Array.isArray(value.evidence) && value.evidence.every(item => object(item) && typeof item.evidence_id === 'string' && typeof item.path === 'string' && typeof item.text === 'string'
+        && Number.isInteger(item.start_line) && item.start_line > 0 && Number.isInteger(item.end_line) && item.end_line >= item.start_line
+        && typeof item.file_sha256 === 'string' && typeof item.excerpt_sha256 === 'string')
+      && Array.isArray(value.exceptions) && value.exceptions.every(exception) && (!value.terminal_exception || exception(value.terminal_exception))
+      && Array.isArray(value.guidance) && value.guidance.every(item => typeof item === 'string' || object(item) && typeof item.title === 'string' && typeof item.detail === 'string')
+      && strings(value.cutoffs) && strings(value.limitations);
   }
   el('failure-form').addEventListener('submit', async event => {
     event.preventDefault();
@@ -407,24 +441,20 @@
     const requestSession = bridge().getSessionGeneration?.();
     const currentRequest = () => requestRevision === inputRevision && requestSession === bridge().getSessionGeneration?.();
     busy = true;
-    controls();
-    notice('');
-    report = null;
+    reportCheckState = 'pending';
     copyAttempt++;
     el('failure-copy-status').textContent = '';
-    el('failure-copy-text').value = '';
-    el('failure-copy-review').hidden = true;
-    credentialWarning([]);
-    reportControls();
-    el('failure-result').hidden = true;
+    controls();
+    notice('');
     el('failure-progress').textContent = 'Matching the error to your current source…';
     try {
       const value = await bridge().api('/api/troubleshoot', payload);
       if (!currentRequest()) {
+        reportCheckState = 'obsolete';
         el('failure-progress').textContent = requestRevision === inputRevision ? 'The local session changed during the check. Your inputs are unchanged; select Find failing source again for this session.' : 'Your inputs changed during the check. Find failing source again to check the current error and project.';
         return;
       }
-      if (value.kind !== 'failure_source_report' || typeof value.error_output !== 'string' || !Array.isArray(value.frames)) throw new Error('The service returned an incomplete source report.');
+      if (!validReport(value, payload)) throw new Error('The service returned an incomplete source report or a report for different inputs.');
       renderReport(value, capturedExample, capturedProject, requestRevision);
       el('failure-progress').textContent = value.innermost_project_frame ? value.frames.find(item => item.frame_id === value.innermost_project_frame)?.location_kind === 'end_of_file' ? 'Source check complete. Review the preceding source context below.' : 'Source check complete. Review the captured line below.' : value.evidence?.length ? 'Check complete. Earlier source was captured; the final failure has no located project line.' : 'Check complete. No source line was located.';
       if (document.activeElement === el('diagnose-run') || document.activeElement === document.body) el('failure-result-title').focus();
@@ -434,6 +464,7 @@
         try {await bridge()?.syncSession?.(false);} catch (_) {}
       }
       if (currentRequest()) {
+        reportCheckState = 'failed';
         const folderRecovery = {
           working_directory_outside_project: 'That working folder is outside the connected project. Choose a folder inside this project, or clear the field to use the connected project folder.',
           working_directory_not_allowed: 'That working folder cannot be used. Choose a folder inside the connected project without parent-folder steps (..) or symbolic links, or clear the field to use the connected project folder.',
@@ -446,6 +477,7 @@
         el('failure-progress').textContent = 'Source check did not complete.';
         if (folderRecovery) {revealRunDetails();el('failure-working-directory').focus();}
       } else {
+        reportCheckState = 'obsolete';
         el('failure-progress').textContent = requestRevision === inputRevision ? 'The local session changed during the check. Your inputs are unchanged; select Find failing source again for this session.' : 'Your inputs changed during the check. Find failing source again to check the current error and project.';
       }
     } finally {
@@ -493,7 +525,7 @@
     ].join('\n');
   }
   el('copy-failure-brief').addEventListener('click', async () => {
-    if (!currentReport() || bridge()?.clipboardOwner()) return;
+    if (busy || !currentReport() || bridge()?.clipboardOwner()) return;
     const value = report, revision = inputRevision, attempt = ++copyAttempt;
     pendingCopy = {value, revision};
     const text = debuggingBrief(value);
@@ -523,7 +555,7 @@
     }
   });
   function saveReport(json) {
-    if (!currentReport()) return;
+    if (!report || !json && (busy || !currentReport())) return;
     const text = json ? JSON.stringify(report, null, 2) : debuggingBrief(report);
     const blob = new Blob([text], {type:json ? 'application/json' : 'text/plain;charset=utf-8'});
     const url = URL.createObjectURL(blob), link = node('a');
