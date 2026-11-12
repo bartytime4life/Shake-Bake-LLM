@@ -1,8 +1,14 @@
 # Current source, validation and delivery
 
-This guide describes the reviewed `0.4.0.dev37` source. Use the [quickstart](quickstart.md) to run it, [architecture](architecture.md) for boundaries and [evaluation status](evaluation-status.md) for model/host experiments. Historical counts and research remain attached to their original versions in the [documentation catalog](catalog.md).
+This guide includes the local `0.4.0.dev38` purpose-alignment candidate and preserves the reviewed dev37 baseline below. Use the [quickstart](quickstart.md) to run it, [architecture](architecture.md) for boundaries and [evaluation status](evaluation-status.md) for model/host experiments. Historical counts and research remain attached to their original versions in the [documentation catalog](catalog.md).
 
-## Source and delivery identity
+## Current local candidate
+
+The dev38 candidate is on `codex/junior-main-workflow-20261111`, based on fetched main `93bd8e7` (the merged dev37 documentation refresh). It makes [Ollama junior preparation and ChatGPT/Claude main-developer handoff](product-purpose.md) the primary journey. The worker prompt is `junior_developer_handoff_v2`; previous profiles and model results do not qualify it. See [the new validation record](junior-main-workflow-2026-11-11.md). The primary checkout and owner installation were not updated by this work. Merge, CI and actual-machine acceptance require their own readback.
+
+The dev38 local checks passed 517 Python tests, 83 dependency-free JavaScript tests plus frontend smoke, source-matching wheel verification, isolated installed smoke/CLI checks, 40 installed handoff tests and the official-SDK subprocess check. The installed browser walkthrough used a simulated Ollama service; exact manual clipboard readback passed after an earlier empty automatic readback. See the linked record for limits and the wheel hash.
+
+## Preserved source and delivery observations
 
 The documentation audit began at **2026-11-12 01:25 UTC** (November 11 in Chicago):
 
@@ -32,7 +38,7 @@ See [failed-run details](failed-run-workflow.md), [manual handoff](assistant-han
 
 ## Recorded mechanical validation
 
-The runtime baseline at `3e59075` passed the following checks. This documentation refresh does not create new model, host or user-study results.
+The runtime baseline at `3e59075` passed the following checks. These preserved baseline checks are separate from the dev38 checks above and create no new model, host or user-study results.
 
 | Check | Recorded result and scope |
 | --- | --- |

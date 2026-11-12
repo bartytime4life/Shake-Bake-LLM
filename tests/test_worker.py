@@ -116,6 +116,9 @@ class WorkerAcceptance(unittest.TestCase):
         self.assertEqual(chat["format"]["properties"]["focus"]["items"]["properties"]["evidence_id"]["enum"], ["E1"])
         self.assertEqual(json.loads(chat["messages"][1]["content"])["task_kind"], "code")
         self.assertIn("draft the best possible prompt", chat["messages"][0]["content"])
+        self.assertIn("junior developer running locally through Ollama", chat["messages"][0]["content"])
+        self.assertIn("ChatGPT or Claude is the main developer", chat["messages"][0]["content"])
+        self.assertIn("no tools, command authority or permission to edit files", chat["messages"][0]["content"])
         self.assertLessEqual(len(chat["messages"][0]["content"].encode()), 4096)
         self.assertTrue(result.has_prompt)
         self.assertEqual(result.goal, note["goal"])
@@ -123,7 +126,7 @@ class WorkerAcceptance(unittest.TestCase):
         self.assertEqual(result.asks, tuple(note["asks"]))
         self.assertEqual(result.approach, tuple(note["approach"]))
         self.assertEqual(result.questions, ("Is equality intended?",))
-        self.assertEqual(result.requested_configuration["preparation_design"], "handoff_prompt_v1")
+        self.assertEqual(result.requested_configuration["preparation_design"], "junior_developer_handoff_v2")
         self.assertEqual(result.to_dict()["asks"], tuple(note["asks"]))
         self.assertEqual(result.label, "unverified_worker_interpretation")
 

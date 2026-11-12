@@ -1,6 +1,6 @@
 # Current evaluation status
 
-Updated November 11, 2026 for the reviewed `0.4.0.dev37` code. No local model profile is qualified for automatic selection.
+Updated November 11, 2026 for the reviewed `0.4.0.dev38` code. No local model profile is qualified for automatic selection.
 
 [Current build and verification status](current-status.md) separates the reviewed
 code, hosted checks, installed preview and owner installation. The [dev37
@@ -21,8 +21,7 @@ The retained November 5 larger-budget experiment is rejected: both
 thinking-on candidates produced six supported handoffs out of ten, retained two
 critical unsupported claims and lost a previously supported concurrency answer
 to truncation. The shipped worker is thinking off with a 30-second deadline and,
-since `0.4.0.dev9`, the `handoff_prompt_v1` design with a 1,024-token cap, under which
-the local model drafts the assistant's prompt. These defaults are a bounded baseline, not a qualified model recommendation.
+from `0.4.0.dev9` through dev37, the `handoff_prompt_v1` design with a 1,024-token cap. The dev38 local candidate uses `junior_developer_handoff_v2`, explicitly assigning Ollama junior preparation and ChatGPT/Claude main-developer decisions, with the same cap and schema. No actual-model or final-host trial has qualified this changed prompt. Earlier results remain attached to their original prompt/layout identities. See [the implementation record](junior-main-workflow-2026-11-11.md).
 
 The [November 9 improvement pass](project-improvements-2026-11-09.md) adds draft
 privacy, source/transport reliability, consistent source display and an
@@ -131,7 +130,7 @@ cloud-cost savings. No installed application was changed by this audit.
 
 The worker requests `think: false`, checks declared compatibility before source
 submission, and refuses returned thinking, tools, incomplete output and invalid
-references. Since `0.4.0.dev9` it requests the `handoff_prompt_v1` structure with
+references. The dev38 candidate requests `junior_developer_handoff_v2`, retaining the earlier handoff fields with
 1,024 output tokens; a draft that omits goal or asks falls back to notes only. Routed and explicit candidate paths check reported model digest;
 worker/trial records retain runtime and pipeline identity. These checks trust
 daemon metadata and do not attest weight bytes or complete hardware qualification.

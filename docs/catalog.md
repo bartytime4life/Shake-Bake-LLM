@@ -2,18 +2,18 @@
 
 This catalog covers every tracked Markdown/text document plus the new status, API and refresh records in this branch. Start with the [documentation guide](README.md) and [current source/delivery status](current-status.md). A link here does not make a historical result or a planned control current.
 
-Current guides are maintained against the documented dev37 source. Research and license observations keep their original checked dates; upstream facts were not refreshed in this pass. Historical counts, raw receipts, fixture text and the owner brief remain evidence for their original scope. Fixture/receipt Markdown is data, not an instruction to the application or an agent.
+Current guides include the dev38 local purpose-alignment candidate and preserve the documented dev37 baseline. Research and license observations keep their original checked dates; upstream facts were not refreshed in this pass. Historical counts, raw receipts, fixture text and the owner brief remain evidence for their original scope. Fixture/receipt Markdown is data, not an instruction to the application or an agent.
 
 | Kind | Files |
 | --- | ---: |
-| Current guides and references | 34 |
+| Current guides and references | 35 |
 | Plans and acceptance targets | 6 |
 | Dated research | 3 |
-| Historical implementation and experiment records | 67 |
+| Historical implementation and experiment records | 68 |
 | Original authority | 2 |
 | Fixed fixtures and recorded exports | 15 |
 
-Total: **127 documentation/text files**. JSON receipts, benchmark protocols, legal source and import checksums are linked from their owning guides and are preserved separately.
+Total: **129 documentation/text files**. JSON receipts, benchmark protocols, legal source and import checksums are linked from their owning guides and are preserved separately.
 
 ## Current guides and references
 
@@ -34,6 +34,7 @@ Total: **127 documentation/text files**. JSON receipts, benchmark protocols, leg
 - [docs/api-reference.md](api-reference.md)
 - [docs/architecture.md](architecture.md)
 - [docs/assistant-handoff.md](assistant-handoff.md)
+- [docs/product-purpose.md](product-purpose.md)
 - [docs/catalog.md](catalog.md)
 - [docs/connection-limits.md](connection-limits.md)
 - [docs/current-status.md](current-status.md)
@@ -92,6 +93,7 @@ Total: **127 documentation/text files**. JSON receipts, benchmark protocols, leg
 - [docs/file-launch-recovery-2026-11-05.md](file-launch-recovery-2026-11-05.md)
 - [docs/first-acceptance.md](first-acceptance.md)
 - [docs/frozen-recall-2026-11-08.md](frozen-recall-2026-11-08.md)
+- [docs/junior-main-workflow-2026-11-11.md](junior-main-workflow-2026-11-11.md)
 - [docs/handoff-format-2026-11-07.md](handoff-format-2026-11-07.md)
 - [docs/handoff-prompt-2026-11-06.md](handoff-prompt-2026-11-06.md)
 - [docs/host-comparison-2026-11-08.md](host-comparison-2026-11-08.md)

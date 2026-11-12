@@ -1,6 +1,6 @@
 # Standalone architecture
 
-Shake & Bake is a standalone local evidence preparation application. It owns its configuration and policy; it requires no other application's code, service or dataset. The current source candidate has two explicit workflows: locate source for a pasted failed run, or prepare a source brief for an existing AI chat. See [current source, delivery and validation status](current-status.md); versioned experiment and validation records retain their original scope.
+Shake & Bake prepares a local Ollama junior developer handoff that the user pastes into ChatGPT or Claude as the main developer. It owns its configuration and policy and requires no other application's code, service or dataset. The primary journey is source preparation, review and manual copy/paste. Evidence-only collection and failed-run source checks support that journey. The main developer owns final reasoning and implementation decisions; the local worker has no action authority. See [product purpose, component responsibilities and acceptance](product-purpose.md) and [current source, delivery and validation status](current-status.md). Versioned experiment and validation records retain their original scope.
 
 ## Current components
 

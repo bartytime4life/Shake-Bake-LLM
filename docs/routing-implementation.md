@@ -1,6 +1,6 @@
 # Recorded-accuracy routing, explanations and the off switch
 
-Reviewed November 11, 2026 against the documented dev37 source candidate. The policy engine first appeared in the historical 0.3.0.dev3 candidate. It now serves the `assist` CLI and the shared workbench/stdio preparation session; only explicit standalone diagnostics use a separate fixed-model or evidence-only launch. See [current source and delivery status](current-status.md) and [shared coordination](shared-coordinator.md).
+Reviewed November 11, 2026 against the documented dev38 source candidate. The policy engine first appeared in the historical 0.3.0.dev3 candidate. It now serves the `assist` CLI and the shared workbench/stdio preparation session; only explicit standalone diagnostics use a separate fixed-model or evidence-only launch. See [current source and delivery status](current-status.md) and [shared coordination](shared-coordinator.md).
 
 No learned task classifier, automatic qualification or real-model winner is supplied. The failed-run source-location workflow uses deterministic parsing and source reads, without this model-selection path. A source brief can be evidence-only, use an eligible owner-recorded profile, or run an explicitly allowed/acknowledged pinned candidate trial. A candidate trial is not qualification and cannot promote a profile.
 

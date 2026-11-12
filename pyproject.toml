@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shake-and-bake-assistant"
-version = "0.4.0.dev37"
-description = "Standalone local evidence preparation for cloud-assisted work"
+version = "0.4.0.dev38"
+description = "Local Ollama junior developer handoffs for ChatGPT or Claude"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "MODEL_LICENSES.json"]

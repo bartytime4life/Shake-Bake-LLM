@@ -1,6 +1,6 @@
 # Documentation guide
 
-Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md). [Current source/delivery status](current-status.md) identifies the documented dev37 source, the recorded main state and the boundaries of code, CI, installed and real-machine evidence. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. The [complete catalog](catalog.md) covers all 127 documentation/text files, including plans, research and fixed inputs. Dated reports
+Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md). [Current source/delivery status](current-status.md) identifies the dev38 local candidate and documented dev37 baseline, the recorded main state and the boundaries of code, CI, installed and real-machine evidence. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. The [complete catalog](catalog.md) covers all 129 documentation/text files, including plans, research and fixed inputs. Dated reports
 below retain the exact scope of earlier checks; an older test count or pending
 state is not a statement about the latest build.
 
@@ -8,6 +8,7 @@ state is not a statement about the latest build.
 
 | Topic | Documents |
 | --- | --- |
+| Product purpose | [Ollama junior developer, ChatGPT/Claude main developer, structure and acceptance](product-purpose.md), [dev38 implementation and validation](junior-main-workflow-2026-11-11.md) |
 | Check a failed run | [Getting started](quickstart.md), [supported formats and limits](failed-run-workflow.md), including privacy, copying and recovery |
 | Source, integration and checks | [Current status](current-status.md), [documentation reconciliation](documentation-refresh-2026-11-11.md); the [November 9 publication record](publication-2026-11-09.md) remains historical |
 | November 9 improvements | [Changes, validation and next product priorities](project-improvements-2026-11-09.md), [draft privacy](draft-privacy.md), [source/transport reliability](source-boundary-reliability.md), [offline host review](host-review-scoring.md) |
