@@ -1,8 +1,18 @@
 # External evaluation datasets
 
-[Current evaluation status](evaluation-status.md) records the development and previously reserved cohorts separately. A larger output budget does not create unseen evidence; freeze and pass the candidate development gate before using a new reserved cohort.
+Guidance refreshed November 11, 2026. [Current build status](current-status.md)
+identifies the reviewed dev37 code and its mechanical verification;
+[evaluation status](evaluation-status.md) records development and previously
+reserved cohorts separately. A larger output budget, newer UI or green test
+suite does not create unseen evidence. Freeze and pass the candidate
+development gate before using a new reserved cohort.
 
-The trial tools can now read an owner-selected dataset outside the checkout. This removes the hardcoded ten-case restriction; it does not establish that any supplied case is unseen or qualifies a model. The bundled Task Lab always remains development data, even when selected with `--dataset`.
+The trial tools accept an owner-selected dataset outside the checkout. This
+removes the bundled ten-case restriction; it does not establish that a supplied
+case is unseen or qualifies a model. The bundled Task Lab remains development
+data even when selected with `--dataset`. This manifest/fixture format is
+separate from the JSON Lines case format for [external file
+recall](../benchmarks/external-recall/README.md).
 
 Keep private cases out of Git and freeze them before tuning. Use a quiescent directory with this layout:
 
@@ -28,7 +38,22 @@ The manifest has this structure. The values below illustrate the format; they ar
 }
 ```
 
-Case IDs use lowercase letters, digits, underscores and hyphens, starting with a letter. Tasks and SearchLimits use the same core bounds as the application. External split choices are `development` or `held_out`; a held-out dataset inside the application's checkout is refused. The split is always recorded as an owner declaration, not an authenticated proof of independence.
+The manifest permits 1–1,000 cases. Case IDs are 1–64 lowercase letters, digits,
+underscores or hyphens, starting with a letter; tasks are nonempty and at most
+16,384 characters, subject to the application's valid-text checks. Each
+`limits` object accepts only `SearchLimits` fields and validates their values.
+An empty object uses the current defaults: 1,000 files, 20,000 entries, depth 8,
+five walk seconds, 16,384 excerpt bytes and 2,048 context bytes. The [file-recall
+guide](../benchmarks/external-recall/README.md) lists all six supported ranges.
+Context bytes are within the shared excerpt budget. Up to four primary and
+six controlling-context windows may be selected, subject to those caps; case
+limits do not make lexical selection exhaustive.
+
+External split choices are `development` or `held_out`; a held-out dataset
+inside the measurement checkout is refused. The split is always recorded as
+an owner declaration, not an authenticated proof of independence. Freeze case
+exposure history as well as bytes: rereading an exposed case cannot restore
+its unseen status.
 
 Keep the grading document outside every fixture root:
 
@@ -46,12 +71,26 @@ Keep the grading document outside every fixture root:
 }
 ```
 
-Only the task and bounded source evidence go into preparation. Keys, dataset labels and review expectations are not sent to the model. Path traversal, duplicate cases, unsafe limits, symlinks, hard links and special fixture files are refused. Fixture hashing is bounded to 4,000 entries, 256 KiB per file and 32 MiB of file bytes. These are trusted local evaluation inputs, not a hostile-filesystem sandbox. The loader cannot detect an owner copying answers into a fixture or reusing previously exposed cases.
+Each case permits up to 32 anchors and 16 required-cutoff labels. An anchor is
+an exact `(path, contains)` pair; `contains` is 1–4,096 characters and must fit
+within one excerpt for a mechanical hit. Required-cutoff labels are at most 64
+characters each. Case IDs in the keys must match the manifest exactly.
 
-Run evidence-only first with an installed Python 3.11+ interpreter, using separate paths for input and output:
+Only the task, bounded source evidence and software-produced collection facts
+go into preparation. Keys, dataset labels and review expectations are not sent
+to the model. Path traversal, duplicate cases, unsafe limits, symlinks, hard
+links and special fixture files are refused. Manifest/key reads are capped
+at 256 KiB each. Fixture hashing is bounded to 4,000 entries, 256 KiB per file
+and 32 MiB of file bytes per case. These are trusted local evaluation inputs,
+not a hostile-filesystem sandbox. The loader cannot detect an owner copying
+answers into a fixture or reusing previously exposed cases.
+
+Run from the trusted project root with Python 3.11 or newer, substituting an
+explicit supported interpreter if the default `python3` is older. Use separate
+paths for input and output and run evidence-only first:
 
 ```bash
-PYTHONPATH=src python3.14 -B benchmarks/model_trial.py run \
+PYTHONPATH=src python3 -B benchmarks/model_trial.py run \
   --evidence-only --dataset /absolute/private-cases \
   --output /absolute/private-trials/evidence-v1 --seed 17
 ```
@@ -59,14 +98,51 @@ PYTHONPATH=src python3.14 -B benchmarks/model_trial.py run \
 Then explicitly select an installed candidate for a separate run, if the source and daemon are permitted:
 
 ```bash
-PYTHONPATH=src python3.14 -B benchmarks/model_trial.py run \
-  --model exact-installed-model:tag --dataset /absolute/private-cases \
+PYTHONPATH=src python3 -B benchmarks/model_trial.py run \
+  --model YOUR_INSTALLED_MODEL --dataset /absolute/private-cases \
   --output /absolute/private-trials/candidate-v1 --seed 17
 ```
 
-No daemon starts, download or cloud call is added. Output directories are created new and cannot enter the dataset or overwrite earlier runs. Receipts bind the manifest, keys, source fixtures, preparation pipeline, runtime and requested settings. Every finished attempt is checkpointed; input drift stops the trial, including grading changes during the final attempt. Accuracy remains unset until the separate receipt-bound review is completed. Interrupted attempts do not create a complete score.
+Replace `YOUR_INSTALLED_MODEL` with the exact permitted installed name. This
+second command explicitly requests local inference. It starts no daemon,
+downloads no model and invokes no cloud host. The shipped worker requests
+`handoff_prompt_v1`, 8,192 context tokens, 1,024 output tokens, thinking off and
+a shared 30-second deadline; those are requested settings, not runtime
+attestation or a tuned/qualified profile. The runner accepts `--repeat` 1–3
+and repeatable `--case` IDs. It exposes no generation-budget override.
 
-Use `model_trial.py score --trial /absolute/run/trial.json --reviews /absolute/run/reviews.json` after reviewing every attempt against exact evidence. Failures remain in the denominator. Repeated cases are not independent examples. These receipts can contain source and model outputs; keep them private.
+Output directories are created new and cannot enter the dataset or overwrite
+earlier runs. Receipts bind the manifest, keys, source fixtures, preparation
+pipeline, runtime and requested settings. Every finished attempt is
+checkpointed; input drift stops the trial, including grading changes during
+the final attempt. Accuracy remains unset until the separate receipt-bound
+review is completed. Interrupted attempts do not create a complete score.
+
+After reviewing every attempt against exact evidence, score the matching run:
+
+```bash
+PYTHONPATH=src python3 -B benchmarks/model_trial.py score \
+  --trial /absolute/private-trials/candidate-v1/trial.json \
+  --reviews /absolute/private-trials/candidate-v1/reviews.json
+```
+
+Failures remain in the denominator. Repeated cases are not independent
+examples. These receipts can contain source and model outputs; keep them private.
+
+## Recorded exposure is dated
+
+The [November 8 frozen collector comparison](frozen-recall-2026-11-08.md)
+selected twelve previously unread LCA Python cases only after freezing its
+protocol and excluding prior exposure, including rows overlapping `dev` and
+`test`. Those twelve are now exposed. Thirteen other rows remained reserved
+in that record; that is not a current audit of other runs or agents.
+
+The [November 11 source-span diagnostic](source-span-development-2026-11-11.md)
+uses six authored development cases tailored to known selection changes. Its
+pinned comparison retains the oversized-anchor miss and supplies no new
+reserved cohort. The [receipt-limit compatibility
+replay](recall-comparison-limits-2026-11-11.md) only recomputes retained public
+receipt pairs. Neither result resets exposure or qualifies a model/host.
 
 ## The next experiment still required
 

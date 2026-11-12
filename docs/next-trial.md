@@ -1,6 +1,20 @@
 # Next trial: does the whole helper improve the work?
 
-Actual Codex [synthetic handoff and injected cancellation/recovery](codex-host-handoff.md) checks now pass. The next host milestone is disconnect/deadline/restart coverage and one real question delegated through an authenticated host to local Ollama and returned with evidence. Claude Code was signed out when inspected. Unit tests, simulated HTTP and these evidence-only checks do not complete that milestone. Consumer ChatGPT needs its own supported connection and independent test; Codex authentication through ChatGPT does not establish it.
+Planning guidance refreshed November 11, 2026. [Current build
+status](current-status.md) identifies the reviewed dev37 code and its
+verification scope; this update starts no model, host or user study. The
+November 5 actual Codex [synthetic handoff and injected
+cancellation/recovery](codex-host-handoff.md) checks remain dated evidence for
+that helper/host setup. Current SDK checks do not refresh the hosted trial.
+
+The next host milestone still includes disconnect/deadline/restart coverage
+and, after the applicable candidate/source gates, one permitted question
+delegated through an authenticated host to local Ollama and returned with
+evidence. The earlier observation that Claude Code was signed out was specific
+to that inspection; authentication was not rechecked for this documentation
+update. Unit tests, simulated HTTP and evidence-only checks do not complete
+the milestone. Consumer ChatGPT needs its own supported connection and
+independent test; Codex authentication through ChatGPT does not establish it.
 
 ## Planning priorities
 
@@ -8,13 +22,21 @@ Actual Codex [synthetic handoff and injected cancellation/recovery](codex-host-h
 | --- | --- | --- |
 | 1 | Jobs and correct outcomes | Start with a repository question, a pinned PR review and a failed-test investigation. Write expected findings and acceptable unknowns before evaluation. Execution of inspected-project tests is future work and requires its own isolation design. |
 | 2 | Local/cloud division | Collection, search and bounded local preparation stay local. The host receives selected information to reason and answer. Record what crosses that boundary; do not describe cloud handoffs as wholly private. |
-| 3 | Models and profiles | Screen explicitly selected installed candidates and declared thinking/output budgets on development tasks; freeze a candidate before a new reserved cohort. Prefer the profile that meets quality gates with least total work. |
+| 3 | Models and profiles | Screen explicitly selected installed candidates on development tasks. The shipped worker requests thinking off, 8,192 context tokens, 1,024 output tokens and a shared 30-second deadline; different budgets need a separately frozen experiment, not an undocumented CLI option. Freeze a candidate before a new reserved cohort and consider efficiency only among profiles meeting quality gates. |
 | 4 | Connection and recovery | Qualify SDK then actual host, local model availability, timeout, cancellation, restart, changed source and offline failure. Current jobs are session-only; a restart needs a new task. Persistent project memory needs source-version invalidation and a separate design. |
 | 5 | Total benefit | Measure correct completed tasks, omissions, false findings, retries, time and cloud usage. Include tool descriptions and follow-up evidence calls, not just the first short brief. |
 
 ## Controlled comparison
 
 Use identical pinned source and task text, the same host model/settings, and separate fresh sessions. Use the bundled synthetic Task Lab for exposed development checks only. Reserve new, unseen cases for qualification; do not reuse known answers as blind evaluation evidence.
+
+Dataset split names do not prove independence. The [November 8 frozen
+collector comparison](frozen-recall-2026-11-08.md) excluded earlier exposure,
+including LCA rows overlapping `dev` and `test`, before opening twelve reserved
+cases under its pre-registered protocol. Those cases are now exposed. Its
+thirteen remaining reserved rows were an as-of-record count, not a current
+blindness audit. A new host cohort needs its own exposure record and must not
+inherit a held-out label from a collector-only study.
 
 A development comparison of competent native retrieval and deterministic evidence can proceed without selecting a local model. For model-assisted arms, first screen explicitly permitted installed model/profile candidates locally using the [current evaluation record](evaluation-status.md). Dated research shortlists are not installed-model inventories or download instructions. Only after a candidate clears development and reserved-cohort gates, compare the relevant qualified-profile host arms: host with the permitted full source baseline; host with deterministic exact evidence only; host with exact evidence plus finalist A notes; host with exact evidence plus finalist B notes. Randomize arm order, record cold/warm local runs, repeat sufficiently to see variation, and retain every refusal and failed attempt. Freeze a development set separately from held-out decisions so tuning does not leak the answers.
 
@@ -35,7 +57,7 @@ twenty answers completed: evidence alone met the rubric on 9/10 cases and the
 notes-assisted arm on 8/10, with no counted unsupported claims. One missing
 intended-contract uncertainty caused a regression; the frozen gate failed.
 
-## Current boundary
+## Retained comparisons and current boundary
 
 The [native-search comparison](native-preparation-2026-11-05.md) is complete.
 Both conditions met the rubric on 8/8 answers; deterministic preparation used
@@ -45,17 +67,16 @@ recorded. The unchanged briefs omitted important cross-file context, while the
 host could retrieve it through the same tools. Timing changed direction between
 repetitions, so this is no repeatable speed or billed-cost result.
 
-The next proposed candidate should address one useful workflow, such as change
-review: preserve the requested diff and collect its contracts, callers and
-relevant tests without treating lexical selection as complete coverage. Freeze
-that candidate before new, more realistic cases. Keep the native baseline's
-source access and tools, record cached/uncached input separately, and include
-failure and correction work. These four cases are exposed development material,
-not a reserved qualification set. No implementation or new host run is implied
-by this proposal.
+That finding motivated a focused change-review design: preserve the requested
+diff and collect its contracts, callers and relevant tests without treating
+lexical selection as complete coverage. The four native-search cases remain
+exposed development material. Any new candidate needs a fresh frozen
+comparison with equal native source/tools, cached/uncached input accounted for,
+and failure/correction work retained. The subsequent candidate and negative
+host results below are historical work, not a newly authorized run.
 
-An initial [deterministic change-review candidate](change-review-candidate-2026-11-08.md)
-now covers one caller-selected modified file and a supplied exact diff. On a
+The initial [deterministic change-review candidate](change-review-candidate-2026-11-08.md)
+covers one caller-selected modified file and a supplied exact diff. On a
 derivative of the exposed publish-reorder fixture, its packet held five of five
 predefined source anchors; the unchanged generic brief held two. This is an
 implementation and packet-coverage check, not a final-host comparison or a
@@ -81,5 +102,22 @@ quality gain. The public corpus may be model-known and the same AI provisionally
 mapped the results; human grading is pending. Use new development tasks for any
 redesign and a fresh reserved cohort for qualification. Do not reuse these cases
 as unseen evidence or wire this candidate into normal routes.
+
+Other retained [orientation/multi-file
+comparisons](orientation-multifile-2026-11-08.md) found more changed-file
+coverage in selected arms while using more tokens. Adding the [local model's
+draft](draft-comparison-2026-11-08.md) showed no file-coverage effect in its
+separate six-case comparison. Those dated cohorts do not qualify a local model,
+prove final-answer correctness or establish whole-task savings.
+
+The November 11 [source-span development
+diagnostic](source-span-development-2026-11-11.md) independently checks exact
+source bytes on six authored cases tailored to known collector changes. Its
+pinned dev32/dev35 comparison improves required-span coverage from 11/18 to 17/18
+and retains the oversized-anchor miss. This is exposed mechanical evidence,
+not a rerun of the host studies above. The [dev36 workbench
+review](workbench-usability-2026-11-11.md) and [dev37 capture
+recovery](captured-report-recovery-2026-11-11.md) improve task entry, copy and
+failure handling without adding a real-model, final-host or savings result.
 
 Linux task core, SDK 2.3.0 transport and scoped actual Codex synthetic handoff/cancellation have evidence. [Current evaluation status](evaluation-status.md) links every retained model experiment, including the 8B prompt comparison, separately authored cohort and bounded thinking-budget diagnostics. The separately authored cohort was kept out of prompt tuning, then became evaluation-exposed; it cannot be reused as unseen. No local profile is qualified. The host-note and native-search development diagnostics do not replace representative final-host qualification or a whole-task savings study. Original `.dev6` outputs remain unavailable. The [external dataset harness](held-out-evaluation.md) supports a newly reserved cohort only after the candidate is frozen. The app stays standalone; future real-project trials require an explicitly approved source root and do not create an application dependency.

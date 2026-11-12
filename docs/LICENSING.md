@@ -2,6 +2,8 @@
 
 Reviewed November 4, 2026. This records the starter's existing terms and remaining distribution work. It does not certify all third-party rights or change the existing LICENSE file.
 
+The [current status record](current-status.md) identifies dev37 source/package verification. No dependencies, model weights or frontend assets were added by the documentation refresh. The upstream observations and legal interpretation below retain their November 4 review date; this pass does not refresh external terms or close LIC-01. Use the [packaging checks](../CONTRIBUTING.md#build-and-verify-a-wheel) for the actual artifact being reviewed.
+
 ## The app's current license
 
 The starter already includes the MIT License with `Copyright (c) 2026 Andy Barta`. That file remains unchanged. MIT is a permissive option for the original Shake and Bake code: recipients can use, modify and distribute it, including commercially and by selling copies, while retaining the required copyright and permission notice. The license includes warranty/liability disclaimers. Read the [authoritative MIT text](https://opensource.org/license/mit).

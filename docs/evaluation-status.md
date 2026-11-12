@@ -1,6 +1,15 @@
 # Current evaluation status
 
-Updated November 11, 2026 for `0.4.0.dev35`. No local model profile is qualified for automatic selection.
+Updated November 11, 2026 for the reviewed `0.4.0.dev37` code. No local model profile is qualified for automatic selection.
+
+[Current build and verification status](current-status.md) separates the reviewed
+code, hosted checks, installed preview and owner installation. The [dev37
+recovery record](captured-report-recovery-2026-11-11.md) reports 516 Python tests,
+134 source/installed browser scenarios, 75 JavaScript checks and official SDK
+2.3.0 in-process/shared/stdio-subprocess checks. Those checks establish the
+recorded mechanical behavior on synthetic inputs; they add no model trial,
+host-answer result, owner-PC acceptance or savings measurement. Counts and
+wheel identity belong to that dated record, not every later revision.
 
 Collector file recall, frozen and held out (November 8): the `dev20` collector beat the PR #30 collector on twelve reserved Long Code Arena Python cases under a pre-registered rule, 26 against 23 of 41 changed files reached including the map, with 3 case-level wins and 2 losses. See [the frozen-run record](frozen-recall-2026-11-08.md). This qualifies no model and measures no answer.
 
@@ -8,7 +17,7 @@ Source-span development diagnostic (November 11): on six authored synthetic case
 
 Host comparison (November 8): on six real issues with Claude Code subagents, the evidence-only brief did not reduce host tokens or mean tool calls and the hosts named fewer of the changed files (7 against 14 of 25). The pre-registered rule was not met. See [the host-comparison record](host-comparison-2026-11-08.md). The no-tools paste path showed no benefit either (9 against 10 of 25); see [the paste-path record](paste-comparison-2026-11-08.md). A reframed orientation brief then lost no case in twelve paired comparisons on fresh cases but showed no clear gain; see [the orientation record](orientation-comparison-2026-11-08.md). On eight fresh multi-file fixes it met both pre-registered gain rules. It scored 11 against 9 of 19 files with tools, where the extra files were tests, and 13 against 9 on the paste path. It used more tokens in every arm. See [the multi-file record](orientation-multifile-2026-11-08.md). Adding the local model's draft to that brief showed no effect on six further fresh cases: 8 against 8 with tools and 9 against 9 pasted. See [the draft comparison](draft-comparison-2026-11-08.md).
 
-The latest larger-budget experiment is rejected: both
+The retained November 5 larger-budget experiment is rejected: both
 thinking-on candidates produced six supported handoffs out of ten, retained two
 critical unsupported claims and lost a previously supported concurrency answer
 to truncation. The shipped worker is thinking off with a 30-second deadline and,
@@ -78,8 +87,8 @@ semantic correctness.
 
 | Evidence | Established scope | Still open |
 | --- | --- | --- |
-| Source and installed tests | 176 application tests on the earlier stated baseline; the current uncommitted working tree passed 191 Python tests on Python 3.12. The earlier 30 readiness and 12 clipboard Promise checks remain dated evidence. | Real-model accuracy, security certification and full owner-PC reliability |
-| Hosted checks | Python 3.11–3.14, installed wheel/official SDK, source and installed browser checks; six jobs passed at [the 512-token report revision](https://github.com/bartytime4life/Shake-Bake-LLM/actions/runs/42122640943) | Deployment, model promotion and independent human qualification |
+| [dev37 source and installed checks](captured-report-recovery-2026-11-11.md) | 516 Python tests on Python 3.12, Python 3.14 and an isolated installed wheel; 134 browser scenarios against source and installed builds; 75 JavaScript checks, with separate frontend/file-launch/server smoke checks; official SDK 2.3.0 in-process, shared-service and stdio-subprocess checks | Real-model accuracy, security certification, representative usability, private-source qualification and full owner-PC reliability |
+| Hosted checks | [Current status](current-status.md) identifies the revision and its hosted-check state separately. The six green jobs at [the earlier 512-token report revision](https://github.com/bartytime4life/Shake-Bake-LLM/actions/runs/42122640943) remain historical evidence for that revision. | Deployment, owner installation, model promotion and independent human qualification |
 | [Installed readiness](pc-readiness-2026-11-05.md) | Real metadata and selected local browser flows; refresh-status correction | Actual memory fit, broad device/accessibility qualification |
 | [Copy recovery](copy-and-screening-2026-11-05.md) | Job-bound feedback, selectable exact text, JSON export and one exact 3,392-character native/manual clipboard transfer; earlier empty readbacks retained | Every browser, permission state and device |
 | [Actual Codex smoke](codex-host-handoff.md) | Synthetic evidence-only handoff and cancellation/recovery using an explicitly stopped owned runner | Model-assisted orchestration, disconnect/deadline/restart, private source, Claude and consumer ChatGPT |
@@ -88,6 +97,12 @@ semantic correctness.
 | [Native retrieval comparison](native-preparation-2026-11-05.md) | Twenty-three runner checks, six grade-binding regressions, 313 exactly reproduced fixture files, sixteen complete corrected answers and a separately retained startup failure; 8/8 supported in each arm | More realistic tasks, controlled repeatable performance, correction work, billed/quota savings and human qualification. The AI grader saw keys during preflight and one answer exposed its arm in a link target. |
 | [Change-review host diagnostic](change-review-host-trial-2026-11-08.md) | Frozen candidate; two synthetic cases; four corrected answers and four retained no-retrieval setup answers; 6/8 strict criteria in each corrected arm, valid citations and no counted critical false claims | Independent cases and human grading, repeated paired runs, complete-task benefit, billed savings and route promotion. The AI author also graded these cases. |
 | [Public change-review probe](change-review-public-result-2026-11-08.md) | Two pinned public PRs; eight completed host answers after two retained preflight failures; equal narrow finding coverage in both arms; 191 source tests | Public data can be model-known; references contain duplicates and model producers; independent human grade, owner-source qualification and whole-task savings remain open. |
+
+Earlier reports' test counts and owner-PC observations remain attached to their
+original builds. The dev36 [workbench review](workbench-usability-2026-11-11.md)
+and dev37 recovery checks improve task entry, exact-copy feedback and retained
+capture handling. They do not rerun or override the negative model/host results
+above, or close the broader UX, reliability, accuracy and savings gates.
 
 ## Independent retrieval evidence
 
@@ -103,8 +118,12 @@ later exposed-case diagnostic changed no gold-file hit counts.
 
 The original self-commit smoke remains development evidence. New schema-2
 receipts replay the same nine exposed cases and reproduce the audit's hit
-counts; they are not another independent cohort. The other 38 Python test
-cases remain reserved. This establishes bounded retrieval behavior, not a
+counts; they are not another independent cohort. The November 7 record's
+38-case reservation estimate was superseded by the [November 8 frozen
+selection](frozen-recall-2026-11-08.md): after prior exposure and `dev`/`test`
+overlap were accounted for, 25 eligible rows remained, twelve were opened and
+thirteen remained reserved as of that record. This is not a current audit of
+other runs or agents' exposure. This establishes bounded retrieval behavior, not a
 model qualification, improved host answers, fewer ChatGPT/Claude turns or
 cloud-cost savings. No installed application was changed by this audit.
 

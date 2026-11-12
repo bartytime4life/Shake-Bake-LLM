@@ -40,7 +40,13 @@ function viewState(value) {
   const saved=savedPreferences();
   const project=value.projects.some(p=>p.id===saved.project_id)?saved.project_id:value.projects[0].id;
   const kind=['code','troubleshoot','documents','search'].includes(saved.task_kind)?saved.task_kind:'code';
-  const recent=value.recent.map(r=>({...r,job_id:r.task_id,request_preview:r.task,created_at:new Date(r.created*1000).toISOString(),status:r.state==='DONE'?'prepared':r.state.toLowerCase()}));
+  const recent=value.recent.map(r=>{
+    // DONE is process completion, not evidence availability. Older services
+    // omitted these facts; keep their results reviewable without claiming a brief.
+    const status=r.state!=='DONE'?r.state.toLowerCase():['DENY','ERROR'].includes(r.outcome)?'failed'
+      :['ANSWER','ABSTAIN'].includes(r.outcome)&&typeof r.evidence_available==='boolean'?(r.evidence_available?'prepared':'incomplete'):'completed';
+    return {...r,job_id:r.task_id,request_preview:r.task,created_at:new Date(r.created*1000).toISOString(),status};
+  });
   return {native:value,version:value.version,csrf:value.csrf_token,projects:value.projects.map(p=>p.id),
     preferences:{project_id:project,task_kind:kind,ai_mode:value.local_ai_enabled?(saved.ai_mode==='trial'?'trial':'best'):'off',model:saved.model||null,digest:saved.digest||null},
     recent,active:recent.find(r=>r.status==='running')||null,local_ai_allowed:value.policy.enabled,local_ai_paused:!value.local_ai_enabled,
@@ -322,6 +328,7 @@ function controls() {
   $('stop').disabled = !active?.job_id || !!preview;
   $('stop').hidden = !active || !!preview;
   $('local-ai').disabled = !state || !connected || settingsPending || !!preview || !state.local_ai_allowed;
+  $('ai-mode').disabled = !draftInitialized || !state || !connected || settingsPending || !!preview;
   $('local-ai').setAttribute('aria-busy',String(settingsPending));
   $('refresh-models').disabled = inventoryLoading || settingsPending || !connected || !!preview || !$('local-ai').checked;
   $('retry-connection').hidden = connected!==false || !!preview;

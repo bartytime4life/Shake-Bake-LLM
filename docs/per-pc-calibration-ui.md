@@ -1,10 +1,14 @@
 # Your computer & tuning: GUI plan
 
-Status: partially implemented. Model details now has explicit computer and selected-model metadata checks with detected/unknown fields. The full navigation/dashboard, automatic calibration, durable test recovery, comparisons and saved per-PC profiles below remain planned. Current readiness data does not complete this design or qualify a model. Read [evaluation status](evaluation-status.md) for the actual readiness, copy-recovery and model-trial evidence; the private budget probes do not expose new tuning controls in this GUI.
+Status refreshed for the reviewed `0.4.0.dev37` source. [Current status](current-status.md) separates source, validation and delivery; [the workbench guide](visual-workbench.md) describes active controls. The full navigation/dashboard, automatic calibration, durable test recovery, comparisons and saved per-PC profiles below remain planned. Historical model/candidate observations and trials remain in [evaluation status](evaluation-status.md); this documentation audit adds no research, recommendation or tuning controls.
+
+The implemented subset is **Options → Model details → This computer & selected model**, with explicit **Check this computer** and **Check selected model** metadata actions, detected/unknown values, model/pipeline identity and **Published statistics & local results**. These are readiness facts, not measured fit, task accuracy or an authenticated per-PC profile. Preparation mode waits until initial connection and saved choices are ready; no automatic calibration or model download follows.
+
+The surrounding application already has **Diagnose a failed run** and **Prepare source brief**, explicit session **Connect folder**, actual shared preparation activity, source-draft saving/opt-out/clear, and retained failed-run JSON through failed rechecks. These do not depend on this planned dashboard. The failed-run workflow calls no model; ordinary source preparation remains evidence-only when no profile qualifies. See [dev36 UI scope](workbench-usability-2026-11-11.md) and [dev37 recovery scope](captured-report-recovery-2026-11-11.md).
 
 ## Make the computer's state visible
 
-Add **Your computer & tuning** to navigation and link to it from each model's expanded details. The first visit offers a guided check. Returning users see their current local profile and whether it still matches this machine/model/runtime. Model names and technical settings stay expandable; the main task interface retains the goal-first choice and Best accuracy default.
+Proposed: add **Your computer & tuning** to navigation and link to it from expanded model details. A future guided first visit would check the installation; returning users would see a saved profile and whether it still matches the machine/model/runtime. Model names and settings would stay expandable, preserving the current job-first task interface. A proposed Best accuracy selector must not be confused with today's **Best tested for this task** owner-policy mode.
 
 | Visible area | Information and visual behavior | Honest empty/failure state |
 | --- | --- | --- |
@@ -28,9 +32,11 @@ Add **Your computer & tuning** to navigation and link to it from each model's ex
 
 Add a separate **License & source** disclosure with upstream license name/link, exact artifact review status, source/quantization/digest, required notices and checked date. Show relevant terms and size before a future explicit download choice. An **About/Licenses** view should expose the app LICENSE and shipped third-party notices. These controls remain planned; upstream observations are currently in MODEL_LICENSES.json.
 
-The existing model panel should gain a **This PC** subsection: installed digest/quantization, hardware/runtime used, context/output/thinking options, task category, evaluation date and cohort, unique case and attempt counts, reviewed correctness, measured timing/memory, failures, limits and a Retest link. A separate **Publisher results** subsection retains the official benchmark links and reported settings. A third **Why selected** subsection names the actual gates and tie-breaks used.
+Beyond the current metadata subsection, the proposed **This PC** profile view would combine installed digest/quantization, hardware/runtime used, context/output/thinking options, task category, evaluation date/cohort, unique case and attempt counts, reviewed correctness, measured timing/memory, failures, limits and Retest. Separate **Publisher results** and **Why selected** sections would retain official links/reported settings and name actual selection gates/tie-breaks. Existing owner declarations and readiness metadata do not supply all these measured fields.
 
-Actual timing and memory should use compact comparison bars or plots only when measured. Show exact values in adjacent text/table cells so color, animation or chart interpretation is not required. Progress animation has reduced-motion behavior; status changes use accessible announcements, keyboard focus and plain text. The layout must work on desktop and a narrow phone view.
+Actual timing and memory should use comparison bars or plots only when measured. Show exact values in adjacent text/table cells so color, animation or chart interpretation is not required. The current source-job activity reports starting, preparing or unknown state; granular loading/gathering/model stages require future backend events. Any proposed calibration progress must report actual attempts/cases with reduced-motion behavior, accessible announcements, keyboard focus and plain text. Desktop/narrow-phone checks remain part of qualification, not an inference from the design.
+
+The source collector's limit is up to ten records: four primary plus six controlling-context records, reduced by other budgets as needed. [Optional embedding reranking](embedding-rerank-2026-11-07.md) is implemented for explicit CLI/benchmark use and remains off by default. Neither mechanism is an automatic calibration/profile dashboard or evidence of semantic accuracy. Connected cloud Send/acknowledgement controls remain separate planned work; manual copy/export is the implemented handoff.
 
 ## Acceptance checklist for this GUI milestone
 
@@ -43,4 +49,4 @@ Actual timing and memory should use compact comparison bars or plots only when m
 - [ ] Publisher statistics and this-PC measurements remain separate in cards, details, charts and exports.
 - [ ] Desktop, phone, keyboard and reduced-motion behavior are actually reviewed before GUI qualification.
 
-This is the next design target, not a claim that those controls already work. Implementation depends on capability detection, a versioned local profile store, selector identity enforcement and a bounded calibration/review flow described in per-pc-calibration.md.
+This checklist is a proposed dashboard milestone, not a claim that the full controls work. Implementation must build on existing metadata detection and policy identity checks, add a versioned local profile store and full identity enforcement, then provide the bounded calibration/review flow in [per-PC calibration](per-pc-calibration.md). Current synthetic browser/program checks do not close these model, hardware, durability or representative-user gates.

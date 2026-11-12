@@ -1,6 +1,6 @@
 # Documentation guide
 
-Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md) for the current app. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. Dated reports
+Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md). [Current source/delivery status](current-status.md) identifies the documented dev37 source, the recorded main state and the boundaries of code, CI, installed and real-machine evidence. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. The [complete catalog](catalog.md) covers all 127 documentation/text files, including plans, research and fixed inputs. Dated reports
 below retain the exact scope of earlier checks; an older test count or pending
 state is not a statement about the latest build.
 
@@ -9,16 +9,25 @@ state is not a statement about the latest build.
 | Topic | Documents |
 | --- | --- |
 | Check a failed run | [Getting started](quickstart.md), [supported formats and limits](failed-run-workflow.md), including privacy, copying and recovery |
-| November 9 integration | [Current-main integration and publication checks](publication-2026-11-09.md) |
+| Source, integration and checks | [Current status](current-status.md), [documentation reconciliation](documentation-refresh-2026-11-11.md); the [November 9 publication record](publication-2026-11-09.md) remains historical |
 | November 9 improvements | [Changes, validation and next product priorities](project-improvements-2026-11-09.md), [draft privacy](draft-privacy.md), [source/transport reliability](source-boundary-reliability.md), [offline host review](host-review-scoring.md) |
 | Local setup and trials | [PC checklist](PC-CHECKLIST.md), [readiness and trial commands](pc-readiness-and-trials.md), [Task Lab](../benchmarks/task-lab/README.md) |
 | Interface and recovery | [Visual workbench](visual-workbench.md), [saved Local AI choice](local-ai-preferences.md), [shared coordinator](shared-coordinator.md) |
 | Continue in Claude or ChatGPT | [Manual handoff, text-file export and verification scope](assistant-handoff.md), [credential warnings before sharing](credential-screening-2026-11-09.md) |
-| Boundaries and integration | [Architecture](architecture.md), [helper contract](helper-contract.md), [routing](routing-implementation.md), [connection limits](connection-limits.md), [Codex host evidence](codex-host-handoff.md) |
+| Boundaries and integration | [Architecture](architecture.md), [helper contract](helper-contract.md), [HTTP reference](api-reference.md), [routing](routing-implementation.md), [connection limits](connection-limits.md), [dated Codex host evidence](codex-host-handoff.md) |
 | Evaluation and practical benefit | [Current results](evaluation-status.md), [external datasets](held-out-evaluation.md), [next host trial](next-trial.md), [open gaps](open-gaps.md), [development yardsticks](../benchmarks/development-yardsticks.md) |
 | Development and reporting | [Contributing](../CONTRIBUTING.md), [security reporting](../SECURITY.md), [third-party notices](../THIRD_PARTY_NOTICES.md), [licensing plan](LICENSING.md) |
 
-## Current experiment records
+## November 11 implementation records
+
+- [Algorithm upgrades](algorithm-upgrades-2026-11-11.md): strongest-anchor preservation, additional weighted line coverage, overlap removal and stable cosine scoring; includes the rejected unconstrained objective and synthetic scope.
+- [Whole-line excerpt byte fitting](excerpt-budget-fitting-2026-11-11.md): retain a fitting anchor without silently altering exact evidence; oversized anchors still remain gaps.
+- [Source-span development comparison](source-span-development-2026-11-11.md): exposed synthetic required spans, exact-source audits and omitted anchors; not unseen or semantic qualification.
+- [Recall-receipt compatibility](recall-comparison-limits-2026-11-11.md): current supported producer/comparer limits with provenance requirements retained.
+- [Compact dev36 workbench](workbench-usability-2026-11-11.md): optional controls on demand, shared activity, exact copy/error associations and screenshot scope.
+- [Dev37 captured-report recovery](captured-report-recovery-2026-11-11.md): earlier evidence survives refused/obsolete rechecks; exact captured JSON and truthful source history remain distinct from newer inputs.
+
+## Recorded development experiments
 
 Read these as successive experiments with separate identities and preserved failures:
 
@@ -39,7 +48,7 @@ Read these as successive experiments with separate identities and preserved fail
 - [Orientation brief on eight multi-file fixes](orientation-multifile-2026-11-08.md): a pre-registered gain on both paths, 11 against 9 of 19 files with tools (test files only) and 13 against 9 pasted. There was still no token saving.
 - [Paste-path comparison](paste-comparison-2026-11-08.md): no-tools hosts with and without the brief; 9 against 10 of 25 files named, no case won. Across four arms the brief anchors the host on its excerpts.
 - [Host comparison on six real issues](host-comparison-2026-11-08.md): Claude Code subagents with and without the brief; the brief added tokens every time, saved no tool calls on average, and halved the changed files named (7 against 14 of 25). Pre-registered rule not met.
-- [Frozen `dev20` collector on reserved cases](frozen-recall-2026-11-08.md): pre-registered paired run on twelve unread Long Code Arena `test` cases; 26 against 23 of 41 files reached, 3 wins and 2 losses, decision rule met; 13 rows still reserved.
+- [Frozen `dev20` collector on reserved cases](frozen-recall-2026-11-08.md): pre-registered paired run on twelve then-unread Long Code Arena `test` cases; 26 against 23 of 41 files reached, 3 wins and 2 losses, decision rule met; the record left 13 rows reserved. Evaluated cases are now exposed; this is not a fresh unseen result.
 - [Primary selection on large trees](primary-selection-2026-11-08.md): a rejected test-and-prose prior, a per-case diagnosis of the external misses, and two path fixes (spaces, `_vendor/`) that take the external cases to 11/13 reached.
 - [Review pass: errors, logic, UI and UX](review-2026-11-07.md): ten code findings fixed, among them the GUI/MCP rejection of jobs with controlling-context windows (BUG-021), plus a headless-Chrome pass over the workbench and the scan-stop versus selection-cap wording.
 - [Request terms chosen by signal, and a wider walk](term-selection-2026-11-07.md): identifiers and first-line words first, URL and template words never, 1,000-file default and 5,000-file ceiling; external cases reached rose from 7/13 to 10/13 at the ceiling.

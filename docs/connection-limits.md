@@ -1,6 +1,6 @@
-# Local web connection limits: 0.4.0.dev3
+# Local web connection limits
 
-This change bounds selected local-web failure modes. It is not a complete denial-of-service defense, a multi-user authorization boundary or a completed security qualification.
+The dev37 source retains the controls introduced in dev3 below. See [current status](current-status.md) for the reviewed source and later validation, and [the HTTP reference](api-reference.md) for current endpoints/authentication. These controls bound selected local-web failure modes; they are not a complete denial-of-service defense, a multi-user authorization boundary or a completed security qualification.
 
 ## Implemented behavior
 
@@ -16,7 +16,7 @@ These settings are server-side defaults. They are not new user-facing tuning con
 
 An overload response is best effort: if the local peer cannot receive it immediately, the socket closes. A client may see a transport error rather than JSON. This path never creates a session cookie or executes a task. It is intended to keep connection pressure bounded, not promise uninterrupted availability under continuous local flooding.
 
-## Regression evidence
+## Original dev3 regression evidence
 
 Six tests use actual loopback sockets and the real server/controller:
 
@@ -27,7 +27,7 @@ Six tests use actual loopback sockets and the real server/controller:
 5. Server close disconnects an incomplete request.
 6. A queued task whose controller wait expires is skipped without spawning work.
 
-Tests shorten deadlines to keep checks bounded; production defaults stay as above. The complete development suite passes 102 program tests. These are development-environment measurements, not owner-PC load results, real-model accuracy, browser rendering or independent security-audit evidence.
+Tests shorten deadlines to keep checks bounded; normal defaults stay as above. The original dev3 development suite passed 102 program tests. That count is historical; [current status](current-status.md) records the later 516-test baseline and its separate browser/installed checks. These are development-environment measurements, not owner-PC load results, real-model accuracy or independent security-audit evidence.
 
 ## Remaining work
 

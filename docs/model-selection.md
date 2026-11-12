@@ -1,8 +1,22 @@
 # Model candidates and tuning plan
 
-Historical candidate research checked 2026-11-04. These registry observations are not a current inventory or qualified recommendation. Read [current evaluation status](evaluation-status.md) for measured local results and the next gate. These are candidates, not measured winners or installed models. The owner has reported RTX 5080 GPUs with about 16 GiB each and approximately 120 GiB system RAM on the PCs. Separate PCs do not automatically combine VRAM; other workloads reduce available GPU memory.
+Historical candidate research checked 2026-11-04; registry facts and published
+scores below have not been refreshed for this documentation update. These
+observations are not a current inventory or qualified recommendation. Read
+[current evaluation status](evaluation-status.md) for measured local results
+and the next gate, and [current build status](current-status.md) for code,
+hosted-check and installation identity. No shipped profile is qualified for
+automatic model selection.
 
-| Role to test | Candidate | Registry observation | Decision |
+The reviewed dev37 [recovery record](captured-report-recovery-2026-11-11.md)
+reports 516 Python tests, 134 source/installed browser scenarios, 75 JavaScript
+checks and official SDK 2.3.0 checks. These are mechanical checks, not additional
+model trials or a reason to promote the historical shortlist. The owner reported
+RTX 5080 GPUs with about 16 GiB each and approximately 120 GiB system RAM on the
+PCs; that report is not a fresh capability measurement. Separate PCs do not
+automatically combine VRAM, and other workloads reduce available GPU memory.
+
+| Historical role | Candidate | Registry observation on November 4 | Shortlist decision at that date |
 | --- | --- | --- | --- |
 | Main preparation model | `qwen3.5:9b-q4_K_M` | 6.6 GB download; Q4_K_M | First candidate for code-aware evidence handoffs. |
 | Smaller challenger | `qwen3.5:4b-q4_K_M` | 3.3 GB download; Q4_K_M | Compare quality and latency on the same tasks. |
@@ -32,10 +46,10 @@ Pin the selected full model digest, exact tag, quantization, Ollama version, GPU
 ## Tuning sequence
 
 1. Use the exposed development cases for prompt/settings work. Freeze the final candidate configuration before authoring or reserving a fresh acceptance cohort; keep its keys outside worker-readable roots and do not tune against its results.
-2. Compare explicitly selected installed candidates with identical evidence and the strict output schema. The dated 9B/4B shortlist is not a detected installation or a winner; current 8B measurements are linked in evaluation status. Preserve source text and identifiers regardless of note quality.
-3. Compare the current mechanical baseline (`temperature=0`, 8,192 context tokens requested, 512 generated tokens, 30-second client deadline) against model-specific sampling recommendations. These existing limits are not tuned Qwen3.5 settings. Low temperature does not prove truth.
+2. Compare explicitly selected installed candidates with identical evidence and the strict output schema. The dated 9B/4B shortlist is not a detected installation or a winner; retained 8B measurements are linked in evaluation status. Preserve source text and identifiers regardless of note quality.
+3. Compare the shipped `handoff_prompt_v1` baseline (`temperature=0`, 8,192 context tokens and 1,024 output tokens requested, thinking off, 30-second shared deadline) against separately frozen experimental settings. These existing limits are not tuned Qwen3.5 settings, and requested settings do not attest runtime behavior. Low temperature does not prove truth.
 4. Discover thinking controls with `/api/show`. Test supported thinking-off and bounded-thinking profiles separately; record defaults when controls are absent. Do not assume every model accepts a boolean switch. The shipped worker explicitly requests `think: false`, refuses declared controls that cannot honor it before source transmission, and rejects returned thinking. Larger-budget thinking experiments are private diagnostics; their final-content projection does not change production acceptance.
-5. Raise context/output limits only when a measured omission or truncation justifies it. The helper receives a small selected packet; it is not using a whole-repository agent context. Count cold loading separately from warm inference and measure CPU/GPU offload with `ollama ps`.
+5. Change context/output limits only in a separately frozen experiment justified by a measured omission or truncation. The current CLI/workbench does not expose budget controls. The helper receives a small selected packet; it is not using a whole-repository agent context. Record controlled cold/warm loading and measured CPU/GPU offload separately; a first request is not automatically a cold start.
 6. Route only tasks for which a profile passed qualification. Do not repeatedly ask several local models the same question by default. A stalled or failed helper returns evidence and a visible failure to the host.
 
 For Claude or ChatGPT, tune task scope and the handoff contract first: one bounded question, compact result, exact evidence fetched as needed, explicit unresolved questions, one coordinator owning retries. This is workflow tuning; no hosted model weights or account settings are changed. Fine-tuning local weights is a later experiment only if repeatable failures remain after retrieval, prompting and sampling changes, with licensed training data and a separate evaluation set.
