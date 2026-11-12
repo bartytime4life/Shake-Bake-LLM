@@ -41,6 +41,8 @@ The simulated service observed exactly three `/api/tags`, one `/api/show`, two `
 
 The first [dev38 hosted run](https://github.com/bartytime4life/Shake-Bake-LLM/actions/runs/43153861204) passed all four Python 3.11–3.14 jobs and the installed-wheel/SDK job. Its browser job passed readiness and clipboard checks, then stopped at a prior assertion that Local AI was hidden inside Options. The follow-up updates that assertion to require the intentionally visible junior-developer control, closed detailed setup and truthful evidence-only result. A new complete hosted pass must be observed separately.
 
+The [next hosted run](https://github.com/bartytime4life/Shake-Bake-LLM/actions/runs/43154167979) also passed the source workbench, excerpt/export and 55 failed-run scenarios, then stopped in session recovery: a fixture connected a folder in the new default source workflow but subsequently read the failure workflow's project selection. Recovery fixtures now explicitly choose the failed-run workflow before their folder-connection tests, preserving the intended session-only approval and late-acknowledgement checks.
+
 Tall full-page result capture failed in the browser tool. Viewport captures were accepted only after the correct result had visibly painted; a partial/blank intermediate image was rejected. Native controls, accessible labels, draft disclosure and reference-text review were observed. This is not a full accessibility, assistive-technology, mobile/device or representative usability qualification.
 
 ## Remaining gates
