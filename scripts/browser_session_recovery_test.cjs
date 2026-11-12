@@ -87,6 +87,7 @@ async function load(page,{project='fixture',directory='./services/api'}={}){
   await page.locator('#choose-failed-run').click();await page.locator('#failure-project').selectOption(project);
   await page.locator('#failure-file').setInputFiles({name:'exact-original.log',mimeType:'text/plain',buffer:Buffer.from(error)});
   await page.waitForFunction(()=>document.querySelector('#failure-file-status').textContent.startsWith('Loaded'));
+  if(!await page.locator('#failure-run-details').evaluate(element=>element.open))await page.locator('#failure-run-details > summary').click();
   await page.locator('#failure-command').fill(command);await page.locator('#failure-working-directory').fill(directory);
 }
 async function diagnose(page){await page.locator('#diagnose-run').click();await page.locator('#failure-result').waitFor({state:'visible'});assert.equal(await page.locator('#failure-original').textContent(),error);}

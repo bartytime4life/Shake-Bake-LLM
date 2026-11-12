@@ -21,3 +21,138 @@
 
 .error-input-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:10px}.error-input-heading .request-label{margin:0}.error-input-heading .compact{font-size:.74rem;min-height:34px}#failure-file-status{margin:0 0 10px;overflow-wrap:anywhere}#failure-file-status:empty{display:none}.workflow-choices+.connect-project{padding-top:0;border-top:0;margin-bottom:20px}
 label[for=failure-working-directory]{display:block;font-size:.79rem;margin:0 0 8px}#failure-working-directory-help{font-size:.7rem;margin:9px 0 23px}#failure-captured-working-directory{overflow-wrap:anywhere;margin:0 0 7px}
+
+/* Keep the everyday path compact; exact evidence and advanced controls stay close. */
+:root{--result:#242521;--control-line:#7c7d71}
+.workbench-header{min-height:76px}
+#workspace{padding-top:18px}
+.connection-controls{margin-bottom:13px}
+.connection-controls .small{font-size:.76rem}
+h1{font-size:clamp(1.85rem,3.3vw,2.15rem);margin-bottom:11px}
+.workflow-intro{font-size:.88rem;line-height:1.55;max-width:79ch;margin-bottom:17px}
+.small{font-size:14px;line-height:1.6}
+.workflow-choices{gap:12px;margin-bottom:20px}
+.workflow-choice{padding:12px 17px;border-radius:6px;min-height:48px}
+.workflow-choice strong{font-size:.9rem;margin-bottom:0}
+.workflow-choice span{font-size:.79rem;line-height:1.55}
+.workflow-choice.selected{background:#2c2b24;box-shadow:inset 3px 0 var(--amber)}
+.connect-project{padding:12px 0 0;margin:20px 0 0;border:0;border-top:1px solid var(--line);font-size:14px}
+.connect-project>summary{width:fit-content;min-height:44px;line-height:1.6;padding:11px 0;color:var(--muted)}
+.connect-project>summary:hover{color:var(--text)}
+.connect-project>p{margin:10px 0 16px}
+.connect-project-form{padding-bottom:5px}
+.connect-project-form button{min-height:44px}
+.workflow-heading{margin-bottom:10px;align-items:center}
+.workflow-heading h2,.source-workflow-title{font-size:1.4rem}
+.source-workflow-title{margin-bottom:10px}
+.workflow-heading .text-button{font-size:.8rem;min-height:44px;padding:8px 0}
+.workflow-help{max-width:83ch;margin-bottom:20px}
+.error-input-heading{margin-bottom:8px;gap:10px}
+.error-input-heading .request-label{flex:1}
+.error-input-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.error-input-actions .text-button{font-size:14px;line-height:1.5;padding:10px 0}
+.request-label{font-size:.93rem;margin-bottom:10px}
+#request{min-height:132px}
+#failure-output{height:154px;min-height:140px;font-size:.83rem;line-height:1.6;padding:14px 16px}
+textarea,input[type=text],select{border-color:var(--control-line)}
+input[type=text],select{min-height:44px;font-size:.85rem}
+.primary,.secondary{min-height:46px;border-radius:6px}
+.compact,.error-input-heading .compact{min-height:44px;font-size:.8rem;padding:10px 13px}
+.text-button{min-height:44px}
+.primary:active:not(:disabled){background:#d49c4e;border-color:#d49c4e}
+.secondary:active:not(:disabled){background:#3e3f37}
+#failure-privacy,#failure-project-help,#failure-working-directory-help,
+#draft-status,#draft-privacy-help,#local-ai-retention,#handoff-privacy,
+#handoff-size,#failure-file-status,#project-connect-status{font-size:14px;line-height:1.6}
+.input-handling{font-size:14px;line-height:1.6;margin:8px 0 0}
+.input-details{font-size:14px;line-height:1.6;margin:0 0 12px}
+.input-details>summary{width:fit-content;min-height:44px;padding:10px 0;color:var(--muted)}
+.input-details>summary:hover{color:var(--text)}
+.input-details>p,#failure-privacy{margin:8px 0 12px;max-width:85ch}
+.project-selection{min-width:0}
+.project-selection>label,.project-label,.run-details-content label{display:block;font-size:14px;margin:0 0 8px;color:var(--text)}
+.project-select-row{display:flex;align-items:stretch;gap:10px;min-width:0;flex:1}
+.project-select-row select{min-width:0;width:0;max-width:none;flex:1;font-size:.85rem}
+.project-select-row button{flex-shrink:0;white-space:nowrap}
+#failure-project-help{margin:9px 0 12px}
+.run-details{margin:0 0 12px;border-bottom:1px solid var(--line);font-size:14px}
+.run-details>summary{width:fit-content;min-height:44px;line-height:1.6;padding:12px 0;color:var(--muted)}
+.run-details>summary:hover{color:var(--text)}
+.run-details-content{display:grid;gap:18px;padding:9px 0 18px;min-width:0}
+.run-details-content>div{min-width:0}
+.run-details-content>div>p{margin:9px 0 0}
+#failure-working-directory-help{margin:9px 0 0;max-width:85ch}
+.composer-context{margin:15px 0 16px;align-items:flex-end;gap:16px}
+.project-context{display:block;min-width:0;flex:1}
+#project{max-width:none;min-width:0;font-size:.85rem;padding:9px 30px 9px 12px}
+#draft-status{max-width:26ch;margin-bottom:3px}
+.task-options{margin-bottom:19px}
+.task-options>summary{min-height:44px;padding:12px 0}
+.action-row{margin-bottom:22px;gap:14px}
+.action-row .primary{min-height:48px}
+.action-row #progress{font-size:.82rem}
+.preparation-activity{display:flex;align-items:center;gap:18px;justify-content:space-between;padding:14px 16px;margin:8px 0 18px;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:5px;background:var(--surface)}
+.preparation-activity p{margin:0;min-width:0;overflow-wrap:anywhere}
+.preparation-activity button{flex-shrink:0}
+.failure-result,.brief-result{padding:24px;background:var(--result);border:1px solid #626154;border-radius:7px;margin-top:28px}
+.failure-result>h2,.brief-identity h2{font-size:1.6rem}
+.failure-result>.eyebrow{font-size:.73rem;line-height:1.6}
+.failure-result .evidence-grid,.brief-result .evidence-grid{background:var(--surface)}
+.failure-handoff{gap:15px 22px;margin:21px 0 15px}
+.failure-handoff .primary,.handoff-actions .primary{min-height:48px}
+.failure-handoff p,.handoff-actions p{font-size:.84rem;line-height:1.6}
+.failure-result .technical,.brief-result .technical{font-size:.82rem}
+.technical>summary,.handoff-copy>summary,.evidence-section>summary{min-height:44px;line-height:1.6;padding:11px 0}
+.handoff-copy,.evidence-section{padding:6px 0}
+.failure-result .handoff-copy{margin-top:14px}
+.failure-guidance-item p,.supplement li{font-size:.83rem}
+.source .source-meta{font-size:.74rem}
+.source .hash{font-size:11px}
+.workspace-footer{margin-top:32px}
+@media(max-width:650px){
+  .shell{width:calc(100% - 32px)}
+  .workbench-header{min-height:70px;gap:12px}
+  #workspace{padding-top:16px}
+  h1{font-size:1.7rem;max-width:22ch;margin-bottom:8px}
+  .connection-controls{margin-bottom:12px}
+  .workflow-intro{font-size:.85rem;line-height:1.55;margin-bottom:17px}
+  .workflow-choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:19px}
+  .workflow-choice{padding:11px 12px}
+  .workflow-choice strong{font-size:.84rem;line-height:1.5;margin-bottom:0}
+  .workflow-choice span{font-size:.79rem}
+  .connect-project{margin-top:18px;padding-top:10px}
+  .workflow-heading{align-items:start;gap:12px}
+  .workflow-heading h2,.source-workflow-title{font-size:1.35rem}
+  .workflow-heading .text-button{font-size:.77rem;max-width:130px;padding:0;line-height:1.5}
+  .workflow-help{font-size:.81rem;margin-bottom:18px}
+  .error-input-heading .request-label{font-size:.86rem;flex-basis:100%;min-width:0}
+  .error-input-actions{gap:16px;justify-content:space-between;width:100%}
+  .error-input-heading .compact{font-size:.77rem;padding-inline:10px}
+  #failure-output{font-size:.83rem;padding:13px;height:166px}
+  #request{font-size:.88rem;min-height:142px}
+  .project-select-row{flex-wrap:wrap;gap:9px}
+  .project-select-row select{flex-basis:100%;width:100%}
+  .project-select-row button{min-height:44px}
+  .composer-context{display:block;margin-bottom:9px}
+  #draft-status{max-width:none;margin:10px 0 0}
+  .task-options{margin-bottom:14px}
+  .preparation-activity{align-items:start;flex-direction:column;gap:12px;padding:14px}
+  .failure-result,.brief-result{padding:18px 15px;margin-top:24px}
+  .failure-result>h2,.brief-identity h2{font-size:1.45rem}
+  .failure-handoff{display:block}
+  .failure-handoff p{margin-top:12px;min-width:0}
+  .source header{padding:12px}
+  .source pre{padding:13px 12px}
+  .source .hash{padding-inline:12px}
+  .failure-result .source .source-meta{font-size:.74rem}
+  .export-actions{align-items:stretch}
+  .export-actions .compact{font-size:.77rem;padding:10px 12px}
+  .workspace-footer{margin-top:28px}
+}
+@media(max-width:360px){
+  .brand{font-size:1.35rem}
+  #history-nav{font-size:.73rem;gap:5px}
+  h1{font-size:1.65rem}
+  .error-input-heading .request-label{flex-basis:100%}
+  .action-row>.primary{width:100%}
+}

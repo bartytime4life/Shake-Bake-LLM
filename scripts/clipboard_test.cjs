@@ -94,7 +94,7 @@ function harness(clipboard,{style='evidence'}={}) {
   const el=id=>elements[id] ||= new Element();
   const windowEvents={};
   const context={document:{getElementById:el,createElement:()=>new Element(),querySelectorAll:()=>[]},window:{addEventListener(name,fn){windowEvents[name]=fn;},dispatchEvent(event){windowEvents[event.type]?.(event);}},
-    CustomEvent:class {constructor(type){this.type=type;}},
+    CustomEvent:class {constructor(type,options={}){this.type=type;this.detail=options.detail;}},
     navigator:{},localStorage:{getItem(){return null;}},setTimeout(fn){timers.push(fn);},clearTimeout(){},setInterval(){},clearInterval(){},
     Blob,URL:{createObjectURL(blob){context.downloadBlob=blob;return 'blob:synthetic';},revokeObjectURL(){}}};
   if(clipboard)context.navigator.clipboard={writeText(text){writes.push(text);return clipboard(text);}};
@@ -141,7 +141,37 @@ for(const outcome of ['resolve','reject']) {
       assert.equal(h.focused(),null,'A late outcome for an earlier brief must not steal focus');
     });
   }
+  for(const initial of ['orientation','evidence'])for(const returnToInitial of [false,true]){
+    test(`late ${outcome} identifies exact ${initial} copy after layout ${returnToInitial?'A/B/A':'A/B'}`,async()=>{
+      const wait=deferred(),h=harness(()=>wait.promise,{style:initial});h.pin(job('layout-copy'));
+      const original=vm.runInContext('handoffText(pinned)',h.context),operation=h.fire('copy');
+      h.el('brief-style').value=initial==='orientation'?'evidence':'orientation';h.el('brief-style').events.change();
+      assert.notEqual(vm.runInContext('handoffText(pinned)',h.context),original);
+      assert.match(h.status(),/earlier layout of this brief/);
+      assert.equal(h.el('copy').disabled,true);await h.fire('copy');assert.deepEqual(h.writes,[original]);
+      if(returnToInitial){h.el('brief-style').value=initial;h.el('brief-style').events.change();assert.doesNotMatch(h.status(),/earlier layout/);}
+      if(outcome==='resolve')wait.resolve();else wait.reject(new Error('synthetic permission denial'));
+      await operation;
+      assert.match(h.status(),outcome==='resolve'?/reported copying/:/could not copy/);
+      assert.equal(h.status().includes('earlier layout'),!returnToInitial);
+      assert.equal(h.el('copy').disabled,false);
+      assert.equal(h.focused(),outcome==='reject'&&returnToInitial?h.el('select-handoff'):null,'An outcome for another layout must not steal focus');
+    });
+  }
 }
+for(const outcome of ['copied','failed'])test(`changing layout updates a settled ${outcome} copy without another write`,async()=>{
+  const h=harness(()=>outcome==='copied'?Promise.resolve():Promise.reject(new Error('synthetic denial')),{style:'orientation'});h.pin(job('settled-layout'));
+  await h.fire('copy');assert.doesNotMatch(h.status(),/earlier layout/);
+  h.el('brief-style').value='evidence';h.el('brief-style').events.change();
+  assert.match(h.status(),/earlier layout/);assert.equal(h.writes.length,1);
+  h.el('brief-style').value='orientation';h.el('brief-style').events.change();
+  assert.doesNotMatch(h.status(),/earlier layout/);assert.equal(h.writes.length,1);
+});
+test('same-job source changes cannot inherit successful clipboard feedback',async()=>{
+  const h=harness(()=>Promise.resolve()),first=job('same-job');h.pin(first);await h.fire('copy');
+  const changed=job('same-job');changed.packet.evidence[0].content='Different synthetic captured source\n';h.pin(changed);
+  assert.match(h.status(),/earlier layout/);assert.equal(h.writes[0],expected(first));
+});
 for(const failure of ['missing API','rejected permission','synchronous failure']) {
   test(`${failure} exposes manual recovery without claiming a copy`,async()=>{
     const clipboard=failure==='missing API'?null:()=>{if(failure==='synchronous failure')throw new Error('unavailable');return Promise.reject(new Error('NotAllowedError'));};
@@ -198,6 +228,23 @@ test('idle cancellation and empty results stay hidden while an active job retain
   assert.equal(h.el('brief-result').hidden,true);
   vm.runInContext('active=null;controls();',h.context);
   assert.equal(h.el('stop').hidden,true);assert.equal(h.el('stop').disabled,true);
+});
+test('shared preparation activity keeps captured project identity and emits only activity transitions',()=>{
+  const h=harness(()=>Promise.resolve()),events=[];
+  h.context.window.addEventListener('sb-preparation-state',event=>events.push(JSON.parse(JSON.stringify(event.detail))));
+  vm.runInContext('nativeState={projects:[{id:"captured",label:"Captured project"}]};connected=true;active={pending:true,project_id:"captured"};controls();',h.context);
+  assert.equal(h.context.window.sbWorkbench.isPreparing(),true);
+  assert.equal(h.el('preparation-activity').hidden,false);assert.match(h.el('preparation-activity-text').textContent,/Starting source preparation for Captured project \(captured\)/);
+  const writes=h.el('preparation-activity-text').textWrites;vm.runInContext('controls();controls();',h.context);
+  assert.equal(events.length,1);assert.equal(h.el('preparation-activity-text').textWrites,writes);
+  h.el('project').value='newer-draft';vm.runInContext('active={job_id:"running",project_id:"captured"};controls();',h.context);
+  assert.match(h.el('preparation-activity-text').textContent,/Captured project \(captured\)/);assert.doesNotMatch(h.el('preparation-activity-text').textContent,/newer-draft/);
+  vm.runInContext('connected=false;controls();controls();',h.context);
+  assert.equal(h.context.window.sbWorkbench.isPreparing(),true);assert.match(h.el('preparation-activity-text').textContent,/status is unknown/);
+  h.fire('activity-view');assert.equal(h.focused(),h.el('progress'));assert.equal(h.el('progress').attributes.tabindex,'-1');
+  vm.runInContext('active=null;controls();controls();',h.context);
+  assert.equal(h.context.window.sbWorkbench.isPreparing(),false);assert.equal(h.el('preparation-activity').hidden,true);
+  assert.deepEqual(events.map(item=>item.status),['pending','running','unknown','idle']);
 });
 test('text download, clipboard and visible preview contain the same captured request and evidence',async()=>{
   const h=harness(()=>Promise.resolve()),j=job();h.pin(j);

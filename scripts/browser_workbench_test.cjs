@@ -121,6 +121,44 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     await h.page.keyboard.press('Tab');
     assert.equal(await h.page.locator('#copy').evaluate(el=>document.activeElement===el),true);
   },{setup:async h=>{h.enabled=false;}});
+  await scenario('preparation stays visible across workflows and View preparation returns to its status',async h=>{
+    const request='Find executable slice coverage for the shared preparation activity.';
+    const acknowledge=h.defer(),finish=h.defer(),startSeen=deferred(),resultSeen=deferred();let heldResult=false;
+    await h.page.route('**/api/tasks',async route=>{
+      if(route.request().method()!=='POST'){await route.fallback();return;}
+      // route.fetch bypasses the shared route that normally counts starts.
+      h.tasks++;
+      const response=await route.fetch();startSeen.resolve();await acknowledge.promise;await route.fulfill({response});
+    });
+    await h.page.route('**/api/tasks/*',async route=>{
+      const response=await route.fetch(),value=await response.json();
+      if(!heldResult&&value.state==='DONE'&&value.original_request===request){heldResult=true;resultSeen.resolve();await finish.promise;}
+      await route.fulfill({json:value});
+    });
+    assert.equal(await h.page.locator('#preparation-activity').isVisible(),false);
+    await h.page.locator('#request').fill(request);await h.page.locator('#prepare').click();await startSeen.promise;
+    assert.equal(await h.page.evaluate(()=>window.sbWorkbench.isPreparing()),true);
+    assert.match(await h.page.locator('#preparation-activity-text').innerText(),/Starting source preparation.*starter-demo/);
+    await h.page.locator('#choose-failed-run').click();
+    assert.equal(await h.page.locator('#source-brief-workflow').isVisible(),false);
+    assert.equal(await h.page.locator('#preparation-activity').isVisible(),true);
+    acknowledge.resolve();await resultSeen.promise;
+    assert.match(await h.page.locator('#preparation-activity-text').innerText(),/Preparing a source brief.*starter-demo/);
+    await h.page.locator('#activity-view').click();
+    assert.equal(await h.page.locator('#source-brief-workflow').isVisible(),true);
+    assert.equal(await h.page.locator('#failed-run-workflow').isVisible(),false);
+    assert.equal(await h.page.locator('#progress').evaluate(el=>document.activeElement===el),true);
+    assert.equal(await h.page.locator('#stop').isVisible(),true);
+    assert.equal(h.tasks,1,'Viewing preparation must not start or cancel a task');
+    finish.resolve();await h.page.waitForFunction(text=>document.querySelector('#original-request').textContent===text,request);
+    await h.page.waitForFunction(()=>!window.sbWorkbench.isPreparing());
+    assert.equal(await h.page.locator('#preparation-activity').isVisible(),false);
+    assert.deepEqual(await h.page.evaluate(()=>window.preparationTransitions.filter(item=>item.status!=='idle').map(item=>item.status)),['pending','running']);
+    assert.equal(await h.page.locator('#request').inputValue(),request);
+  },{setup:async h=>{
+    h.enabled=false;
+    await h.page.addInitScript(()=>{window.preparationTransitions=[];window.addEventListener('sb-preparation-state',event=>window.preparationTransitions.push(event.detail));});
+  }});
   await scenario('completion announces the captured result without stealing focus from the next draft',async h=>{
     const request='Find the executable slice coverage guard before writing the next draft.';
     const held=h.defer(),seen=deferred();let once=true;
