@@ -1,6 +1,6 @@
 # Local AI across restarts
 
-Current service behavior for the [documented dev37 source](current-status.md). Browser task drafts and model/layout choices are separate from this one persisted service setting; see [draft controls](draft-privacy.md).
+Current service behavior for the [documented dev38 source](current-status.md). Browser task drafts and model/layout choices are separate from this one persisted service setting; see [draft controls](draft-privacy.md).
 
 The normal GUI launch stores only the Local AI on/off choice in a private settings directory. A launch with no saved choice starts **off**. Turning it on is an explicit owner action; starting a task cannot turn it on. The GUI and shared adapter use the same service choice. Evidence-only tasks remain available while paused.
 

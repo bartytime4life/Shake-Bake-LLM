@@ -33,6 +33,7 @@ async function scenario(label, run, setup, expectedTaskRequests = 0) {
     if (setup) await setup(page,context);
     await page.goto(baseURL);
     await page.waitForFunction(() => window.sbWorkbench?.getState()?.native?.csrf_token);
+    await page.locator('#choose-failed-run').click();
     await run(page, {requests,external});
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
@@ -91,7 +92,7 @@ async function capturedJson(page) {
   baseURL = await waitForServer(server);
   browser = await chromium.launch({headless:true,...(process.env.SB_CHROMIUM_EXECUTABLE?{executablePath:process.env.SB_CHROMIUM_EXECUTABLE}:{})});
   console.log('Chromium '+browser.version());
-  await scenario('first visit asks for a real failed run and does not silently use the demo', async page => {
+  await scenario('explicit failed-run selection asks for a real failure and does not silently use the demo', async page => {
     assert.equal(await page.locator('#failed-run-workflow').isVisible(),true);
     assert.equal(await page.locator('#source-brief-workflow').isVisible(),false);
     assert.equal(await page.locator('#choose-failed-run').getAttribute('aria-pressed'),'true');

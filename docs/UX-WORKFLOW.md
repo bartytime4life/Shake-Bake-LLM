@@ -1,6 +1,6 @@
 # Whole-workflow user experience
 
-Original design plan: November 4, 2026. Implementation status refreshed November 11 for the reviewed `0.4.0.dev37` source. [Current status](current-status.md) separates that source and its validation from delivery to main or an owner installation. Use the [workbench guide](visual-workbench.md) for active instructions and [evaluation status](evaluation-status.md) for model/host evidence.
+Original design plan: November 4, 2026. Implementation status refreshed November 11 for the reviewed `0.4.0.dev38` source. [Current status](current-status.md) separates that source and its validation from delivery to main or an owner installation. Use the [workbench guide](visual-workbench.md) for active instructions and [evaluation status](evaluation-status.md) for model/host evidence.
 
 This plan joins setup, local preparation, evidence review, assistant handoff and recovery into one product journey. It separates implemented controls from proposed calibration, dashboards, durable recovery and connected delivery. The earlier blocked cloud-browser inspection remains a historical limitation of that attempt. Later [installed readiness](pc-readiness-2026-11-05.md) and [copy recovery](copy-and-screening-2026-11-05.md) cover their stated versions and selected flows.
 
@@ -8,7 +8,9 @@ The dev36 [workbench follow-up](workbench-usability-2026-11-11.md) records scree
 
 ## The experience we want
 
-A user should be able to start with a failed run or source question, prepare evidence from explicitly permitted source, and copy it into an existing assistant chat. The primary screen should make three things clear: what the app does, what source it uses, and the next useful action. Failed-run command/working-folder inputs belong in **Run details (optional)**. Source-task type, draft controls and optional models belong in **Options**; ordinary evidence-only use requires neither disclosure. Source review, exports and recent briefs remain available on demand.
+The [accepted product purpose](product-purpose.md) is local junior developer preparation followed by a compact manual handoff to the main developer. This priority guides both existing workflows; it does not enable autonomous edits, automatic cloud transmission or unqualified models.
+
+A user should be able to start with a failed run or source question, prepare evidence from explicitly permitted source, and copy it into an existing assistant chat. The primary screen should make three things clear: what the app does, what source it uses, and the next useful action. Failed-run command/working-folder inputs belong in **Run details (optional)**. The source-brief journey opens first, with a visible **Local AI — Ollama junior developer** control. **Model details** opens setup; task type and draft controls remain in **Options**. ChatGPT or Claude is the main developer after explicit review and copy/paste. Evidence-only use requires no model setup. Source review, exports and recent briefs remain available on demand.
 
 Source preparation has two entry points: a person starting in the GUI, or an assistant delegating through an explicitly scoped adapter. The failed-run source check is a separate GUI workflow. The core owns project permissions, task identity, model policy, status, evidence and pause controls. The GUI explains that state; the adapter requests bounded work without inheriting newly connected browser folders. Shared coordination was implemented for explicit shared mode in dev4. SDK 2.3.0 and scoped Codex synthetic handoff/cancellation checks have evidence; broader host qualification and full guided setup/persistence remain pending.
 

@@ -1,8 +1,10 @@
 # Shake & Bake
 
-Check a failed run against the code on your computer, then take a precise debugging brief into your AI chat. The workbench reads approved source folders, preserves the original error and shows the exact lines it found. No model is needed for this workflow.
+Use a locally running Ollama model as your **junior developer**, then paste its compact handoff into **ChatGPT or Claude as your main developer**. Ollama prepares source-backed notes, relevant code locations, questions and suggested next checks. The main developer reviews that work, makes the final decisions and helps implement and verify the solution.
 
-**Documented development source: `0.4.0.dev37`. Linux and Python 3.11+ are required.** [Current status](docs/current-status.md) identifies reviewed source, the recorded `main` state, validation and installation boundaries. Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
+The purpose is to reduce paid-model context and repeated preparation. Token reduction and subscription cost savings still require whole-task measurement. The app preserves your original request, exact source and gaps; nothing is sent to either chat service automatically. See [the product purpose and developer roles](docs/product-purpose.md).
+
+**Development source: `0.4.0.dev38`. Linux and Python 3.11+ are required.** [Current status](docs/current-status.md) distinguishes this local candidate, recorded validation and installation boundaries.
 
 ## Open the app
 
@@ -14,7 +16,17 @@ cd Shake-Bake-LLM
 
 The launcher chooses a supported installed Python and opens `http://127.0.0.1:8421`. Keep its terminal running; stop it with **Ctrl+C**. Opening the HTML file directly shows launch instructions rather than starting the service. No model, package installation or download happens automatically.
 
-## Check an actual failure
+## Prepare locally, then paste into your main developer chat
+
+1. Start in **Prepare source brief**. Select **Connect folder** beside **Project** and approve the folder to inspect read-only.
+2. Describe the task in your own words. The handoff retains this request unchanged.
+3. Use **Local AI — Ollama junior developer** and **Model details** to choose local preparation. A new installation starts off. **Best tested** requires a reviewed profile; none is currently qualified. To deliberately try your already installed model, launch with `./scripts/run-workbench --allow-candidate-trials`, enable Local AI, select **Try a candidate — unqualified**, refresh installed models, choose one and acknowledge the trial. Use a trusted local Ollama daemon with cloud features disabled. No model is downloaded or silently substituted.
+4. Select **Prepare brief**. Review the junior developer draft, exact evidence and gaps. If no usable model draft was produced, the result explicitly says **evidence-only**; you can still use it as source preparation.
+5. Select **Copy brief**, paste it into your existing **ChatGPT or Claude** chat, and send. The handoff tells that assistant to act as the main developer, verify the junior's advice, request missing source and decide the implementation and checks.
+
+**Starting points (default)** keeps the handoff compact. **Full evidence, cited answer** includes every captured excerpt. **Review & export** provides manual copying and text/JSON saves. Neither model can authorize commands, change project scope or apply repairs through this app. Ollama's draft is unverified advice.
+
+## Gather evidence for a failed run
 
 1. Select **Connect folder** beside Project to open **Connect project folder**, enter the absolute folder path containing the failing code, and confirm the connection. This approves read-only inspection for the running session.
 2. Paste the complete error output, or select **Load error file** for a saved UTF-8 `.txt` or `.log` up to 64 KiB. Expand **Run details (optional)** to record the command that failed; it is never executed.
@@ -39,7 +51,7 @@ Loading a file stays in the open tab until **Find failing source**. Original fil
 
 The optional **Try a labelled example** uses invented errors and bundled inert source. It does not demonstrate a failure on your computer. See [the quickstart](docs/quickstart.md) and [supported formats and limits](docs/failed-run-workflow.md).
 
-## Prepare source for a question
+## Selection and model limits
 
 When there is no traceback, choose **Prepare source brief**, select your connected project and ask a concrete question, such as “Where is the retry limit applied after a failed sign-in?” Inspect the collected source before copying the brief into your AI chat. An empty result cannot be copied as a successful source handoff.
 
@@ -49,7 +61,7 @@ Within each matching file, selection keeps the strongest request-term anchor fir
 
 If surrounding lines exceed the source-byte limit, a window can be shortened around its strongest match. Only whole source lines are kept, and the workbench and copied briefs disclose missing surrounding context. A matching line that cannot itself fit is still omitted. See [byte-budget fitting](docs/excerpt-budget-fitting-2026-11-11.md).
 
-An optional Ollama worker can draft unverified preparation notes for source briefs. It is separate from failed-run checks. New installations start with Local AI off; an existing installation retains its saved choice. No shipped model profile is qualified for automatic selection. Read [model setup and trial boundaries](docs/pc-readiness-and-trials.md), [routing](docs/routing-implementation.md) and [evaluation status](docs/evaluation-status.md) before enabling model trials.
+Ollama supplies the junior developer draft for source briefs. It is separate from failed-run evidence checks, which make no model call. Evidence-only preparation is available when Local AI is off, unavailable or unqualified. Existing installations retain their saved Local AI choice. Read [model setup and trial boundaries](docs/pc-readiness-and-trials.md), [routing](docs/routing-implementation.md) and [evaluation status](docs/evaluation-status.md) before enabling model trials. The dev38 role prompt has a new identity and has not been qualified on real models; earlier prompt results do not qualify it.
 
 ## Local data and scope
 

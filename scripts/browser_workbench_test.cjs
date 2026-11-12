@@ -104,13 +104,17 @@ async function scenario(label,run,{startupFailure=false,preview=null,setup=null,
     assert.match(await h.page.locator('#project-help').innerText(),/Synthetic demo selected.*only bundled example files/);
     assert.equal(await h.page.locator('#task-options').evaluate(el=>el.open),false);
     assert.equal(await h.page.locator('#local-ai').isChecked(),false);
-    assert.equal(await h.page.locator('#local-ai').isVisible(),false);
+    assert.equal(await h.page.locator('#local-ai').isVisible(),true);
+    assert.equal(await h.page.locator('#model-details-toggle').isVisible(),true);
+    assert.equal(await h.page.locator('#model-details').isVisible(),false);
+    assert.match(await h.page.locator('.workflow-intro').innerText(),/local junior developer.*main developer/);
     for(const id of ['stop','brief-result','recent-section'])assert.equal(await h.page.locator('#'+id).isVisible(),false,id);
     const request='Find the executable slice coverage guard.';
     await prepare(h.page,request);
     assert.equal(h.tasks,1);assert.equal(h.settingsCalls,0);assert.equal(h.modelCalls,0);
     assert.equal(await h.page.locator('#task-options').evaluate(el=>el.open),false);
     assert.equal(await h.page.locator('#brief-result').isVisible(),true);
+    assert.match(await h.page.locator('#developer-role-status').innerText(),/no Ollama junior developer draft was used/);
     assert.equal(await h.page.locator('#copy').isVisible(),true);
     assert.equal(await h.page.locator('#copy').isEnabled(),true);
     assert.equal(await h.page.locator('#stop').isVisible(),false);

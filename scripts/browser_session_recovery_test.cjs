@@ -136,7 +136,7 @@ async function hold(page,pattern){
     assert.equal(record.error_output,error);assert.equal(record.command,command);assert.equal(record.working_directory,'./services/api');
   });
   await scenario('a restarted session revokes UI-only project approvals without losing either workflow text',async h=>{
-    const {page}=h;await page.locator('#connect-project > summary').click();await page.locator('#project-path').fill(extraFixture);await page.locator('#project-label').fill('Session-only synthetic folder');await page.locator('#connect-project-button').click();
+    const {page}=h;await page.locator('#choose-failed-run').click();await page.locator('#connect-project > summary').click();await page.locator('#project-path').fill(extraFixture);await page.locator('#project-label').fill('Session-only synthetic folder');await page.locator('#connect-project-button').click();
     await page.waitForFunction(()=>document.querySelector('#project-connect-status').textContent.includes('Folder connected'));
     const project=await page.locator('#failure-project').inputValue();await load(page,{project,directory:''});await diagnose(page);
     await page.locator('#choose-source-brief').click();await page.locator('#project').selectOption(project);await page.locator('#request').fill('Preserve this question for the disconnected folder.');await page.locator('#choose-failed-run').click();
@@ -196,7 +196,7 @@ async function hold(page,pattern){
     await diagnose(page);assert.equal(h.posts.length,2);
   });
   await scenario('a late folder-connection acknowledgement cannot select a different new-session root',async h=>{
-    const {page}=h;const held=await hold(page,'**/api/projects');h.releases.push(held.release);
+    const {page}=h;await page.locator('#choose-failed-run').click();const held=await hold(page,'**/api/projects');h.releases.push(held.release);
     await page.locator('#connect-project > summary').click();await page.locator('#project-path').fill(extraFixture);await page.locator('#project-label').fill('Delayed synthetic folder');await page.locator('#connect-project-button').click();
     const acknowledgement=await held.seen;const id=acknowledgement.project_id||acknowledgement.id;assert.ok(id);
     await h.restart({additional:{[id]:fixture}});await h.disconnected();await h.retry();

@@ -21,3 +21,11 @@ The full planning export is retained locally in `.local/recovered/` and excluded
 ## Qualification still required
 
 Actual Ollama/model performance, native host interoperability, the owner's hardware, Windows filesystem boundaries, independent security review, unseen correctness trials and whole-task savings require their own evidence. Program tests do not qualify these properties.
+
+## Owner clarification, November 11, 2026
+
+The original recovered record above remains intact. The owner clarified the primary product direction in this request:
+
+> Make sure the entire structure and purpose of this project is to take the output from an ollama locally ran LLM and paste it into claude or ChatGPT reducing the costs of tokens for the paid subscriptions. The ollama model should think and act like a jr. developer and chatgpt/claude the main developer.
+
+The accepted interpretation is local Ollama junior developer preparation → user reviews and copies a compact handoff → ChatGPT or Claude acts as the main developer. Evidence-only collection and error-source checks are supporting preparation paths. They must not imply a model ran. Cost reduction is the objective, subject to correctness and measured whole-task usage; subscription charges and quotas are separate unknowns. [Product purpose](../product-purpose.md) maps this direction to the implementation and acceptance criteria. This clarification does not authorize cloud calls, repository execution, automatic source transmission or model promotion.

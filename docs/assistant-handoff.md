@@ -1,8 +1,8 @@
 # Continue in Claude or ChatGPT
 
-Current guidance for `0.4.0.dev37`. See [current status](current-status.md) for source, validation and delivery state. The [dev36 workbench review](workbench-usability-2026-11-11.md) and [dev37 capture-recovery record](captured-report-recovery-2026-11-11.md) retain dated evidence; the earlier follow-ups below describe their own versions.
+Current guidance for `0.4.0.dev38`. See [current status](current-status.md) for source, validation and delivery state. The [dev36 workbench review](workbench-usability-2026-11-11.md) and [dev37 capture-recovery record](captured-report-recovery-2026-11-11.md) retain dated evidence; the earlier follow-ups below describe their own versions.
 
-The workbench prepares captured evidence. The receiving assistant continues the task after you explicitly share it.
+The primary journey is a local Ollama junior developer handoff that you paste into ChatGPT or Claude as your main developer. The local model prepares cited notes and questions; the main developer reviews them, makes final decisions and proposes implementation and verification. See [product purpose and role boundaries](product-purpose.md). Evidence-only preparation explicitly says when no Ollama draft was used.
 
 1. Choose **Prepare source brief**, describe what you need, select a project and select **Prepare brief**. **Connect folder** beside **Project** opens the shared connection form if needed. No model or Options changes are required for ordinary evidence-only preparation.
 2. Review the captured request, source and any **Gaps & collection limits**. Use **View source excerpts** for the captured records. Select a **Brief layout**, then **Copy brief**.
@@ -31,7 +31,7 @@ The shared preparation notice stays visible across workflows. **View preparation
 
 For a failed run, **Copy debugging brief** packages the exact captured error, recorded command, project/working-folder identity, source, explicit error/frame/evidence associations, missing locations and suggested checks. **Review debugging brief or copy manually** provides its fallback; **Original error & report** contains the text save and **Download captured JSON report**. A last accepted report remains visible during failed or obsolete rechecks. Copy/text/manual handoff wait while checking or when inputs differ, but its captured JSON remains saveable and excludes newer edits. After a failed same-input check, copying the earlier capture becomes available with a not-refreshed notice. A successful replacement supersedes it. See the [failed-run guide](failed-run-workflow.md).
 
-**Options** contains task type, task-draft controls and optional Local AI. A new installation starts with Local AI off. Candidate trials require the owner's launch permission and explicit acknowledgement; they do not qualify a model. Missing or failed optional model notes do not turn captured evidence into an answer.
+The visible **Local AI — Ollama junior developer** control enables model preparation; **Model details** opens its setup. **Options** contains task type, task-draft controls and the expanded model setup. A new installation starts with Local AI off. Candidate trials require the owner's launch permission and explicit acknowledgement; they do not qualify a model. Missing or failed optional model notes do not turn captured evidence into an answer.
 
 ## Sharing and retention
 

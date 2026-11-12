@@ -39,17 +39,17 @@
     <main id="workspace" tabindex="-1">
       <div class="connection-controls"><span class="small muted" id="connection-status">Connecting to local session…</span><button type="button" id="retry-connection" class="secondary compact" hidden>Retry connection</button></div>
       <p id="session-notice" class="notice" role="status" aria-live="polite" hidden></p>
-      <h1>Bring your source into focus.</h1>
-      <p class="workflow-intro muted">Find failing source or prepare a brief for your AI chat.</p>
+      <h1>Prepare locally. Finish in ChatGPT or Claude.</h1>
+      <p class="workflow-intro muted">Ollama works as your local junior developer. Review its compact handoff, then paste it into ChatGPT or Claude as your main developer. The goal is less paid-model context and repeated work.</p>
       <div class="workflow-choices" role="group" aria-label="Choose a job">
-        <button type="button" id="choose-failed-run" class="workflow-choice selected" aria-pressed="true" aria-controls="failed-run-workflow"><strong>Diagnose a failed run</strong><span class="sr-only">Check Python, pytest, Node.js and TypeScript errors against current source.</span></button>
-        <button type="button" id="choose-source-brief" class="workflow-choice" aria-pressed="false" aria-controls="source-brief-workflow"><strong>Prepare source brief</strong><span class="sr-only">Package source for an AI chat. Does not diagnose or fix it.</span></button>
+        <button type="button" id="choose-source-brief" class="workflow-choice selected" aria-pressed="true" aria-controls="source-brief-workflow"><strong>Prepare source brief</strong><span class="sr-only">Prepare the junior developer handoff for ChatGPT or Claude. Evidence-only preparation is also available.</span></button>
+        <button type="button" id="choose-failed-run" class="workflow-choice" aria-pressed="false" aria-controls="failed-run-workflow"><strong>Diagnose a failed run</strong><span class="sr-only">Collect Python, pytest, Node.js and TypeScript error evidence for the main developer. No model is called.</span></button>
       </div>
       <section id="preparation-activity" class="preparation-activity" aria-label="Preparation status" hidden>
         <p id="preparation-activity-text" class="small" role="status" aria-live="polite"></p>
         <button type="button" id="activity-view" class="secondary compact">View preparation</button>
       </section>
-      <section id="failed-run-workflow" aria-labelledby="failed-run-heading">
+      <section id="failed-run-workflow" aria-labelledby="failed-run-heading" hidden>
         <h2 id="failed-run-heading" class="sr-only">Where did it fail?</h2>
         <form id="failure-form" autocomplete="off">
           <div class="error-input-heading"><label for="failure-output" class="request-label">Paste the complete error output</label><div class="error-input-actions"><button type="button" id="try-failure-example" class="text-button">Try a labelled example</button><button type="button" id="load-failure-file" class="secondary compact">Load error file</button></div></div>
@@ -88,7 +88,7 @@
           <p id="failure-exception" class="failure-exception"></p>
           <p id="failure-result-context" class="small muted"></p>
           <p id="failure-credential-warning" class="notice credential-warning" role="alert" hidden></p>
-          <div class="failure-handoff"><button type="button" id="copy-failure-brief" class="primary" disabled>Copy debugging brief</button><p class="small muted">Take the original error and captured source into your existing AI chat to investigate the cause and a verifiable fix.</p></div>
+          <div class="failure-handoff"><button type="button" id="copy-failure-brief" class="primary" disabled>Copy debugging brief</button><p class="small muted">Paste the original error and source into ChatGPT or Claude as your main developer. This evidence-only check does not call Ollama.</p></div>
           <p id="failure-copy-status" class="small" role="status" aria-live="polite"></p>
           <details id="failure-copy-review" class="handoff-copy" hidden><summary>Review debugging brief or copy manually</summary><label for="failure-copy-text" class="sr-only">Captured debugging brief</label><textarea id="failure-copy-text" rows="12" readonly spellcheck="false"></textarea><p class="small muted">This includes the original error, recorded command, project folder, working folder and captured source. Review before sharing. Clipboard and chat clients can change line endings; the JSON report preserves exact contents.</p></details>
           <div id="failure-source"></div>
@@ -98,7 +98,7 @@
           <div id="failure-limits" class="failure-limits small muted"></div>
         </section>
       </section>
-      <div id="source-brief-workflow" hidden>
+      <div id="source-brief-workflow">
       <h2 class="source-workflow-title">Prepare a source brief.</h2>
       <p class="workflow-help small muted sr-only">Describe the task and choose a project. Prepare the evidence, then review and copy it into your existing AI chat.</p>
       <form id="task-form">
@@ -109,6 +109,11 @@
           <p id="draft-status" class="small muted" role="status" aria-live="polite">Draft saving starts after the local session connects.</p>
         </div>
         <p id="project-help" class="small muted sr-only" role="status">Only projects approved in the owner's launch configuration are available.</p>
+        <div class="model-strip">
+          <label class="switch-label"><input type="checkbox" id="local-ai" disabled aria-describedby="local-role-help"><span>Local AI <small class="muted">Ollama junior developer</small></span></label>
+          <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="icons/chevron-down.svg" alt=""></button>
+        </div>
+        <p id="local-role-help" class="small muted">Enable a reviewed model or an acknowledged candidate trial to add a junior developer draft. With Local AI off, preparation collects evidence only. ChatGPT or Claude reviews and finishes the task.</p>
         <details id="task-options" class="task-options">
           <summary>Options <span id="mode-summary" class="muted" hidden></span></summary>
           <div class="options-content">
@@ -123,10 +128,6 @@
               <p id="draft-privacy-help" class="small muted">Turning this off removes the saved draft and keeps your current text here. Clear draft empties this task; prepared briefs stay available.</p>
               <button type="button" id="clear-draft" class="secondary compact">Clear draft</button>
             </fieldset>
-            <div class="model-strip">
-              <label class="switch-label"><input type="checkbox" id="local-ai" disabled><span>Local AI <small class="muted">optional</small></span></label>
-              <button type="button" class="text-button details-button" id="model-details-toggle" aria-expanded="false" aria-controls="model-details">Model details<img src="icons/chevron-down.svg" alt=""></button>
-            </div>
           <section id="model-details" class="details-surface" hidden aria-label="Model details">
           <div class="details-heading"><div><h2>Choose how local AI helps</h2><p id="model-help" class="muted small">Exact evidence remains available with Local AI off.</p></div><button type="button" id="refresh-models" class="secondary compact">Refresh installed models</button></div>
           <label for="ai-mode">Preparation mode</label>
@@ -159,18 +160,19 @@
           <div class="brief-identity"><h2 id="brief-title" tabindex="-1">Your brief is ready</h2><p class="small muted" id="brief-subtitle"></p></div>
         </header>
         <p id="handoff-summary" class="captured-request small muted"></p>
+        <p id="developer-role-status" class="small muted"></p>
         <p id="credential-warning" class="notice credential-warning" role="alert" hidden></p>
         <div class="handoff-actions">
           <button type="button" class="primary" id="copy" disabled><img src="icons/copy.svg" alt="">Copy brief</button>
           <p>Paste into <a id="open-claude" href="https://claude.ai/" target="_blank" rel="noopener noreferrer" aria-label="Open Claude in a new tab" aria-describedby="handoff-privacy">Claude</a> or <a id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-label="Open ChatGPT in a new tab" aria-describedby="handoff-privacy">ChatGPT</a>, then send.</p>
         </div>
-        <div class="brief-style"><label for="brief-style">Brief layout</label><select id="brief-style" aria-describedby="brief-style-help"><option value="orientation" selected>Starting points (default)</option><option value="evidence">Full evidence, cited answer</option></select><p id="brief-style-help" class="small muted">In two pre-registered runs with Claude, starting points led to more of the files real fixes changed. Full evidence shows every excerpt and asks for a cited answer.</p></div>
+        <div class="brief-style"><label for="brief-style">Brief layout</label><select id="brief-style" aria-describedby="brief-style-help"><option value="orientation" selected>Starting points (default)</option><option value="evidence">Full evidence, cited answer</option></select><p id="brief-style-help" class="small muted">Starting points keeps the handoff compact. Full evidence includes every captured excerpt. Both ask ChatGPT or Claude to act as the main developer.</p></div>
         <p id="handoff-privacy" class="small muted">Only share source you intend to send. Nothing is sent automatically. Session history is temporary; use Review &amp; export to save a copy.</p>
         <p id="handoff-size" class="small muted"></p>
         <p id="copy-status" class="small" role="status" aria-live="polite" aria-atomic="true" hidden></p>
         <p id="worker-status" class="notice" hidden></p>
         <section id="gaps-section" class="supplement gaps" hidden><h2>Gaps &amp; collection limits</h2><ul id="gaps"></ul><p id="collection-warning" class="small muted"></p></section>
-        <section id="prompt-section" class="supplement prompt" aria-labelledby="prompt-heading" hidden><h2 id="prompt-heading">Prompt drafted by local AI <span class="muted">· unverified</span></h2><p class="muted small" id="prompt-caption"></p><p id="prompt-goal" class="prompt-goal"></p><h3 id="prompt-focus-heading">Read first</h3><ul id="prompt-focus"></ul><h3>Please answer</h3><ol id="prompt-asks"></ol><h3 id="prompt-approach-heading">Suggested approach</h3><ol id="prompt-approach"></ol></section>
+        <section id="prompt-section" class="supplement prompt" aria-labelledby="prompt-heading" hidden><h2 id="prompt-heading">Junior developer draft <span class="muted">· unverified</span></h2><p class="muted small" id="prompt-caption"></p><p id="prompt-goal" class="prompt-goal"></p><h3 id="prompt-focus-heading">Read first</h3><ul id="prompt-focus"></ul><h3>Please answer</h3><ol id="prompt-asks"></ol><h3 id="prompt-approach-heading">Suggested approach</h3><ol id="prompt-approach"></ol></section>
         <section id="notes-section" class="supplement" hidden><h2>Local model notes <span class="muted">· unverified</span></h2><p class="muted small">These notes are separate from exact source. Citations are checked; correctness still needs review.</p><ul id="notes"></ul><h3>Uncertainties</h3><ul id="uncertainties"></ul></section>
         <details id="handoff-copy" class="handoff-copy" hidden>
           <summary>Review &amp; export</summary>

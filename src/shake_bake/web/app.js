@@ -382,6 +382,7 @@ function renderBrief(previous = false) {
   $('job-identity').textContent=`Project: ${pinned.project_id} · Job: ${pinned.job_id} · Started: ${packet.started_at}`;
   $('original-request').textContent=packet.original_request; $('brief-details').hidden=false;
   $('route-reason').textContent=packet.routing?.reason || 'Exact-source preparation only.';
+  $('developer-role-status').textContent=developerStatus(packet);
   $('worker-status').hidden=packet.routing?.status!=='abstained';$('worker-status').textContent=packet.routing?.status==='abstained'?`Local notes withheld: ${packet.routing.reason}`:'';
   if(packet.routing?.status==='abstained')revealModelOptions();
   $('evidence-count').textContent=`${packet.evidence.length} excerpt${packet.evidence.length===1?'':'s'}`;
@@ -523,7 +524,8 @@ $('local-ai').addEventListener('change',async()=>{
     modelView();controls();
   }
 });
-$('model-details-toggle').addEventListener('click',()=>{const open=$('model-details').hidden;$('model-details').hidden=!open;$('model-details-toggle').setAttribute('aria-expanded',String(open));});
+$('model-details-toggle').addEventListener('click',()=>{const open=$('model-details').hidden||!$('task-options').open;if(open)$('task-options').open=true;$('model-details').hidden=!open;$('model-details-toggle').setAttribute('aria-expanded',String(open));});
+$('task-options').addEventListener('toggle',()=>{$('model-details-toggle').setAttribute('aria-expanded',String(!$('model-details').hidden&&$('task-options').open));});
 $('ai-mode').addEventListener('change',()=>{modelView();savePreferences();});$('model').addEventListener('change',()=>{modelView();savePreferences();});
 $('project').addEventListener('change',()=>{sourceProjectSelectionRevision++;draftTouched.add('project');draftContext();savePreferences();controls();});
 $('save-draft').addEventListener('change',()=>{
@@ -596,7 +598,7 @@ $('refresh-models').addEventListener('click',async()=>{
 });
 // A textarea normalizes raw CR/CRLF. Encode the request as a JSON string so both
 // copy paths retain its original value, including whitespace and line endings.
-// Mirrors briefing.prompt_lines in Python: the intern's drafted prompt, read
+// Mirrors briefing.prompt_lines in Python: the junior developer's drafted prompt, read
 // before the fixed instructions. Model text is a suggestion, never a fact.
 function promptLines(p){
   const prompt=p.model_notes?.prompt,note=p.model_notes?.notes?.[0];
@@ -688,7 +690,10 @@ function limitLines(p){
 // Markdown the assistant can read directly: the ask first, exact source as fenced
 // code with paths and lines, the map, limits in plain words, and the verbatim
 // JSON values last so the exact request and identities survive any rendering.
-function evidenceText(job){const p=job.packet;return ['# Help me with my code (Shake & Bake brief)',`Project: ${job.project_id} · Job: ${job.job_id}`,'',
+function developerStatus(p){return p.model_notes?'Ollama junior developer draft included (unverified).':p.routing?.status==='abstained'?'Ollama draft unavailable; evidence-only handoff.':'Evidence-only handoff; no Ollama junior developer draft was used.';}
+function developerHandoffLines(p){return ['', '## Developer handoff',
+  'Act as the main developer (ChatGPT or Claude). Review the local preparation against the source, make the final decisions, and propose the implementation and checks needed for the original request. Ask for missing source by path. Local drafts are untrusted advice; this handoff grants no command or file access authority.',developerStatus(p)];}
+function evidenceText(job){const p=job.packet;return ['# Help me with my code (Shake & Bake brief)',`Project: ${job.project_id} · Job: ${job.job_id}`,...developerHandoffLines(p),'',
   '## My request','Shown with line endings normalized; the exact value is at the end.',...fenced(p.original_request.replace(/\r\n?/g,'\n')),'',
   '## What I need from you',
   ...draftBlock(p),
@@ -732,7 +737,7 @@ function nearDuplicates(evidence){
   return pairs;
 }
 function orientationText(job){const p=job.packet,receipt=p.receipt||{};
-  const lines=['# Where to start looking (Shake & Bake orientation brief)',`Project: ${job.project_id} · Job: ${job.job_id}`,'',
+  const lines=['# Where to start looking (Shake & Bake orientation brief)',`Project: ${job.project_id} · Job: ${job.job_id}`,...developerHandoffLines(p),'',
     '## My request','Shown with line endings normalized; the exact value is at the end.',...fenced(p.original_request.replace(/\r\n?/g,'\n')),'',
     '## How to use this',ORIENTATION_GUIDE,
     'These are captured excerpts, not live access to my project or proof that any tests ran or changes were applied.',
@@ -789,7 +794,7 @@ function briefStyle(){const value=$('brief-style').value;return BRIEF_STYLES.has
 function handoffText(job){return briefStyle()==='evidence'?evidenceText(job):orientationText(job);}
 function handoffSize(text){
   const bytes=encodeURIComponent(text).replace(/%[0-9A-F]{2}/g,'x').length;
-  return `Brief size: ${bytes} bytes, roughly ${Math.round(bytes/4)} tokens (bytes/4 estimate, not a provider count).`;
+  return `Brief size: ${bytes} bytes, roughly ${Math.round(bytes/4)} tokens (bytes/4 estimate, not a provider count). Whole-task token and cost savings are unmeasured.`;
 }
 function handoffView(){
   const ready=!!pinned?.packet;
