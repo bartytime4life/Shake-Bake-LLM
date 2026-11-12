@@ -1,10 +1,16 @@
 # Run on your PC: checklist
 
-Updated November 5, 2026 · Shake and Bake 0.4.0.dev8, including the PR #11 clipboard build
+Updated November 11, 2026 · guidance for the reviewed `0.4.0.dev37` code
 
 Nothing below is marked complete until it has been checked on your actual PC. The development environment's program tests and recorded preview do not complete these items. Commands run from the extracted `shake-and-bake` folder on Linux.
 
-Use the [prioritized to-do list](../TODO.md) to choose the next item. Start with actual-PC/model readiness and a reviewed real Ollama trial; host integration, unseen accuracy and whole-task savings have separate qualification checks.
+Use the [prioritized to-do list](../TODO.md) to choose the next item. Start with the evidence-only workflow and actual-PC startup checks. Local-model checks and trials are optional; host integration, unseen accuracy and whole-task savings have separate qualification checks.
+
+The [current status](current-status.md) and [dev37 recovery
+record](captured-report-recovery-2026-11-11.md) identify the reviewed build and its
+516 Python tests, 134 source/installed browser scenarios, 75 JavaScript checks
+and official SDK 2.3.0 checks. These synthetic and isolated-installation checks
+do not mark any owner-PC item below complete.
 
 The [November 5 local walkthrough](pc-readiness-2026-11-05.md) records the completed
 owner-PC subset, the corrected refresh-completion message and remaining gaps.
@@ -14,18 +20,20 @@ installation has passed.
 
 ## First: identify the code you are actually running
 
-The copy-recovery build was verified at `afc181f3f33485fce13f7cda26ae1fe005ec67a7`
-and merged in [PR #11](https://github.com/bartytime4life/Shake-Bake-LLM/pull/11).
-It includes the earlier readiness corrections. The package version is still
-`0.4.0.dev8`; the version label alone cannot distinguish an older installation.
-Use a supported Python 3.11+ interpreter for the commands below.
+Use the exact reviewed revision and artifact from [current status](current-status.md)
+and its linked acceptance record. The version label alone does not identify
+installed bytes. The earlier PR #11 hashes in the November 5 records identify
+that historical clipboard build; they are not the expected hashes for dev37.
+Use a supported Python 3.11+ interpreter for the commands below; substitute its
+explicit path if your default `python3` is older.
 
 - [ ] In the trusted checkout, record `git rev-parse HEAD` and `git status --short`.
-  Verify that `git merge-base --is-ancestor afc181f3f33485fce13f7cda26ae1fe005ec67a7 HEAD`
-  exits 0. This checks checkout history; it does not identify an installed wheel.
-- [ ] Record `sha256sum src/shake_bake/web/app.js`. For that clipboard build it is
-  `235ecf0dad6171db60a7f39a63c635a385ae732959aee6013b547e52c6ff4fa4`.
-  A later interface change needs a fresh expected hash from its reviewed commit.
+  Compare the revision with the reviewed code you intend to run. Checkout
+  ancestry alone does not identify an installed wheel or uncommitted changes.
+- [ ] Record `sha256sum src/shake_bake/web/app.js` and compare it with the exact
+  reviewed revision. For package acceptance, also verify the wheel checksum and
+  the code/assets/legal-byte checks in that build's record. One interface hash
+  is not a complete package check.
 - [ ] For an installed wheel, use its own Python with `PYTHONPATH` unset and
   record the actual imported location, version and interface hash:
 
@@ -45,7 +53,8 @@ and interface hash with each local acceptance record. Do not overwrite old recor
 - [ ] Keep this project in its own folder with its own configuration and data.
 - [ ] Run `PYTHONPATH=src python3 -B -m shake_bake doctor` and read the startup results. If the port is occupied, check whether the app is already open; otherwise choose another port for both doctor and gui.
 - [ ] Run `PYTHONPATH=src python3 -B -m shake_bake gui` and open the loopback address it prints.
-- [ ] Submit the bundled demo. Confirm the exact source receipts, evidence map and expandable model explanation work.
+- [ ] Choose **Prepare source brief**, enter a question about the selected **Synthetic demo**, then select **Prepare brief**. Review source excerpts and captured request/identity in **Review & export**. No model is needed.
+- [ ] In **Diagnose a failed run**, use **Try a labelled example**, then explicitly select **Find failing source**. Confirm its synthetic label, captured source and original error; a source match does not establish a cause or fix.
 - [ ] Check a desktop and narrow phone-width layout: readable text, expanding panels, keyboard focus, reduced motion, copy and JSON download. The offline preview is a recorded demo, not a live connection to your PC.
 
 ## Next: verify the local model
@@ -61,9 +70,14 @@ generation, download or model activation is requested by these checks.
 
 ## Then: verify the corrected readiness display
 
-Open Model details and expand **This computer & selected model**. Turning Local AI
-on permits the explicit metadata checks; do not start a candidate trial during
-this walkthrough. An installed model must be selected by the operator.
+Choose **Prepare source brief**, open **Options**, then **Model details** and
+expand **This computer & selected model**. **Check this computer** works with
+Local AI off and does not contact Ollama. Turning Local AI on permits explicit
+inventory/model metadata checks; it does not itself generate notes. Choose
+**Try a candidate — unqualified** to expose the installed-model selector. Do not
+prepare a model-assisted task during this walkthrough. An installed model must
+be selected by the operator; an actual candidate trial additionally requires
+the owner's `gui --allow-candidate-trials` launch option and acknowledgement.
 
 - [ ] Refresh models, choose an installed candidate and click Check selected model.
   Record its name, digest, reported quantization/capabilities and check time.
@@ -95,7 +109,7 @@ and hosted CI are development evidence, separate from these unchecked PC gates.
 - [ ] Prepare a synthetic brief. Copy must immediately show which job is waiting,
   then retain the browser-reported result or failure. Do not equate a resolved
   Promise with verified paste/readback in every browser.
-- [ ] Open **Review or copy brief text**, select all text and use the device Copy
+- [ ] Open **Review & export**, select all text and use the device Copy
   command. Compare the pasted text with this field and the downloaded JSON.
   Decode the original-request JSON string to check whitespace and line endings.
 - [ ] If a copy is still pending, another copy must not queue. The displayed brief
@@ -106,7 +120,31 @@ and hosted CI are development evidence, separate from these unchecked PC gates.
   records one exact native/manual in-app transfer plus earlier empty readbacks;
   broader timing, permission and device checks remain open.
 
-The [current evaluation record](evaluation-status.md) includes separately frozen thinking-budget probes. Their diagnostic final-content acceptance is not production acceptance; the standard trial commands below keep the shipped thinking-off, 512-token baseline.
+The [current evaluation record](evaluation-status.md) includes separately frozen thinking-budget probes. Their diagnostic final-content acceptance is not production acceptance; the standard trial commands below request the shipped thinking-off `handoff_prompt_v1` baseline: 8,192 context tokens, 1,024 output tokens and a 30-second shared deadline. Requested settings do not attest runtime behavior.
+
+## Retained reports and startup recovery
+
+- [ ] After a successful synthetic failed-run check, make a different input and
+  perform an unsuccessful check. The earlier report must remain labelled as a
+  previous capture. Copy/manual-copy/text export wait while inputs differ or a
+  check is pending; **Download captured JSON report** saves the displayed
+  capture, including its original inputs, rather than newer unsent edits.
+- [ ] Save needed failed-run JSON before a successful replacement, page reload
+  or tab closure. This report is held in the open tab; it is not durable history.
+- [ ] For source briefs, distinguish failed/denied tasks from prepared or
+  incomplete captures in **Recent briefs**. Reload may restore an earlier usable
+  capture while retaining a newer task draft, only while that capture remains
+  in the service's limited history. Older service metadata can be labelled
+  completed and require manual review; it does not imply evidence is prepared.
+- [ ] On a slow or failed initial connection, **Preparation mode** stays disabled
+  until saved choices are restored. Recovery must preserve task/error inputs
+  and must not silently replay a check, preparation, connection approval or
+  model request.
+
+The [dev37 recovery record](captured-report-recovery-2026-11-11.md) covers these
+cases with synthetic fixtures and an isolated browser/service walkthrough.
+Recheck on this PC before marking them complete; it does not add hard-crash
+resume, durable jobs or automatic restoration of source-folder approvals.
 
 ## Then: one small trial
 

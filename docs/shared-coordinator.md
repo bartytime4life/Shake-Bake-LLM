@@ -1,12 +1,12 @@
 # Shared local coordinator
 
-Current update: `0.4.0.dev7` saves the shared Local AI choice across restart; see [preference boundaries](local-ai-preferences.md). SDK 2.3.0 transport and one [actual Codex evidence-only demo handoff](codex-host-handoff.md) have later scoped evidence. The original `.dev4` implementation evidence below retains its stated scope; broader host behavior and actual Claude/consumer ChatGPT remain unqualified.
+Reviewed November 11, 2026 against the documented dev37 source candidate. [Current status](current-status.md) distinguishes that source from recorded main, hosted delivery and the owner's installed application. Shared Local AI persistence was introduced in dev7; see [preference boundaries](local-ai-preferences.md). The original dev4 evidence below retains its historical scope. SDK 2.3.0 transport and an [actual Codex evidence-only synthetic handoff/cancellation](codex-host-handoff.md) have separate scoped evidence; broader host behavior and actual Claude/consumer ChatGPT remain unqualified.
 
 Shared mode connects the GUI and prepared assistant adapter to one real owner-thread/controller and one routed HelperSession. Projects, single-job admission, captured results, task categories, model-policy gates and this session's pause state are shared. Native loopback and installed SDK clients are tested; actual-host qualification remains limited to the synthetic Codex check above.
 
 ## Start the service and connect the adapter
 
-From the extracted folder on Linux:
+From the extracted folder on Linux with a supported Python 3.11+ interpreter:
 
 ```bash
 PYTHONPATH=src python3 -B -m shake_bake gui \
@@ -22,7 +22,7 @@ PYTHONPATH=src python3 -B -m shake_bake.mcp_server \
   --connection-file "$HOME/.local/state/shake-and-bake/connection.json"
 ```
 
-The adapter uses the official SDK for MCP stdio. Its internal connection to the workbench is a small authenticated local RPC, not an MCP HTTP server, remote service or OAuth implementation. No host configuration is installed automatically. The later Codex smoke used a temporary configuration with only the inert demo exposed; it did not qualify private-source handoffs.
+The optional extra pins SDK 2.3.0. The adapter uses it for MCP stdio; installing/running that adapter does not add a browser listener, cloud call or automatic model download. Its internal connection to the workbench is a small authenticated local RPC, not an MCP HTTP server, remote service or OAuth implementation. No host configuration is installed automatically. The later opt-in Codex smoke used a temporary configuration with only the inert demo exposed; it did not qualify private-source handoffs.
 
 Only `starter-demo` is exposed to the adapter by default. Configure a real project and explicitly permit its ID at service launch:
 
@@ -33,36 +33,44 @@ PYTHONPATH=src python3 -B -m shake_bake gui \
   --connection-file "$HOME/.local/state/shake-and-bake/connection.json"
 ```
 
-Repeat `--adapter-project` to permit several configured IDs. Unlisted projects and their jobs cannot be read or cancelled by this adapter token. Native requests cannot add roots, replace models, alter policies or toggle settings. The GUI remains the owner control for its shared-session pause switch. Arbitrary paths and shell commands are not accepted through tools.
+Repeat `--adapter-project` to permit several configured IDs. Unlisted projects and their jobs cannot be read or cancelled by this adapter token. Native requests cannot add roots, replace models, alter policies or toggle settings. The GUI remains the owner control for its shared-session pause switch. Tool arguments offer approved project IDs and task text, without a root-selection or command-execution argument; embedded text does not grant that authority.
+
+The workbench can also connect a folder explicitly for its current local session. That action does not expand the adapter's launch-time permitted-ID set. There are at most eight total approved project IDs, including the bundled demo. A model or inspected source cannot grant approval.
 
 ## What is shared
 
-- Adapter-started tasks appear in the GUI's recent history with Assistant origin; GUI-started permitted tasks are visible through the adapter too.
+- Adapter-started tasks appear in the GUI's recent history; API result/history metadata records `entry_point=assistant` or `workspace`. The compact current history UI shows the request/date/status rather than an origin badge. GUI-started permitted tasks are visible through the adapter too.
 - `start_task` takes an approved project ID, exact task and Code/Troubleshoot/Documents/Search category. The same routed policy and model gates apply as in the GUI.
-- The pipeline fingerprint now includes the GUI, shared client, helper session/runner and adapter modules as well as evidence/worker/routing code. Exact external SDK/runtime/hardware identity still needs its separate qualification record.
+- The pipeline fingerprint includes the selected Python implementation modules for GUI/shared transport, helper/runner, readiness/preferences and failed-run parsing/screening, as well as evidence/worker/routing code. It does not attest external SDK/runtime/hardware or browser asset bytes; those need their separate identities and checks.
 - `get_result` remains compact; `fetch_evidence` returns captured exact excerpts on demand. Notes remain unverified and final-answer readiness stays false.
 - The one-active-job limit applies across both entry points. The GUI pause cancels the shared service's owned active runner and keeps new jobs evidence-only.
 - Closing one adapter client does not terminate the shared service or erase retained jobs. Work stays bounded by its existing deadline, and the GUI can observe/cancel it.
+
+Recent GUI task metadata includes native lifecycle `state`, actual `outcome` or null and boolean `evidence_available` from the existing bounded result read. It does not fetch source to build history. `DONE` plus denied/error outcome is failed; successful preparation without source is incomplete. Older metadata without outcome/availability stays completed and manually reviewable, without a prepared claim. A newer failure does not prevent startup restoring an earlier retained prepared/incomplete capture. These are browser-history facts, not a new MCP history tool. See [helper contract](helper-contract.md) and [browser API reference](api-reference.md).
+
+The failed-run workflow is a separate GUI source-location check, with no model call and no extra MCP tool. It refuses a conflicting active preparation; the common banner exposes the actual source job and existing Stop action. A busy race reconciles service state read-only without replaying either operation. Optional recorded command text is never executed.
 
 Advanced separate diagnostics require explicit `--standalone` plus project/model or evidence-only arguments. That mode has its own session and is outside the GUI switch's scope; it is not the normal connected-product path. The legacy direct HelperSession SDK smoke remains a separate diagnostic.
 
 ## Credential and transport limits
 
-The private file permits only schema 1, numeric loopback port, host `127.0.0.1` and a bounded URL-safe token. Public hosts, non-private/symlink/oversized configuration files and injected authorization headers are refused. The client ignores proxy/host environment variables, follows no redirects and uses a ten-second shared request deadline with bounded JSON.
+The private file permits only schema 1, numeric loopback port, host `127.0.0.1` and a bounded URL-safe token. Public hosts, non-private/symlink/oversized configuration files and injected authorization headers are refused. The client ignores proxy/host environment variables, follows no redirects and uses a ten-second shared request deadline. Its JSON request envelope is capped at 128 KiB and shared response at 1 MiB plus 16 KiB of transport allowance.
 
 The endpoint checks exact Host, bearer capability and method/project scope; browser Origin/Fetch headers are refused on this native endpoint. GUI cookie/Origin/CSRF rules remain separate. Connection/body/resource bounds are still enforced. This design assumes a trusted single-owner local environment; it does not isolate malicious same-user processes or establish multi-user security. Independent review and deployment/daemon isolation remain open.
 
-Clean service shutdown removes only its exact unchanged connection file. Failed publication cleans its newly created partial file. An owner replacement is preserved. A hard kill can leave a stale private file: confirm the old service is stopped and handle that file explicitly before restarting. There is no automatic stale-file deletion or durable job recovery. The normal GUI now saves its Local AI choice, while jobs still do not survive service restart, and stopping a client/runner does not prove Ollama stopped GPU work.
+Clean service shutdown removes only its exact unchanged connection file. Failed publication cleans its newly created partial file. An owner replacement is preserved. A hard kill can leave a stale private file: confirm the old service is stopped and handle that file explicitly before restarting. There is no automatic stale-file deletion or adapter reconnection/replay. A new service publication requires an explicitly restarted/reconnected adapter. The normal GUI saves its Local AI choice, while jobs and in-app folder approvals do not survive service restart; stopping a client/runner does not prove Ollama stopped GPU work.
 
-## UX changes in this build
+## Browser capture and recovery boundaries
 
-The existing interface now includes first-run guidance, Assistant/Workspace labels in recent activity, a pinned completed request/job identity and an expandable full original request. An earlier brief is explicitly labeled when a newer job is preparing, fails or is cancelled. Busy/controller-timeout messages give a next action. These changes reuse the current interface. The original `.dev4` implementation had no browser acceptance; subsequent [readiness](pc-readiness-2026-11-05.md) and [copy-recovery](copy-and-screening-2026-11-05.md) checks cover selected installed flows. Broader desktop/phone and assistive-technology qualification remains open.
+The current workbench separates failed-run source location from source-brief preparation, with optional details and explicit folder connection. A pinned source brief retains its captured request/job identity while newer draft text is edited. Shared starting/running/unknown preparation remains visible across workflows. Copy feedback follows exact handoff text, including a changed layout, and one unsettled clipboard write is shared across both workflows.
 
-Full guided project registration, automatic calibration, persistent model profiles and other settings, a connected host-delivery UI and durable recovery remain future slices in UX-WORKFLOW.md. Manual copy/export still means the user must paste the brief and obtain the host's final judgment.
+Failed-run reports remain in the open tab through pending, failed, malformed and obsolete repeat checks. Captured JSON saves the displayed report rather than newer unsent edits; text/manual/copy handoff is gated while pending or inputs differ. The accepted report and credential warning change only with a valid current replacement. Browser Retry can explicitly renew an expired local cookie without reloading or replaying work; it does not restore service jobs or folder approvals. See [dev36 workbench checks](workbench-usability-2026-11-11.md) and [dev37 recovery checks](captured-report-recovery-2026-11-11.md).
+
+The original dev4 implementation had no browser acceptance; November 5 [readiness](pc-readiness-2026-11-05.md) and [copy-recovery](copy-and-screening-2026-11-05.md) checks retain their narrower installed scope. Current synthetic checks do not establish representative desktop/phone usability or assistive-technology qualification. Automatic calibration, persistent model profiles, connected host delivery and durable jobs/reports remain future work in [the workflow plan](UX-WORKFLOW.md). Manual copy/export still requires the user to paste the brief and obtain the host's final judgment.
 
 ## Qualification
 
-Nineteen new tests use actual private files, loopback HTTP, the controller and bounded children. They cover shared results/origins, scoped access, policy/pause/cancel behavior, cross-client single-job admission, refused browser/invalid credentials, private-file publication/cleanup/permissions, configuration bounds and explicit CLI modes. Model service tests use a simulation. The original `.dev4` full suite passed 121 tests. The current suite has 176; [evaluation status](evaluation-status.md) separates source, installed, hosted, browser and actual-host evidence. Program tests do not establish real-model accuracy or full host interoperability.
+The original dev4 record covered nineteen added tests using actual private files, loopback HTTP, the controller and bounded children: shared results/origins, scoped access, policy/pause/cancel, cross-client single-job admission, browser/credential refusal, file publication/cleanup/permissions, configuration bounds and explicit CLI modes. Model service tests used a simulation. That full suite passed 121 tests; the later 176-test checkpoint previously listed here is also historical. Use [current status](current-status.md) for current validation and delivery, and [evaluation status](evaluation-status.md) for the separate model/host evidence. Program tests do not establish real-model accuracy or full host interoperability.
 
 On a dependency-enabled machine, run `PYTHONPATH=src python3 -B integration/mcp_shared_smoke.py` to qualify the real SDK through the internal bridge. Missing SDK causes a failure rather than a skipped pass. Then qualify each supported host separately using permitted inert source before sensitive-project trials.
 

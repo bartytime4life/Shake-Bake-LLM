@@ -1,5 +1,7 @@
 # Receipt-bound public host review
 
+Current offline tooling guidance for the [documented source](current-status.md). It validates receipt/review identity; it does not supply a new host-quality result or refresh the historical public trials.
+
 `benchmarks/public_host_review.py` closes a reporting gap in the public
 change-review runner. It binds a separate review to the exact selected receipt
 and retained answer bytes, validates judgments, and reports both trial progress
@@ -26,11 +28,11 @@ model-produced observations and false positives.
 For an interrupted run, or to create a new blank sheet, select new output paths:
 
 ```bash
-python3 benchmarks/public_host_review.py prepare \
+python3.12 benchmarks/public_host_review.py prepare \
   --receipt /absolute/private-run/receipt.json \
   --output /absolute/private-review/reviews.json
 
-python3 benchmarks/public_host_review.py score \
+python3.12 benchmarks/public_host_review.py score \
   --receipt /absolute/private-run/receipt.json \
   --reviews /absolute/private-review/reviews.json \
   --output /absolute/private-review/report.json
@@ -80,5 +82,5 @@ from a successful report.
 Synthetic regression checks:
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -p test_public_host_review.py -v
+PYTHONPATH=src python3.12 -m unittest discover -s tests -p test_public_host_review.py -v
 ```

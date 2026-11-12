@@ -1,5 +1,7 @@
 # Native retrieval and deterministic preparation development cases
 
+This reproduces the dated comparison's synthetic inputs. [Current source and validation](../../docs/current-status.md) are separate; generating the fixtures does not rerun that comparison or create new host/accuracy evidence.
+
 These four AI-authored synthetic projects test a targeted-search baseline against
 the same host and tools with an optional brief from the unchanged application.
 They are exposed development material, not an unseen qualification cohort.

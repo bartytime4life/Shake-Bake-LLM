@@ -2,7 +2,7 @@
 
 Check a failed run against the code on your computer, then take a precise debugging brief into your AI chat. The workbench reads approved source folders, preserves the original error and shows the exact lines it found. No model is needed for this workflow.
 
-**Development preview: `0.4.0.dev35`. Linux and Python 3.11+ are required.** Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
+**Documented development source: `0.4.0.dev37`. Linux and Python 3.11+ are required.** [Current status](docs/current-status.md) identifies reviewed source, the recorded `main` state, validation and installation boundaries. Finding a source line is a starting point for debugging; a cause or fix still needs investigation and verification.
 
 ## Open the app
 
@@ -16,8 +16,8 @@ The launcher chooses a supported installed Python and opens `http://127.0.0.1:84
 
 ## Check an actual failure
 
-1. Open **Connect project folder**, enter the absolute folder path containing the failing code, and select **Connect folder**. This approves read-only inspection for the running session.
-2. Paste the complete error output, or select **Load error file** for a saved UTF-8 `.txt` or `.log` up to 64 KiB. Optionally record the command that failed; it is never executed.
+1. Select **Connect folder** beside Project to open **Connect project folder**, enter the absolute folder path containing the failing code, and confirm the connection. This approves read-only inspection for the running session.
+2. Paste the complete error output, or select **Load error file** for a saved UTF-8 `.txt` or `.log` up to 64 KiB. Expand **Run details (optional)** to record the command that failed; it is never executed.
    If the command ran in a subfolder, enter **Folder where the command ran**, for example `services/api`. Leave it blank to use the connected project root. This choice controls relative locations only and is never inferred from the command.
 3. Select **Find failing source**. Inspect the source, reported line and column, unmatched frames and suggested next checks.
 4. Select **Copy debugging brief** to take the captured error, project context and exact source into Claude or ChatGPT. If clipboard access fails, select and copy the provided text manually. Nothing is sent automatically.
@@ -31,7 +31,7 @@ The launcher chooses a supported installed Python and opens `http://127.0.0.1:84
 
 ANSI terminal colors are ignored only while recognizing locations; the original output remains unchanged. Browser URLs, runtime internals, outside-project files and missing files remain explicit. Source maps and container-to-local path mapping are not inferred. An unsupported log produces an incomplete result.
 
-Changing the project, error or recorded command invalidates the previous result. A late response cannot silently replace the result for newer input. Pasted errors and commands are not stored as browser drafts or sent to a model.
+Changing the project, error or recorded command marks the previous report outdated. Its captured JSON stays saveable, while copy and text handoff wait for a new accepted check. A late response cannot silently replace the report for newer input. Pasted errors and commands are not stored as browser drafts or sent to a model.
 
 The recorded working folder is captured with the result and exports. It must remain inside the connected project; symlinks and parent traversal are refused. Changing it also makes the previous result outdated. Separate local previews now keep their browser sessions from replacing one another.
 
@@ -100,6 +100,6 @@ The optional `mcp` extra supplies the official-SDK `shake-bake-mcp` stdio adapte
 
 Source reads use descriptor-relative paths, reject symlinks and selected sensitive filenames, and retain exact bytes and hashes. This is not an operating-system or hostile-filesystem sandbox. Trusted root ancestors, hard links, bind mounts, kernel stalls, secret detection and cross-file atomic snapshots remain limitations. Windows needs an equivalent qualified read/process boundary before support.
 
-Use [the documentation guide](docs/README.md) for technical details and dated experiments, [TODO.md](TODO.md) for priorities, [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for open release gates and [SECURITY.md](SECURITY.md) for reporting. The [original import](docs/import/2026-11-05.md) remains documented in Git history.
+Use [the documentation guide](docs/README.md) for current instructions, [the complete catalog](docs/catalog.md) for plans and historical evidence, [the HTTP reference](docs/api-reference.md) for internal endpoints, [TODO.md](TODO.md) for priorities, [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for open release gates and [SECURITY.md](SECURITY.md) for reporting. The [original import](docs/import/2026-11-05.md) retains its own byte-preservation record.
 
 The application uses the [MIT license](LICENSE). Dependencies and model weights have separate terms; see [third-party notices](THIRD_PARTY_NOTICES.md), [model licenses](MODEL_LICENSES.json) and [the licensing plan](docs/LICENSING.md).

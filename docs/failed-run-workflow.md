@@ -1,5 +1,7 @@
 # Failed-run source checks
 
+Current guidance for the [documented dev37 source](current-status.md). [The recovery record](captured-report-recovery-2026-11-11.md) retains its earlier checks, while [the HTTP reference](api-reference.md) describes the internal request and session contract.
+
 The workbench starts with a concrete job: match a pasted Python, pytest, Node.js or TypeScript failure to current local source. It preserves the original output and optional command, locates exact reported paths inside the selected folder, and compares Python and pytest statements with current source. Node.js and TypeScript provide reported line/column locations; they do not prove the source statement matches the failed run. It reports Python chained exceptions, missing files, source mismatches and bounded next checks for common errors such as missing modules, syntax errors and missing files.
 
 This is deterministic source inspection. No model, project import, failing command, test, installation or repair runs. Finding a line does not prove a root cause. A fix still needs implementation and validation in the appropriate environment. Source-map lookups and browser-URL fetching are not performed. Container paths and paths from another machine must match the connected root; there is no basename guessing or automatic path mapping.

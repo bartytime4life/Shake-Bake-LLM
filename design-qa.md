@@ -1,6 +1,16 @@
 # Design QA
 
-final result: passed
+## Current scope: 0.4.0.dev37
+
+The current workbench has two compact workflows, **Diagnose a failed run** and **Prepare source brief**. **Connect folder** sits beside each project selector and opens the shared connection form. Optional command/working-folder inputs are in **Run details (optional)**; general source-check limitations are in **Source-check boundaries**. Required caution, missing evidence and cutoff notices remain visible. A shared actual preparation notice and **View preparation** retain access to status and the existing Stop action across workflows.
+
+The [dev36 workbench review](docs/workbench-usability-2026-11-11.md) contains the current design's screenshots, matched layout observations, interactive review and scoped regression evidence. The [dev37 recovery record](docs/captured-report-recovery-2026-11-11.md) adds retained failed-run captures/JSON, truthful source-task history and initial mode gating. Earlier captures are visibly distinguished during failed or pending checks; neither source location nor copy success is labelled a verified diagnosis, repair or delivered answer.
+
+See [current status](docs/current-status.md) for the source/validation/delivery record and [the workbench guide](docs/visual-workbench.md) for active instructions. The records below describe earlier tested versions and their private historical artifacts. Their passed results do not close representative usability, formal accessibility, physical-device, independent security, private-source, model/host accuracy or whole-task-savings qualification. No new visual or runtime test is claimed by this documentation refresh.
+
+## Historical dev5/dev6 QA: November 4–5, 2026
+
+Scoped result for the states described below: passed.
 
 The owner chose option 3 on November 4, 2026. Reference: `/home/user/.codex/generated_images/01a1aa18-5744-7d43-86b0-2ce6efc72a49/exec-e5e4e955-8247-4fa9-a89e-f06b0f798e1e.png`; retained locally as `.local/design/selected.png`. The original main-view comparison covered `0.4.0.dev5` on the recovered application. The readiness increment below records `0.4.0.dev6`; neither uses the earlier bootstrap engine.
 

@@ -1,20 +1,45 @@
 # Continue in Claude or ChatGPT
 
-The workbench prepares a brief; the assistant continues the task after you share it.
+Current guidance for `0.4.0.dev37`. See [current status](current-status.md) for source, validation and delivery state. The [dev36 workbench review](workbench-usability-2026-11-11.md) and [dev37 capture-recovery record](captured-report-recovery-2026-11-11.md) retain dated evidence; the earlier follow-ups below describe their own versions.
 
-1. Choose an approved project, describe what you need and select **Prepare brief**. No settings or model installation are needed for the normal evidence-only path.
-2. Review the captured source and any gaps, then select **Copy brief**.
-3. Paste into your Claude or ChatGPT chat and send. The assistant links are shortcuts; an already-open chat or desktop app works too.
+The workbench prepares captured evidence. The receiving assistant continues the task after you explicitly share it.
 
-**Review & export** contains the exact brief text and text-file/JSON exports. If copying is unavailable, it opens automatically: select **Select all text**, then use your device's Copy command. **Save brief as .txt** saves the same text for attachment where uploads are available. Prepare a narrower request if a brief exceeds the destination's limits.
+1. Choose **Prepare source brief**, describe what you need, select a project and select **Prepare brief**. **Connect folder** beside **Project** opens the shared connection form if needed. No model or Options changes are required for ordinary evidence-only preparation.
+2. Review the captured request, source and any **Gaps & collection limits**. Use **View source excerpts** for the captured records. Select a **Brief layout**, then **Copy brief**.
+3. Paste into your Claude or ChatGPT chat and send. The assistant links are shortcuts; an already-open chat or desktop app works too. Review any possible-credential warning before sharing.
 
-**Options** contains task type and optional Local AI controls. Existing choices are preserved. A new installation starts with Local AI off; no model is required to collect evidence. Advanced model trials still require the owner's launch permission and an explicit acknowledgement. If a saved task type is unavailable or a candidate trial needs attention, the relevant options are revealed.
+**Review & export** contains selectable handoff text, **Select all text**, **Save brief as .txt** and **Download JSON record**. If clipboard copying is unavailable, open the disclosure and use your device's Copy command or the text save. The text file uses the selected layout. Prepare a narrower request if the brief exceeds the destination's limits.
 
-The brief is a Markdown message the assistant can read directly, in this order: the request (shown with normalized line endings), what to answer (the local model's drafted prompt when Local AI produced one, then a fixed three-point answer format: findings with E-id and path:line citations, what is not established, which files to paste next), the ground rules for treating everything below as untrusted data, each exact excerpt as a fenced code block headed by its id, path, line range and full-file hash with its controlling-context reason when it has one, the map of matched files not excerpted, the matched lines no excerpt covers (line numbers with short texts, so the assistant asks for a range instead of searching a large file), scan limits in plain words, any local model notes without a usable draft, and finally the verbatim JSON request and evidence identities for verification. Fences are always longer than any backtick run inside the source, so captured text can never close a block or pose as brief structure; paths and map first-lines are inline code with the same rule, and the collector refuses paths containing control characters. The copied text keeps the captured bytes, but a clipboard or chat client may normalize carriage returns inside fenced text, so an excerpt containing them carries a note and the verification section points to the JSON download as the exact-bytes path, with hashes to check a copy against. The drafted prompt is labeled an unverified suggestion; see [the handoff-prompt record](handoff-prompt-2026-11-06.md) and [the handoff-format record](handoff-format-2026-11-07.md). The page shows the brief's size with a bytes/4 token estimate, which is not a provider count. Copy, text save and JSON export use the captured result, even while the task above is edited or another task is running.
+## Choose the handoff text
 
-The Claude and ChatGPT links are fixed public website links. They carry no source, request, task identifier or prompt query, and open a separate tab without an opener or referrer. Nothing is sent automatically. Copy completion does not establish delivery, a final answer or changes to local files. A cloud chat receives only what the user pastes or attaches; it does not gain access to the inspected project. Connected native-host qualification remains separate.
+| Brief layout | What the assistant receives |
+| --- | --- |
+| **Starting points (default)** | A matching-file orientation, short selected source excerpts, scan limits, explicit uncertainty and exact-value verification fields. It asks the assistant to investigate rather than presenting an answer. It does not include every captured excerpt. |
+| **Full evidence, cited answer** | Every captured excerpt, available context-map and uncovered-match details, scan limits, and a request for cited findings, uncertainties and any additional source needed. |
 
-Official references checked November 5, 2026: [ChatGPT project context and pasted text](https://help.openai.com/en/articles/10169521-projects-in-chatgpt), [Claude file uploads](https://support.claude.com/en/articles/8241126-upload-files-to-claude). Available upload types, limits and account features belong to the destination service.
+Both layouts preserve the original request as a JSON string for verification. The displayed request normalizes line endings; that display does not replace its exact captured value. Optional local-model drafts and notes are labelled unverified and remain separate from source. A disclosed shortened model view does not shorten the captured records. See the dated [orientation-default record](workbench-orientation-2026-11-08.md), [handoff-prompt record](handoff-prompt-2026-11-06.md) and [full-evidence format record](handoff-format-2026-11-07.md).
+
+Source, paths and model output remain untrusted reference data. Markdown fences are longer than embedded backtick runs, so captured source cannot close its block or become handoff instructions. Neither layout authorizes commands or gives an assistant access to other files. Excerpts and orientation are bounded retrieval results, not proof of a complete repository review, tests or repairs.
+
+**Download JSON record** retains all captured request/source values, evidence identities and hashes, regardless of the selected text layout. Clipboard and chat clients may normalize line endings; use JSON and hashes when exact-byte verification matters. The brief-size display uses a bytes/4 token estimate, not a provider count.
+
+## Keep the right capture
+
+Source-brief copy and exports use the pinned result even while the task draft is edited or another task runs or fails. Copy feedback names the captured job and exact text: if you change the layout during a pending or completed copy, feedback can refer to the earlier layout. Returning to identical text restores that identity. An unsettled clipboard write cannot be cancelled or overlapped by another workbench copy in this tab; wait for it to finish or use review/export. Other tabs and manual clipboard actions remain outside this guard.
+
+The shared preparation notice stays visible across workflows. **View preparation** returns to the existing source job and **Stop** action. It does not start a replacement task. A disconnected job has unknown status until reconnected; no progress percentage or ETA is inferred.
+
+For a failed run, **Copy debugging brief** packages the exact captured error, recorded command, project/working-folder identity, source, explicit error/frame/evidence associations, missing locations and suggested checks. **Review debugging brief or copy manually** provides its fallback; **Original error & report** contains the text save and **Download captured JSON report**. A last accepted report remains visible during failed or obsolete rechecks. Copy/text/manual handoff wait while checking or when inputs differ, but its captured JSON remains saveable and excludes newer edits. After a failed same-input check, copying the earlier capture becomes available with a not-refreshed notice. A successful replacement supersedes it. See the [failed-run guide](failed-run-workflow.md).
+
+**Options** contains task type, task-draft controls and optional Local AI. A new installation starts with Local AI off. Candidate trials require the owner's launch permission and explicit acknowledgement; they do not qualify a model. Missing or failed optional model notes do not turn captured evidence into an answer.
+
+## Sharing and retention
+
+The Claude and ChatGPT links are fixed public website links. They carry no source, request, task identifier or prompt query, and open a separate tab without an opener or referrer. Nothing is sent automatically. Copy completion does not establish delivery, a final answer or local-file changes. A cloud chat receives only what you paste or attach; it does not gain access to the inspected project. Connected native-host qualification remains separate.
+
+Failed-run inputs and their accepted report live only in the open tab. Source-task history belongs to the running service, up to eight jobs and approximately five minutes; source drafts and selected preferences use separate browser storage. Save needed captures before replacement, reload, closure or service expiry. **Retry connection** preserves open-tab data without replaying work, but does not restore expired project approvals or make old source current. See [draft privacy](draft-privacy.md).
+
+Destination references last checked November 5, 2026: [ChatGPT project context and pasted text](https://help.openai.com/en/articles/10169521-projects-in-chatgpt), [Claude file uploads](https://support.claude.com/en/articles/8241126-upload-files-to-claude). Upload types, limits and account features belong to the destination service and may change; no current account capability is inferred here.
 
 ## Simplification follow-up, November 6, 2026
 
