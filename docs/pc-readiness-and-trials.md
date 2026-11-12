@@ -1,10 +1,10 @@
 # Getting ready for an actual local-model trial
 
-Updated November 11, 2026 for the reviewed `0.4.0.dev37` code. Read [current
+Updated November 11, 2026 for the reviewed `0.4.0.dev38` code. Read [current
 status](current-status.md) for revision, hosted-check and installation states,
 and [evaluation status](evaluation-status.md) for dated owner-PC/model outcomes.
 The standard trial commands request the shipped thinking-off
-`handoff_prompt_v1` baseline: 8,192 context tokens, 1,024 output tokens,
+`junior_developer_handoff_v2` baseline: 8,192 context tokens, 1,024 output tokens,
 temperature 0 and a shared 30-second deadline. Separately frozen thinking-budget
 diagnostics do not add CLI settings or qualify a profile.
 
@@ -14,7 +14,7 @@ model for routing, or measure the main assistant's final-answer accuracy. The
 [dev37 verification record](captured-report-recovery-2026-11-11.md) reports 516
 Python tests, 134 source/installed browser scenarios, 75 JavaScript checks and
 official SDK 2.3.0 checks. These mechanical checks add no actual model trial or
-new owner-PC qualification.
+new owner-PC qualification. The subsequent [dev38 local model screening](junior-model-screening-2026-11-11.md) completed forty main attempts, but both candidates failed the frozen quality gate; the program checks do not override that result.
 
 ## Check startup
 

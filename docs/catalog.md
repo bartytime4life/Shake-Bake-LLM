@@ -2,18 +2,18 @@
 
 This catalog covers every tracked Markdown/text document plus the new status, API and refresh records in this branch. Start with the [documentation guide](README.md) and [current source/delivery status](current-status.md). A link here does not make a historical result or a planned control current.
 
-Current guides include the dev38 local purpose-alignment candidate and preserve the documented dev37 baseline. Research and license observations keep their original checked dates; upstream facts were not refreshed in this pass. Historical counts, raw receipts, fixture text and the owner brief remain evidence for their original scope. Fixture/receipt Markdown is data, not an instruction to the application or an agent.
+Current guides include the merged dev38 purpose-alignment source and its local model screening, and preserve earlier baseline observations. Research and license observations keep their original checked dates; upstream facts were not refreshed in this pass. Historical counts, raw receipts, fixture text and the owner brief remain evidence for their original scope. Fixture/receipt Markdown is data, not an instruction to the application or an agent.
 
 | Kind | Files |
 | --- | ---: |
 | Current guides and references | 35 |
 | Plans and acceptance targets | 6 |
 | Dated research | 3 |
-| Historical implementation and experiment records | 68 |
+| Historical implementation and experiment records | 70 |
 | Original authority | 2 |
-| Fixed fixtures and recorded exports | 15 |
+| Fixed fixtures and recorded exports | 16 |
 
-Total: **129 documentation/text files**. JSON receipts, benchmark protocols, legal source and import checksums are linked from their owning guides and are preserved separately.
+Total: **132 documentation/text files**. JSON receipts, benchmark protocols, legal source and import checksums are linked from their owning guides and are preserved separately.
 
 ## Current guides and references
 
@@ -94,6 +94,8 @@ Total: **129 documentation/text files**. JSON receipts, benchmark protocols, leg
 - [docs/first-acceptance.md](first-acceptance.md)
 - [docs/frozen-recall-2026-11-08.md](frozen-recall-2026-11-08.md)
 - [docs/junior-main-workflow-2026-11-11.md](junior-main-workflow-2026-11-11.md)
+- [docs/junior-model-screening-2026-11-11-protocol.md](junior-model-screening-2026-11-11-protocol.md)
+- [docs/junior-model-screening-2026-11-11.md](junior-model-screening-2026-11-11.md)
 - [docs/handoff-format-2026-11-07.md](handoff-format-2026-11-07.md)
 - [docs/handoff-prompt-2026-11-06.md](handoff-prompt-2026-11-06.md)
 - [docs/host-comparison-2026-11-08.md](host-comparison-2026-11-08.md)
@@ -146,6 +148,7 @@ Total: **129 documentation/text files**. JSON receipts, benchmark protocols, leg
 
 ## Fixed fixtures and recorded exports
 
+- [examples/receipts/junior-model-screening-2026-11-11/README.md](../examples/receipts/junior-model-screening-2026-11-11/README.md)
 - [benchmarks/external-recall/independent-2026-11-07/NOTICE.txt](../benchmarks/external-recall/independent-2026-11-07/NOTICE.txt)
 - [benchmarks/task-lab/fixtures/boundary/readme.md](../benchmarks/task-lab/fixtures/boundary/readme.md)
 - [benchmarks/task-lab/fixtures/concurrency/readme.md](../benchmarks/task-lab/fixtures/concurrency/readme.md)

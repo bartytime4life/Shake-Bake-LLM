@@ -47,6 +47,8 @@ Tall full-page result capture failed in the browser tool. Viewport captures were
 
 ## Remaining gates
 
+Subsequent observation: [PR #74](https://github.com/bartytime4life/Shake-Bake-LLM/pull/74) merged at `c4f25ce41fe854b1b69b839152e94fda27569629`. The [frozen dev38 real-model screening](junior-model-screening-2026-11-11.md) then completed forty main attempts; both candidates failed its quality gate. The instructions below describe the gates as they stood at this implementation record; the later result does not qualify a model or savings.
+
 Screen the changed worker prompt on development tasks, then freeze a candidate before fresh held-out cases and separate human review. Compare direct native chat, evidence-only preparation and junior-assisted preparation on identical permitted inputs. Count the whole cloud task, local preparation time, retrieval, follow-ups, retries, corrections and failures. Retain unknown provider usage and separate subscription/quota/billed observations. Earlier results cannot qualify the changed prompt or prove savings.
 
 This work used an isolated branch and installed test environment. The primary checkout and owner installation were preserved. Publishing the branch, hosted CI, merging and owner-machine installation are separate delivery observations; use the associated PR and live source identity for those states.

@@ -1,6 +1,6 @@
 # Documentation guide
 
-Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md). [Current source/delivery status](current-status.md) identifies the dev38 local candidate and documented dev37 baseline, the recorded main state and the boundaries of code, CI, installed and real-machine evidence. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. The [complete catalog](catalog.md) covers all 129 documentation/text files, including plans, research and fixed inputs. Dated reports
+Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md). [Current source/delivery status](current-status.md) identifies the merged dev38 source, its model screening and earlier baseline observations, the recorded main state and the boundaries of code, CI, installed and real-machine evidence. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. The [complete catalog](catalog.md) covers all 132 documentation/text files, including plans, research and fixed inputs. Dated reports
 below retain the exact scope of earlier checks; an older test count or pending
 state is not a statement about the latest build.
 
@@ -32,6 +32,7 @@ state is not a statement about the latest build.
 
 Read these as successive experiments with separate identities and preserved failures:
 
+- [Dev38 junior developer screening](junior-model-screening-2026-11-11.md) and [frozen protocol](junior-model-screening-2026-11-11-protocol.md): forty main attempts, both candidates fail the prospective quality gate; exact synthetic drafts and same-session AI review retained.
 - [Handoff-prompt design and two-model runs](handoff-prompt-2026-11-06.md), where the local model drafts the assistant's prompt.
 - [Where host context tokens go at the start of a task](host-context-cost-2026-11-06.md): turn count and broad reads dominate; the brief is cheap but incomplete.
 - [Controlling-context collection](controlling-context-2026-11-06.md): bounded definition, usage, test and map additions after the primary windows; measured on the four exposed comparison fixtures, no host run.

@@ -1,13 +1,13 @@
 # Run on your PC: checklist
 
-Updated November 11, 2026 · guidance for the reviewed `0.4.0.dev37` code
+Updated November 11, 2026 · guidance for the reviewed `0.4.0.dev38` code
 
 Nothing below is marked complete until it has been checked on your actual PC. The development environment's program tests and recorded preview do not complete these items. Commands run from the extracted `shake-and-bake` folder on Linux.
 
 Use the [prioritized to-do list](../TODO.md) to choose the next item. Start with the evidence-only workflow and actual-PC startup checks. Local-model checks and trials are optional; host integration, unseen accuracy and whole-task savings have separate qualification checks.
 
-The [current status](current-status.md) and [dev37 recovery
-record](captured-report-recovery-2026-11-11.md) identify the reviewed build and its
+The [current status](current-status.md) identifies the reviewed build. The dated
+[dev37 recovery record](captured-report-recovery-2026-11-11.md) reports its own
 516 Python tests, 134 source/installed browser scenarios, 75 JavaScript checks
 and official SDK 2.3.0 checks. These synthetic and isolated-installation checks
 do not mark any owner-PC item below complete.
@@ -23,7 +23,7 @@ installation has passed.
 Use the exact reviewed revision and artifact from [current status](current-status.md)
 and its linked acceptance record. The version label alone does not identify
 installed bytes. The earlier PR #11 hashes in the November 5 records identify
-that historical clipboard build; they are not the expected hashes for dev37.
+that historical clipboard build; they are not the expected hashes for dev38.
 Use a supported Python 3.11+ interpreter for the commands below; substitute its
 explicit path if your default `python3` is older.
 
@@ -100,7 +100,7 @@ the owner's `gui --allow-candidate-trials` launch option and acknowledgement.
 
 Capture expected/observed behavior and failures with each record. A successful
 metadata check leaves memory suitability, throughput and reasoning accuracy
-unmeasured. Current exposed Qwen screening has reasoning failures; no model is
+unmeasured. The [dev38 exposed Qwen screening](junior-model-screening-2026-11-11.md) completed forty main attempts with reasoning failures; no model is
 promoted by completing this checklist. [PR #8 evidence](readiness-invalidation-2026-11-05.md)
 and hosted CI are development evidence, separate from these unchecked PC gates.
 
@@ -120,7 +120,7 @@ and hosted CI are development evidence, separate from these unchecked PC gates.
   records one exact native/manual in-app transfer plus earlier empty readbacks;
   broader timing, permission and device checks remain open.
 
-The [current evaluation record](evaluation-status.md) includes separately frozen thinking-budget probes. Their diagnostic final-content acceptance is not production acceptance; the standard trial commands below request the shipped thinking-off `handoff_prompt_v1` baseline: 8,192 context tokens, 1,024 output tokens and a 30-second shared deadline. Requested settings do not attest runtime behavior.
+The [current evaluation record](evaluation-status.md) includes separately frozen thinking-budget probes. Their diagnostic final-content acceptance is not production acceptance; the standard trial commands below request the shipped thinking-off `junior_developer_handoff_v2` baseline: 8,192 context tokens, 1,024 output tokens and a 30-second shared deadline. Requested settings do not attest runtime behavior.
 
 ## Retained reports and startup recovery
 

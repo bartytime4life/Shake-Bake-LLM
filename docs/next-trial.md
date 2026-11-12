@@ -1,8 +1,11 @@
 # Next trial: does the whole helper improve the work?
 
 Planning guidance refreshed November 11, 2026. [Current build
-status](current-status.md) identifies the reviewed dev37 code and its
-verification scope; this update starts no model, host or user study. The
+status](current-status.md) identifies the merged dev38 code and its
+verification scope; this guide starts no model, host or user study. The
+[subsequent local screening](junior-model-screening-2026-11-11.md) completed
+forty main attempts but both candidates failed the frozen quality gate. The
+next model-assisted study first needs a reliable development candidate. The
 November 5 actual Codex [synthetic handoff and injected
 cancellation/recovery](codex-host-handoff.md) checks remain dated evidence for
 that helper/host setup. Current SDK checks do not refresh the hosted trial.
