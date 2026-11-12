@@ -1,6 +1,6 @@
 # Local junior developer, main developer handoff
 
-Accepted product direction, November 11, 2026. Implemented as the local `0.4.0.dev38` candidate; see [current status](current-status.md) and [validation](junior-main-workflow-2026-11-11.md). The [original owner record and exact clarification](planning/source-record.md) remain separate from implementation evidence.
+Accepted product direction, November 11, 2026. Implemented in the merged `0.4.0.dev38` source; see [current status](current-status.md), [implementation validation](junior-main-workflow-2026-11-11.md) and the subsequent [local screening failures](junior-model-screening-2026-11-11.md). The [original owner record and exact clarification](planning/source-record.md) remain separate from implementation evidence.
 
 Shake & Bake exists to let a locally running Ollama model do junior developer preparation before the user pastes a compact handoff into ChatGPT or Claude as the main developer. The intended benefit is less paid-model context, repeated investigation and correction work while preserving final-task quality. Whole-task token, quota and financial benefits remain unqualified.
 

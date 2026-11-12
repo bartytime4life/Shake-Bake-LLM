@@ -1,6 +1,6 @@
 # Task Lab: useful jobs with evidence and grading keys
 
-Guidance refreshed November 11, 2026 for the reviewed dev37 code. See [current
+Guidance refreshed November 11, 2026 for the reviewed dev38 code. See [current
 build status](../../docs/current-status.md) for revision and verification scope,
 [evaluation status](../../docs/evaluation-status.md) for retained real-model
 results, and the [thinking-budget
@@ -42,7 +42,7 @@ PYTHONPATH=src python3 -B benchmarks/run_task_lab.py \
 Replace `YOUR_INSTALLED_MODEL` with the exact permitted installed name.
 `--case failure-triage` runs one case; repeat `--case` to select multiple IDs.
 There is no automatic model download or cloud-provider call. A model replay
-requests the current worker baseline (`handoff_prompt_v1`, 8,192 context tokens,
+requests the current worker baseline (`junior_developer_handoff_v2`, 8,192 context tokens,
 1,024 output tokens, thinking off, shared 30-second deadline); these requests
 are not attested runtime settings, a tuned profile or automatic qualification.
 A model whose declared thinking controls cannot be switched off is refused
