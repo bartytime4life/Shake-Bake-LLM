@@ -59,7 +59,18 @@ function briefJson(brief, heading) {
 async function diagnose(page, error=output()) {
   await page.locator('#failure-output').fill(error);
   await page.locator('#diagnose-run').click();
+  await completedCheck(page);
   await page.locator('#failure-result').waitFor({state:'visible'});
+}
+async function completedCheck(page) {
+  await page.waitForFunction(() => document.querySelector('#failure-form').getAttribute('aria-busy') === 'false');
+}
+async function capturedJson(page) {
+  const details = page.getByText('Original error & report',{exact:true});
+  if (!await page.locator('#download-failure-json').isVisible()) await details.click();
+  const downloading = page.waitForEvent('download');
+  await page.locator('#download-failure-json').click();
+  return JSON.parse(await fs.readFile(await (await downloading).path(),'utf8'));
 }
 (async () => {
   fixture = await fs.mkdtemp(path.join(os.tmpdir(),'sb-failed-run-browser-'));
@@ -215,6 +226,7 @@ async function diagnose(page, error=output()) {
     const storage = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
     assert.equal(Object.values(storage).some(value => value.includes('ValueError: invalid literal')),false);
     await page.locator('#diagnose-run').click();
+    await completedCheck(page);
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.match(await page.locator('#failure-result-title').innerText(),/Source located/);
     assert.equal(await page.locator('#failure-original').textContent(),error);
@@ -251,6 +263,7 @@ async function diagnose(page, error=output()) {
     await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded nested-run.log'));
     await fillRunDetail(page, '#failure-working-directory', directory);
     await page.locator('#diagnose-run').click();
+    await completedCheck(page);
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.equal(await page.locator('#failure-original').textContent(),error);
     assert.match(await page.locator('#failure-result-context').innerText(),/services\/api workspace\/parse.py:4/);
@@ -302,6 +315,7 @@ async function diagnose(page, error=output()) {
     }
     await fillRunDetail(page, '#failure-working-directory', '');
     await page.locator('#diagnose-run').click();
+    await completedCheck(page);
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.match(await page.locator('#failure-result-title').innerText(),/Source located — check this line/);
     assert.equal(await page.locator('#failure-original').textContent(),error);
@@ -316,6 +330,7 @@ async function diagnose(page, error=output()) {
     await page.locator('#failure-output').fill(edited);
     assert.equal(await page.locator('#failure-file-status').textContent(),'');
     await page.locator('#diagnose-run').click();
+    await completedCheck(page);
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.equal(await page.locator('#failure-original').textContent(),edited);
     assert.match(await page.locator('#failure-result-title').innerText(),/pasted statement differs/);
@@ -337,6 +352,7 @@ async function diagnose(page, error=output()) {
     }
     assert.equal(requests.includes('/api/troubleshoot'),false);
     await page.locator('#diagnose-run').click();
+    await completedCheck(page);
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.equal(await page.locator('#failure-original').textContent(),error);
   }, async page => {
@@ -400,6 +416,7 @@ async function diagnose(page, error=output()) {
         await page.locator('#failure-file').setInputFiles({name:'pytest-short.log',mimeType:'text/plain',buffer:Buffer.from(error,'utf8')});
         await page.waitForFunction(() => document.querySelector('#failure-file-status').textContent.startsWith('Loaded pytest-short.log'));
         await page.locator('#diagnose-run').click();
+        await completedCheck(page);
         await page.locator('#failure-result').waitFor({state:'visible'});
       } else await diagnose(page,error);
       assert.match(await page.locator('#failure-result-title').innerText(),/Source located/);
@@ -627,9 +644,10 @@ async function diagnose(page, error=output()) {
     assert.equal(Object.values(storage).some(value => value.includes(command) || value.includes('<img')),false);
   });
   for (const changed of ['error', 'command', 'project', 'working folder']) {
-    await scenario(`editing the ${changed} marks the captured report outdated and disables handoff and exports`, async page => {
+    await scenario(`editing the ${changed} disables handoff while preserving captured JSON`, async page => {
       await diagnose(page);
       const captured = await page.locator('#failure-captured-project').innerText();
+      const original = await capturedJson(page);
       if (changed === 'error') await page.locator('#failure-output').fill(output('return 99'));
       if (changed === 'command') await fillRunDetail(page, '#failure-command', 'python parse.py --changed');
       if (changed === 'project') await page.locator('#failure-project').selectOption('starter-demo');
@@ -638,7 +656,8 @@ async function diagnose(page, error=output()) {
       assert.equal(await page.locator('#failure-captured-project').innerText(),captured);
       assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
       assert.equal(await page.locator('#download-failure-text').isDisabled(),true);
-      assert.equal(await page.locator('#download-failure-json').isDisabled(),true);
+      assert.equal(await page.locator('#download-failure-json').isEnabled(),true);
+      assert.deepEqual(await capturedJson(page),original);
       assert.equal(await page.locator('#failure-copy-text').inputValue(),'');
       if (changed === 'error') {
         await page.locator('#failure-output').fill(output());
@@ -649,6 +668,138 @@ async function diagnose(page, error=output()) {
       }
     });
   }
+  await scenario('a repeated check keeps the exact previous capture saveable until a new capture is accepted', async (page,{requests}) => {
+    await diagnose(page);
+    const original = await capturedJson(page);
+    const before = await page.locator('#failure-source').innerText();
+    const changedSource = source.replace('int(value)','int(value.strip())');
+    let release, seen;
+    const waiting = new Promise(resolve => {release=resolve;});
+    const started = new Promise(resolve => {seen=resolve;});
+    await page.route('**/api/troubleshoot',async route => {
+      const response = await route.fetch();
+      seen();
+      await waiting;
+      await route.fulfill({response});
+    });
+    try {
+      await fs.writeFile(path.join(fixture,'parse.py'),changedSource);
+      await page.locator('#diagnose-run').click();
+      await started;
+      assert.equal(await page.locator('#failure-result').isVisible(),true);
+      assert.equal(await page.locator('#failure-source').innerText(),before);
+      assert.match(await page.locator('#failure-stale').innerText(),/previous capture.*has not been refreshed/);
+      assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+      assert.equal(await page.locator('#download-failure-text').isDisabled(),true);
+      assert.equal(await page.locator('#failure-copy-review').isVisible(),false);
+      assert.deepEqual(await capturedJson(page),original);
+      await page.locator('#copy-failure-brief').dispatchEvent('click');
+      assert.equal(await page.evaluate(() => window.__failureCopies.length),0);
+      release();
+      await completedCheck(page);
+      const replacement = await capturedJson(page);
+      assert.notEqual(replacement.evidence[0].file_sha256,original.evidence[0].file_sha256);
+      assert.equal(replacement.evidence[0].text,changedSource);
+      assert.match(await page.locator('#failure-result-title').innerText(),/pasted statement differs/);
+      assert.equal(await page.locator('#failure-stale').isVisible(),false);
+      assert.equal(await page.locator('#copy-failure-brief').isEnabled(),true);
+      assert.equal(requests.filter(url => url === '/api/troubleshoot').length,2);
+    } finally {release?.();await fs.writeFile(path.join(fixture,'parse.py'),source);}
+  },async page => {
+    await page.addInitScript(() => {
+      window.__failureCopies=[];
+      Object.defineProperty(navigator,'clipboard',{value:{writeText:async text => {window.__failureCopies.push(text);}},configurable:true});
+    });
+  });
+  for (const fault of ['unavailable','deadline','malformed evidence','different inputs']) {
+    await scenario(`a repeat ${fault} failure preserves the accepted capture and exact JSON without replay`,async (page,{requests}) => {
+      await diagnose(page);
+      const original = await capturedJson(page), brief = await page.locator('#failure-copy-text').inputValue();
+      const before = await page.locator('#failure-source').innerText();
+      let release, seen;
+      const waiting = new Promise(resolve => {release=resolve;});
+      const started = new Promise(resolve => {seen=resolve;});
+      if (fault === 'deadline') await page.clock.install();
+      await page.route('**/api/troubleshoot',async route => {
+        if (fault === 'deadline') {
+          seen();await waiting;
+          await route.fulfill({status:503,json:{error:'synthetic_unavailable'}}).catch(() => {});
+        } else if (fault === 'unavailable') {
+          await route.fulfill({status:503,json:{error:'synthetic_unavailable'}});
+        } else {
+          const response = await route.fetch(), value = await response.json();
+          if (fault === 'malformed evidence') value.evidence[0].text=null;
+          else value.error_output += 'Wrong response identity\n';
+          await route.fulfill({response,json:value});
+        }
+      });
+      try {
+        await page.locator('#diagnose-run').click();
+        if (fault === 'deadline') {await started;await page.clock.fastForward(15001);}
+        await completedCheck(page);
+        assert.equal(await page.locator('#failure-result').isVisible(),true);
+        assert.equal(await page.locator('#failure-source').innerText(),before);
+        assert.equal(await page.locator('#failure-output').inputValue(),output());
+        assert.match(await page.locator('#failure-stale').innerText(),/latest check did not complete.*previous capture.*has not been refreshed/);
+        assert.match(await page.locator('#failure-progress').innerText(),/did not complete/);
+        assert.match(await page.locator('#failure-notice').innerText(),fault === 'deadline' ? /timed out/ : fault === 'unavailable' ? /Could not check/ : /incomplete source report or a report for different inputs/);
+        assert.deepEqual(await capturedJson(page),original);
+        assert.equal(await page.locator('#failure-copy-text').inputValue(),brief);
+        assert.equal(await page.locator('#copy-failure-brief').isEnabled(),true);
+        assert.equal(requests.filter(url => url === '/api/troubleshoot').length,2);
+      } finally {release?.();}
+    });
+  }
+  await scenario('a response made obsolete by edits retains the old capture and only permits captured JSON', async (page,{requests}) => {
+    await diagnose(page);
+    const original = await capturedJson(page);
+    let release, seen;
+    const waiting = new Promise(resolve => {release=resolve;});
+    const started = new Promise(resolve => {seen=resolve;});
+    await page.route('**/api/troubleshoot',async route => {
+      const response=await route.fetch();seen();await waiting;await route.fulfill({response});
+    });
+    try {
+      await page.locator('#failure-output').fill(output('return 77'));
+      await page.locator('#diagnose-run').click();await started;
+      const newer = output('return 88');
+      await page.locator('#failure-output').fill(newer);
+      release();await completedCheck(page);
+      assert.equal(await page.locator('#failure-output').inputValue(),newer);
+      assert.equal(await page.locator('#failure-original').textContent(),original.error_output);
+      assert.match(await page.locator('#failure-stale').innerText(),/latest response was not accepted.*previous capture/);
+      assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+      assert.equal(await page.locator('#download-failure-text').isDisabled(),true);
+      assert.equal(await page.locator('#failure-copy-review').isVisible(),false);
+      assert.equal(await page.locator('#failure-copy-text').inputValue(),'');
+      assert.deepEqual(await capturedJson(page),original);
+      assert.equal(requests.filter(url => url === '/api/troubleshoot').length,2);
+    } finally {release?.();}
+  });
+  await scenario('a late clipboard completion cannot mark a pending repeated check copied or discard its capture', async page => {
+    await diagnose(page);
+    const original=await capturedJson(page);
+    await page.locator('#copy-failure-brief').click();
+    let release, seen;
+    const waiting=new Promise(resolve => {release=resolve;});
+    const started=new Promise(resolve => {seen=resolve;});
+    await page.route('**/api/troubleshoot',async route => {seen();await waiting;await route.fulfill({status:503,json:{error:'synthetic_unavailable'}});});
+    try {
+      await page.locator('#diagnose-run').click();await started;
+      await page.evaluate(() => window.__finishFailureCopy());
+      await page.waitForFunction(() => document.querySelector('#failure-notice').textContent.includes('earlier captured'));
+      assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+      assert.equal(await page.locator('#failure-copy-review').isVisible(),false);
+      assert.doesNotMatch(await page.locator('#failure-copy-status').innerText(),/Browser reported copying/);
+      assert.deepEqual(await capturedJson(page),original);
+      release();await completedCheck(page);
+      assert.match(await page.locator('#failure-stale').innerText(),/latest check did not complete/);
+      assert.doesNotMatch(await page.locator('#failure-copy-status').innerText(),/Browser reported copying/);
+      assert.deepEqual(await capturedJson(page),original);
+    } finally {release?.();}
+  },async page => {
+    await page.addInitScript(() => Object.defineProperty(navigator,'clipboard',{value:{writeText:() => new Promise(resolve => {window.__finishFailureCopy=resolve;})},configurable:true}));
+  });
   await scenario('a late response cannot appear under edited error text or overwrite the current input', async page => {
     let release, seen;
     const waiting = new Promise(resolve => { release = resolve; });
@@ -728,7 +879,12 @@ async function diagnose(page, error=output()) {
     assert.ok(saved.includes(error));
     assert.equal(saved.includes('Possible credentials'),false);
     await page.locator('#failure-output').fill(output());
-    assert.equal(await warning.isVisible(),false);
+    assert.equal(await warning.isVisible(),true,'The displayed capture still contains the credential and remains saveable as JSON.');
+    assert.equal(await warning.innerText(),warningText);
+    assert.ok((await capturedJson(page)).error_output.includes(token));
+    await fillRunDetail(page,'#failure-command','');
+    await diagnose(page);
+    assert.equal(await warning.isVisible(),false,'A newly accepted clean capture replaces its credential warning.');
     assert.equal(await warning.textContent(),'');
   }, async page => {
     await page.addInitScript(() => {
@@ -773,6 +929,7 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.evaluate(() => window.__clipboardWrites.length),1);
     await fillRunDetail(page, '#failure-command', 'python parse.py --capture-B');
     await page.locator('#diagnose-run').click();
+    await completedCheck(page);
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
     assert.match(await page.locator('#failure-copy-status').innerText(),/earlier captured debugging brief/);
@@ -867,6 +1024,7 @@ async function diagnose(page, error=output()) {
     assert.equal(await page.locator('#failure-working-directory').inputValue(),'');
     assert.equal(await page.locator('#failure-project').inputValue(),'starter-demo');
     await page.locator('#diagnose-run').click();
+    await completedCheck(page);
     await page.locator('#failure-result').waitFor({state:'visible'});
     assert.match(await page.locator('#failure-result-status').innerText(),/Synthetic example/i);
     assert.match(await page.locator('#failure-result-title').innerText(),/Source located/);

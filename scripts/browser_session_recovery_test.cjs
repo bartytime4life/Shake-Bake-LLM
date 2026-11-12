@@ -90,7 +90,7 @@ async function load(page,{project='fixture',directory='./services/api'}={}){
   if(!await page.locator('#failure-run-details').evaluate(element=>element.open))await page.locator('#failure-run-details > summary').click();
   await page.locator('#failure-command').fill(command);await page.locator('#failure-working-directory').fill(directory);
 }
-async function diagnose(page){await page.locator('#diagnose-run').click();await page.locator('#failure-result').waitFor({state:'visible'});assert.equal(await page.locator('#failure-original').textContent(),error);}
+async function diagnose(page){await page.locator('#diagnose-run').click();await page.waitForFunction(()=>document.querySelector('#failure-form').getAttribute('aria-busy')==='false');await page.locator('#failure-result').waitFor({state:'visible'});assert.equal(await page.locator('#failure-original').textContent(),error);}
 async function exactInputs(page){assert.equal(await page.locator('#failure-output').inputValue(),error.replace(/\r\n/g,'\n'));assert.equal(await page.locator('#failure-command').inputValue(),command);}
 async function hold(page,pattern){
   const seen=deferred(),release=deferred();let held=false;
@@ -157,6 +157,33 @@ async function hold(page,pattern){
     assert.match(await page.locator('#session-notice').textContent(),/earlier preparation is no longer in this session/);
     const finished=page.waitForResponse(response=>response.url().includes('/api/tasks/'+old.task_id));held.release();await finished;
     await page.waitForFunction(()=>!document.querySelector('#prepare').disabled);assert.equal(await page.locator('#handoff-text').inputValue(),captured);
+  });
+  await scenario('a repeat check crossing a real restart preserves the earlier exact report without replay',async h=>{
+    const {page}=h;await load(page);await diagnose(page);
+    await page.getByText('Original error & report',{exact:true}).click();
+    const save=async()=>{
+      const pending=page.waitForEvent('download');await page.locator('#download-failure-json').click();
+      return fs.readFile(await (await pending).path(),'utf8');
+    };
+    const original=await save();
+    const capture=JSON.parse(original);
+    assert.equal(capture.error_output,error);assert.equal(capture.command,command);assert.ok(capture.evidence.length);
+    const changedCommand=command+'--new-check';await page.locator('#failure-command').fill(changedCommand);
+    const held=await hold(page,'**/api/troubleshoot');h.releases.push(held.release);
+    await page.locator('#diagnose-run').click();const newer=await held.seen;assert.equal(newer.command,changedCommand);
+    assert.equal(await page.locator('#failure-result').isVisible(),true);
+    assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+    assert.equal(await save(),original);
+    const posts=h.posts.length;await h.restart();await h.disconnected();await h.retry();
+    const finished=page.waitForResponse(response=>response.url().endsWith('/api/troubleshoot'));held.release();await finished;
+    await page.waitForFunction(()=>document.querySelector('#failure-form').getAttribute('aria-busy')==='false');
+    assert.equal(await page.locator('#failure-output').inputValue(),error.replace(/\r\n/g,'\n'));
+    assert.equal(await page.locator('#failure-command').inputValue(),changedCommand);
+    assert.equal(await page.locator('#failure-working-directory').inputValue(),'./services/api');
+    assert.equal(await page.locator('#failure-original').textContent(),error);
+    assert.match(await page.locator('#failure-stale').innerText(),/earlier|previous/i);
+    assert.equal(await page.locator('#copy-failure-brief').isDisabled(),true);
+    assert.equal(await save(),original);assert.equal(h.posts.length,posts);
   });
   for(const crossTab of [false,true])await scenario(`${crossTab?'another tab renewing the shared cookie':'explicit session renewal'} rejects a late old-session failed-run response`,async h=>{
     const {page}=h;await load(page);const held=await hold(page,'**/api/troubleshoot');h.releases.push(held.release);

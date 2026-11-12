@@ -124,6 +124,49 @@ class WorkbenchAcceptance(unittest.TestCase):
         self.assertTrue(any("len(reported_slices) <= slices_detected" in e["text"] for e in result["evidence"]))
         self.assertEqual(before,{p.name:p.read_bytes() for p in DEMO.iterdir() if p.is_file()})
 
+    def test_recent_history_distinguishes_real_capture_denial_and_empty_search_without_fetching_source(self):
+        self.authenticate()
+        self.request("POST", "/api/settings", {"enabled": False})
+        with tempfile.TemporaryDirectory(prefix="sb-history-fixture-") as directory:
+            root = Path(directory) / "project"
+            root.mkdir()
+            source = root / "main.py"
+            source.write_text("RETRY_LIMIT = 3\n", encoding="utf-8")
+            status, _, raw = self.request("POST", "/api/projects", {"label": "History fixture", "path": str(root)})
+            self.assertEqual(status, 200)
+            project = json.loads(raw)["project_id"]
+
+            def prepare(task):
+                status, _, raw = self.request("POST", "/api/tasks", {"project_id": project, "task": task, "task_kind": "code"})
+                self.assertEqual(status, 202)
+                identifier = json.loads(raw)["task_id"]
+                for _ in range(200):
+                    result = json.loads(self.request("GET", "/api/tasks/" + identifier)[2])
+                    if result["state"] != "RUNNING":
+                        return result
+                    time.sleep(.01)
+                self.fail("Synthetic history preparation did not complete")
+
+            captured = prepare("Find RETRY_LIMIT")
+            self.assertTrue(captured["evidence"])
+            empty = prepare("Find zqxv_nonexistent_marker_8731")
+            self.assertEqual(empty["evidence"], [])
+            source.unlink()
+            root.rmdir()
+            denied = prepare("Find RETRY_LIMIT after the folder disappears")
+            self.assertEqual(denied["outcome"], "DENY")
+            with patch.object(self.controller._session, "fetch_evidence", side_effect=AssertionError("History must not fetch source")):
+                state = json.loads(self.request("GET", "/api/state")[2])
+            recent = {item["task_id"]: item for item in state["recent"]}
+            for result, available in ((captured, True), (empty, False), (denied, False)):
+                item = recent[result["task_id"]]
+                self.assertEqual(item["state"], "DONE")
+                self.assertEqual(item["outcome"], result["outcome"])
+                self.assertIs(item["evidence_available"], available)
+            # A failed later task cannot alter the earlier session capture.
+            retained = json.loads(self.request("GET", "/api/tasks/" + captured["task_id"])[2])
+            self.assertEqual(retained["evidence"], captured["evidence"])
+
     def test_project_ids_and_task_options_cannot_supply_arbitrary_paths(self):
         self.authenticate()
         self.assertEqual(self.request("POST","/api/tasks",{"project_id":"/etc","task":"Find source","task_kind":"code"})[0],400)
@@ -177,6 +220,10 @@ class WorkbenchAcceptance(unittest.TestCase):
             self.assertEqual(self.request("POST","/api/settings",{"enabled":False})[0],200)
             result=json.loads(self.request("GET","/api/tasks/"+identifier)[2])
             self.assertEqual(result["state"],"CANCELLED")
+            recent = json.loads(self.request("GET", "/api/state")[2])["recent"][0]
+            self.assertEqual(recent["state"], "CANCELLED")
+            self.assertIsNone(recent["outcome"])
+            self.assertIs(recent["evidence_available"], False)
             self.assertIsNotNone(self.controller._session._jobs[identifier].process.poll())
 
     def test_static_paths_do_not_expose_owner_files(self):
