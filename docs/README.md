@@ -1,6 +1,6 @@
 # Documentation guide
 
-Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md). [Current source/delivery status](current-status.md) identifies the merged dev38 source, its model screening and earlier baseline observations, the recorded main state and the boundaries of code, CI, installed and real-machine evidence. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. The [complete catalog](catalog.md) covers all 132 documentation/text files, including plans, research and fixed inputs. Dated reports
+Start with [the quickstart](quickstart.md), [failed-run source checks](failed-run-workflow.md) and the root [README](../README.md). [Current source/delivery status](current-status.md) identifies the merged dev38 source, its model screening and earlier baseline observations, the recorded main state and the boundaries of code, CI, installed and real-machine evidence. [TODO](../TODO.md), [Known Issues](../KNOWN_ISSUES.md) and [evaluation status](evaluation-status.md) distinguish implemented behavior, measured results and remaining work. The [complete catalog](catalog.md) covers all 134 documentation/text files, including plans, research and fixed inputs. Dated reports
 below retain the exact scope of earlier checks; an older test count or pending
 state is not a statement about the latest build.
 
@@ -75,6 +75,11 @@ build output do not belong in Git. AI assessments are labeled as such and do not
 replace independent human qualification.
 
 ## Plans and dated research
+
+The [agent harness playbook](agent-harness-playbook.md) prioritizes a more
+useful evidence packet and a verifiable junior-to-main-developer transfer.
+Use the [paired evaluation plan](agent-harness-evaluation.md) to compare
+quality, time, usage and reviewer effort with the main model held fixed.
 
 [UX workflow](UX-WORKFLOW.md), [per-PC calibration](per-pc-calibration.md),
 [calibration GUI](per-pc-calibration-ui.md), [model routing and usability](model-routing-and-usability.md)
